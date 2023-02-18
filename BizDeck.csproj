@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <ApplicationIcon />
+    <StartupObject />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HidSharp" Version="2.1.0" />
+    <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\bld\embedio\src\EmbedIO\EmbedIO.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Unosquare.Tubular">
+      <HintPath>..\..\bld\embedio\src\EmbedIO.Samples\bin\Debug\net5.0\Unosquare.Tubular.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+ <ItemGroup>
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App"/>
+  </ItemGroup>
+
+</Project>

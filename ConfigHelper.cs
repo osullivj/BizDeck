@@ -48,5 +48,10 @@ namespace BizDeck {
             var json_string = JsonSerializer.Serialize<BizDeckLayout>(new_layout, options);
             File.WriteAllText(LayoutPath, json_string);
         }
+
+        public BizDeckLayout LoadLayout()
+        {
+            return JsonSerializer.Deserialize<BizDeckLayout>(File.ReadAllText(LayoutPath));
+        }
     }
 }

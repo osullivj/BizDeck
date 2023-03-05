@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using HidSharp;
 
 namespace BizDeck
@@ -19,6 +20,7 @@ namespace BizDeck
         private static readonly int ImageReportPayloadLength = ImageReportLength - ImageReportHeaderLength;
 
         private byte[] keyPressBuffer = new byte[1024];
+
 
         public ConnectedDevice()
         {
@@ -91,29 +93,60 @@ namespace BizDeck
 
         private HidStream UnderlyingInputStream { get; set; }
 
+        private List<ButtonMapping> button_list;
+        public List<ButtonMapping> ButtonList {
+            get => button_list;
+            set {
+                button_list = value;
+                SetupDeviceButtons();
+            }
+        }
+        public Dictionary<string, ButtonAction> ButtonMap { get; set; }
         /// <summary>
         /// Initialize the device and start reading the input stream.
         /// </summary>
         public void InitializeDevice()
         {
-            this.UnderlyingInputStream = this.UnderlyingDevice.Open();
-            this.UnderlyingInputStream.ReadTimeout = Timeout.Infinite;
-            this.UnderlyingInputStream.BeginRead(this.keyPressBuffer, 0, this.keyPressBuffer.Length, this.KeyPressCallback, null);
+            UnderlyingInputStream = UnderlyingDevice.Open();
+            UnderlyingInputStream.ReadTimeout = Timeout.Infinite;
+            UnderlyingInputStream.BeginRead(keyPressBuffer, 0, keyPressBuffer.Length, KeyPressCallback, null);
         }
 
-        /// <summary>
-        /// Open the underlying Stream Deck device.
-        /// </summary>
-        /// <returns>HID stream that can be read or written to.</returns>
+        public async Task ReadAsync()
+        {
+            UnderlyingInputStream = UnderlyingDevice.Open();
+            UnderlyingInputStream.ReadTimeout = Timeout.Infinite;
+            Array.Clear(keyPressBuffer, 0, keyPressBuffer.Length);
+            int bytes_read = 0;
+            while ((bytes_read = await UnderlyingInputStream.ReadAsync(this.keyPressBuffer, 0, this.keyPressBuffer.Length)) > 0)
+            {
+                var button_data = new ArraySegment<byte>(this.keyPressBuffer, ButtonPressHeaderOffset, ButtonCount).ToArray();
+                var pressed_button = Array.IndexOf(button_data, (byte)1);
+                var button_kind = ButtonEventKind.DOWN;
+                if (pressed_button == -1)
+                {
+                    button_kind = ButtonEventKind.UP;
+                    pressed_button = LastButton;
+                    var button_entry = ButtonList.FirstOrDefault(x => x.ButtonIndex == pressed_button);
+                    if (button_entry != null)
+                    {
+                        // ConfigureAwait(false) to signal that we can resume on any thread
+                        await ButtonMap[button_entry.Name].RunAsync().ConfigureAwait(false);
+                    }
+                }
+                else
+                {
+                    LastButton = pressed_button;
+                }
+            }
+        }
+
         public HidStream Open()
         {
             return this.UnderlyingDevice.Open();
         }
 
 
-        /// <summary>
-        /// Clear the contents of the Stream Deck buttons.
-        /// </summary>
         public void ClearPanel()
         {
             for (int i = 0; i < this.ButtonCount; i++)
@@ -124,10 +157,6 @@ namespace BizDeck
             }
         }
 
-        /// <summary>
-        /// Sets the brightness of the Stream Deck device display.
-        /// </summary>
-        /// <param name="percentage">Percentage, from 0 to 100, to which brightness should be set. Any values larger than 100 will be set to 100.</param>
         public void SetBrightness(byte percentage)
         {
             if (percentage > 100)
@@ -145,13 +174,9 @@ namespace BizDeck
             stream.SetFeature(brightnessRequest);
         }
 
-        /// <summary>
-        /// Sets up the button mapping to associated plugins.
-        /// </summary>
-        /// <param name="buttonMap">List of mappings, usually loaded from a configuration file.</param>
-        public void SetupDeviceButtonMap(IEnumerable<ButtonMapping> buttonMap)
+        private void SetupDeviceButtons( )
         {
-            foreach (var button in buttonMap)
+            foreach (var button in button_list)
             {
                 if (button.ButtonIndex <= this.ButtonCount - 1)
                 {

@@ -64,9 +64,10 @@ namespace BizDeck
                 {
                     // assume just one StreamDeck connected and take first
                     // entry on device list
-                    var targetDevice = devices.ElementAt(0);
-                    targetDevice.SetupDeviceButtonMap(config.ButtonMap);
-                    return targetDevice;
+                    var connected_device = devices.ElementAt(0);
+                    // targetDevice.SetupDeviceButtonMap(config.ButtonMap);
+                    connected_device.ButtonList = config.ButtonMap;
+                    return connected_device;
                 }
                 else
                 {

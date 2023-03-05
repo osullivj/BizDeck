@@ -20,6 +20,12 @@ namespace BizDeck
         [JsonPropertyName("http_server_port")]
         public int HTTPServerPort { get; set; }
 
+        [JsonPropertyName("edge_recorder_port")]
+        public int EdgeRecorderPort { get; set; }
+
+        [JsonPropertyName("edge_path")]
+        public string EdgePath { get; set; }
+
         [JsonPropertyName("console")]
         public bool Console { get; set; }
 

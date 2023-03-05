@@ -20,5 +20,11 @@ namespace BizDeck
             };
             browser.Start();
         }
+
+        public async override Task RunAsync()
+        {
+            Run();
+            await Task.Delay(0);
+        }
     }
 }

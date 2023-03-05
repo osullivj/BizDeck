@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,19 +8,17 @@ using Swan.Logging;
 
 namespace BizDeck
 {
-    public class RestoreLayout:ButtonAction
+    public class StopRecording : ButtonAction
     {
-        private Layout layout;
-        public RestoreLayout(Layout lay) { layout = lay; }
+        private Recorder recorder;
+        public StopRecording(Recorder r) { recorder = r; }
         public override void Run()
         {
-            "Restoring layout...".Info();
-            layout.Restore();
+            
         }
         public async override Task RunAsync()
         {
-            Run();
-            await Task.Delay(0);
+            await recorder.Stop();
         }
     }
 }

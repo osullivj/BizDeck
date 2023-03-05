@@ -15,6 +15,7 @@
     {
         private const bool UseFileCache = true;
         private static Dictionary<string, ButtonAction> button_action_map = new Dictionary<string, ButtonAction>();
+        private static Recorder recorder;
         /// <summary>
         /// Defines the entry point of the application.
         /// </summary>
@@ -27,23 +28,27 @@
             var url = string.Format("http://localhost:{0}/", config.HTTPServerPort);
             if (args.Length > 0)
                 url = args[0];
-
             if (config.Console)
             {
                 Win32.AllocConsole();
             }
+
+            var recorder = new Recorder(config);
             InitLogging(config_helper.LogDir);
-            InitButtonActionMap(url, new Layout(config_helper));
+            InitButtonActionMap(url, new Layout(config_helper), recorder);
 
             // Our web server is disposable.
             using (var server = CreateWebServer(url, config_helper.HtmlDir))  {
                 // Once we've registered our modules and configured them, we
                 // call the RunAsync() method.
-                server.RunAsync();
-
-                var device = DeviceManager.SetupDevice(config);
+                var http_server_task = server.RunAsync();
                 var exitSignal = new ManualResetEvent(false);
-                device.OnButtonPress += (s, e) => {
+                var stream_deck = DeviceManager.SetupDevice(config);
+                stream_deck.ButtonMap = button_action_map;
+                var hid_stream_task = stream_deck.ReadAsync();
+
+                /* The old synchronous button handler code 
+                   device.OnButtonPress += (s, e) => {
                     $"Button {e.Id} pressed. Event type: {e.Kind}".Info();
                     if (e.Kind == ButtonEventKind.DOWN) {
                         var buttonEntry = config.ButtonMap.FirstOrDefault(x => x.ButtonIndex == e.Id);
@@ -52,7 +57,7 @@
                         }
                     }
                 };
-                device.InitializeDevice();
+                device.InitializeDevice(); */
                 // Wait for any key to be pressed before disposing of our web server.
                 // In a service, we'd manage the lifecycle of our web server using
                 // something like a BackgroundWorker or a ManualResetEvent.
@@ -100,10 +105,12 @@
             Logger.RegisterLogger(logger);
         }
 
-        private static void InitButtonActionMap(string biz_deck_gui_url, Layout layout)
+        private static void InitButtonActionMap(string biz_deck_gui_url, Layout layout, Recorder recorder)
         {
             button_action_map["gui"] = new ShowBizDeckGUI(biz_deck_gui_url);
             button_action_map["snap_layout"] = new SnapLayout(layout);
+            button_action_map["start_recording"] = new StartRecording(recorder);
+            button_action_map["stop_recording"] = new StopRecording(recorder);
         }
     }
 }

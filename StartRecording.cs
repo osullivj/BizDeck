@@ -18,6 +18,7 @@ namespace BizDeck
         }
         public async override Task RunAsync()
         {
+            $"StartRecording awaiting...".Info();
             await recorder.Start();
         }
     }

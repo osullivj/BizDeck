@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using HidSharp;
+using Swan.Logging;
 
 namespace BizDeck
 {
@@ -118,16 +119,20 @@ namespace BizDeck
             UnderlyingInputStream.ReadTimeout = Timeout.Infinite;
             Array.Clear(keyPressBuffer, 0, keyPressBuffer.Length);
             int bytes_read = 0;
+            $"ConnectedDevice.ReadAsync awaiting stream...".Info();
             while ((bytes_read = await UnderlyingInputStream.ReadAsync(this.keyPressBuffer, 0, this.keyPressBuffer.Length)) > 0)
             {
+
                 var button_data = new ArraySegment<byte>(this.keyPressBuffer, ButtonPressHeaderOffset, ButtonCount).ToArray();
                 var pressed_button = Array.IndexOf(button_data, (byte)1);
                 var button_kind = ButtonEventKind.DOWN;
+                $"ConnectedDevice.ReadAsync pressed:{pressed_button}, kind:{button_kind}".Info();
                 if (pressed_button == -1)
                 {
                     button_kind = ButtonEventKind.UP;
                     pressed_button = LastButton;
                     var button_entry = ButtonList.FirstOrDefault(x => x.ButtonIndex == pressed_button);
+                    $"ConnectedDevice.ReadAsync entry:{button_entry.Name}".Info();
                     if (button_entry != null)
                     {
                         // ConfigureAwait(false) to signal that we can resume on any thread

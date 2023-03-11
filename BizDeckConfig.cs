@@ -23,6 +23,9 @@ namespace BizDeck
         [JsonPropertyName("edge_recorder_port")]
         public int EdgeRecorderPort { get; set; }
 
+        [JsonPropertyName("edge_user_data_dir")]
+        public string EdgeUserDataDir { get; set; }
+
         [JsonPropertyName("edge_path")]
         public string EdgePath { get; set; }
 

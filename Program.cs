@@ -43,21 +43,10 @@
                 // call the RunAsync() method.
                 var http_server_task = server.RunAsync();
                 var exitSignal = new ManualResetEvent(false);
+                // Now connect to StreamDeck, and start async read
                 var stream_deck = DeviceManager.SetupDevice(config);
                 stream_deck.ButtonMap = button_action_map;
                 var hid_stream_task = stream_deck.ReadAsync();
-
-                /* The old synchronous button handler code 
-                   device.OnButtonPress += (s, e) => {
-                    $"Button {e.Id} pressed. Event type: {e.Kind}".Info();
-                    if (e.Kind == ButtonEventKind.DOWN) {
-                        var buttonEntry = config.ButtonMap.FirstOrDefault(x => x.ButtonIndex == e.Id);
-                        if (buttonEntry != null) {
-                           ExecuteButtonAction(buttonEntry, device);
-                        }
-                    }
-                };
-                device.InitializeDevice(); */
                 // Wait for any key to be pressed before disposing of our web server.
                 // In a service, we'd manage the lifecycle of our web server using
                 // something like a BackgroundWorker or a ManualResetEvent.
@@ -68,14 +57,6 @@
             }
         }
 
-        private static void ExecuteButtonAction(ButtonMapping button, ConnectedDevice device, int activatingButton = -1)
-        {
-            if (button_action_map.ContainsKey(button.Name)) {
-                button_action_map[button.Name].Run();
-                return;
-            }
-            $"No action mapped for button {button.Name}".Info();
-        }
 
         // Create and configure our web server.
         private static WebServer CreateWebServer(string url, string html_path)

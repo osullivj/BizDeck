@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Swan.Logging;
 
@@ -13,12 +14,26 @@ namespace BizDeck
         private HttpClient edge_client;
         private Process browser;
         private string json_list_url;
+        private string browser_cmd_line_args;
         private BizDeckConfig config;
+        private CancellationTokenSource cancel_token_source;
         public Recorder(BizDeckConfig cfg)
         {
             config = cfg;
             edge_client = new HttpClient();
+            browser_cmd_line_args = $"--remote-debugging-port={config.EdgeRecorderPort} "
+                                            + $" --user-data-dir={config.EdgeUserDataDir}";
+            json_list_url = $"http://localhost:{config.EdgeRecorderPort}/json/list";
+            browser = null;
+        }
 
+        public async Task StartBrowser()
+        { 
+            if (browser != null)
+            {
+                $"Recorder browser already running: Id:{browser.Id}, Handle:{browser.Handle}".Info();
+                return;
+            }
             // https://learn.microsoft.com/en-us/microsoft-edge/devtools-protocol-chromium/
             // msedge.exe --remote-debugging-port=9222
             // NB we also need --user-data-dir option per this MS issue...
@@ -32,18 +47,30 @@ namespace BizDeck
             // warning....
             browser = new Process();
             browser.StartInfo.FileName = config.EdgePath;
-            var args = $"--remote-debugging-port={config.EdgeRecorderPort} --user-data-dir={config.EdgeUserDataDir}";
-            $"Recorder browser starting with {config.EdgePath} {args}".Info();
-            browser.StartInfo.Arguments = args;
+            $"Recorder browser starting with {config.EdgePath} {browser_cmd_line_args}".Info();
+            browser.StartInfo.Arguments = browser_cmd_line_args;
             browser.Start();
-            json_list_url = $"http://localhost:{config.EdgeRecorderPort}/json/list";
-            $"Recorder browser: Id:{browser.Id}, Handle:{browser.Handle}, Title:{browser.MainWindowTitle}".Info();
+            $"Recorder browser: Id:{browser.Id}, Handle:{browser.Handle}".Info();
+            // Now tee up two tasks: one to await the /json/list result from the
+            // debugger port, and one to timeout. If the timeout completes first
+            // we know that the edge instance launched here was not the first, and
+            // that the pre-existing instance is running without a debug port.
+            cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config.EdgeJsonListTimeout));
+            try
+            {
+                var json_list = await edge_client.GetStringAsync(json_list_url,
+                                                        cancel_token_source.Token);
+                $"Recorder browser: json/list:{json_list}".Info();
+            }
+            catch (OperationCanceledException ex) {
+                $"Recorder /json/list timeout".Error();
+                // TODO: add code here to redirect the browser to an
+                // error page about msedge.exe instances.
+            }
         }
 
         public async Task Start() {
-            $"Recorder.Start: awaiting {json_list_url}".Info();
-            string json_list = await edge_client.GetStringAsync(json_list_url);
-            $"Recorder.Start: json_list:{json_list}".Info();
+            await StartBrowser();
         }
 
         public async Task Stop() {

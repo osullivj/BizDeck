@@ -9,32 +9,18 @@ using Swan.Logging;
 
 namespace BizDeck
 {
-    /// <summary>
-    /// Abstract class representing a connected Stream Deck device. Use specific implementations for a given connected model.
-    /// </summary>
     public abstract class ConnectedDevice
     {
         private const int ButtonPressHeaderOffset = 4;
-
         private static readonly int ImageReportLength = 1024;
         private static readonly int ImageReportHeaderLength = 8;
         private static readonly int ImageReportPayloadLength = ImageReportLength - ImageReportHeaderLength;
-
         private byte[] keyPressBuffer = new byte[1024];
-
 
         public ConnectedDevice()
         {
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ConnectedDevice"/> class with given device parameters.
-        /// </summary>
-        /// <param name="vid">Vendor ID.</param>
-        /// <param name="pid">Product ID.</param>
-        /// <param name="path">Path to the USB HID device.</param>
-        /// <param name="name">Name of the USB HID device.</param>
-        /// <param name="model">Stream Deck model.</param>
         public ConnectedDevice(int vid, int pid, string path, string name, DeviceModel model)
         {
             this.VId = vid;
@@ -47,54 +33,22 @@ namespace BizDeck
             this.ButtonSize = DeviceConstants.constants[model].ButtonSize;
         }
 
-        /// <summary>
-        /// Delegate responsible for handling Stream Deck button presses.
-        /// </summary>
-        /// <param name="source">The device where the button was pressed.</param>
-        /// <param name="e">Information on the button press.</param>
         public delegate void ReceivedButtonPressHandler(object source, ButtonPressEventArgs e);
 
-        /// <summary>
-        /// Button press event handler.
-        /// </summary>
         public event ReceivedButtonPressHandler OnButtonPress;
 
-        /// <summary>
-        /// Gets the vendor ID.
-        /// </summary>
         public int VId { get; private set; }
-
-        /// <summary>
-        /// Gets the product ID.
-        /// </summary>
         public int PId { get; private set; }
-
-        /// <summary>
-        /// Gets the USB HID device path.
-        /// </summary>
         public string Path { get; private set; }
-
-        /// <summary>
-        /// Gets the USB HID device name.
-        /// </summary>
         public string Name { get; private set; }
-
-        /// <summary>
-        /// Gets the Stream Deck device model.
-        /// </summary>
         public DeviceModel Model { get; private set; }
-
-        /// <summary>
-        /// Gets the number of buttons on the connected Stream Deck device.
-        /// </summary>
         public int ButtonCount { get; }
         public int ButtonSize { get; }
         public int LastButton { get; set; }
         private HidDevice UnderlyingDevice { get; }
-
         private HidStream UnderlyingInputStream { get; set; }
-
         private List<ButtonMapping> button_list;
+
         public List<ButtonMapping> ButtonList {
             get => button_list;
             set {
@@ -103,15 +57,6 @@ namespace BizDeck
             }
         }
         public Dictionary<string, ButtonAction> ButtonMap { get; set; }
-        /// <summary>
-        /// Initialize the device and start reading the input stream.
-        /// </summary>
-        public void InitializeDevice()
-        {
-            UnderlyingInputStream = UnderlyingDevice.Open();
-            UnderlyingInputStream.ReadTimeout = Timeout.Infinite;
-            UnderlyingInputStream.BeginRead(keyPressBuffer, 0, keyPressBuffer.Length, KeyPressCallback, null);
-        }
 
         public async Task ReadAsync()
         {
@@ -243,34 +188,6 @@ namespace BizDeck
             }
 
             return true;
-        }
-
-        private void KeyPressCallback(IAsyncResult result)
-        {
-            int bytesRead = this.UnderlyingInputStream.EndRead(result);
-
-            var buttonData = new ArraySegment<byte>(this.keyPressBuffer, ButtonPressHeaderOffset, ButtonCount).ToArray();
-            var pressedButton = Array.IndexOf(buttonData, (byte)1);
-            // var buttonKind = pressedButton != -1 ? ButtonEventKind.DOWN : ButtonEventKind.UP;
-            var buttonKind = ButtonEventKind.DOWN;
-            if (pressedButton == -1)
-            {
-                buttonKind = ButtonEventKind.UP;
-                pressedButton = LastButton;
-            }
-            else
-            {
-                LastButton = pressedButton;
-            }
-
-            if (this.OnButtonPress != null)
-            {
-                this.OnButtonPress(this.UnderlyingDevice, new ButtonPressEventArgs(pressedButton, buttonKind));
-            }
-
-            Array.Clear(this.keyPressBuffer, 0, this.keyPressBuffer.Length);
-
-            this.UnderlyingInputStream.BeginRead(this.keyPressBuffer, 0, this.keyPressBuffer.Length, this.KeyPressCallback, null);
         }
     }
 }

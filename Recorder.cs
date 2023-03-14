@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Net.WebSockets;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Swan.Logging;
@@ -16,7 +18,7 @@ namespace BizDeck
         private string json_list_url;
         private string browser_cmd_line_args;
         private BizDeckConfig config;
-        private CancellationTokenSource cancel_token_source;
+
         public Recorder(BizDeckConfig cfg)
         {
             config = cfg;
@@ -55,12 +57,26 @@ namespace BizDeck
             // debugger port, and one to timeout. If the timeout completes first
             // we know that the edge instance launched here was not the first, and
             // that the pre-existing instance is running without a debug port.
-            cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config.EdgeJsonListTimeout));
+            var http_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config.EdgeJsonListTimeout));
             try
             {
-                var json_list = await edge_client.GetStringAsync(json_list_url,
-                                                        cancel_token_source.Token);
-                $"Recorder browser: json/list:{json_list}".Info();
+                var json_list_str = await edge_client.GetStringAsync(json_list_url,
+                                                        http_cancel_token_source.Token);
+                $"Recorder browser: json/list:{json_list_str}".Info();
+                // Now we have a list from Dev Tools, so we deserialize,
+                // and connect to each of the debug websocket URLs. 
+                List<DevToolsJsonListResponse> json_list_arr = JsonSerializer.Deserialize<List<DevToolsJsonListResponse>>(json_list_str);
+                var task_list = new List<Task>(json_list_arr.Count);
+                foreach (DevToolsJsonListResponse response in json_list_arr)
+                {
+                    var websock = new ClientWebSocket();
+                    var ws_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config.EdgeJsonListTimeout));
+                    task_list.Add(websock.ConnectAsync(new System.Uri(response.WebSocketDebuggerUrl), ws_cancel_token_source.Token));
+                }
+                // Wait on the connection tasks
+                await Task.WhenAll(task_list);
+                // Should be connected to each websock now, so start listening
+                // TODO: invoke ReceiveAsync
             }
             catch (OperationCanceledException ex) {
                 $"Recorder /json/list timeout".Error();

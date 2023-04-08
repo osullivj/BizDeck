@@ -1,0 +1,16 @@
+<vbox style="padding: 5px;" width="100%" styleName="default-background">
+    <grid>
+        <!--  top tabview -->
+        <tabview id="bd_tabview1" width="240" height="100">
+			<box text="Config" icon="haxeui-core/styles/default/haxeui_tiny.png">
+				<textarea id="bd_config_json" text="" width="100%" height="100%"/>
+            </box>
+            <box text="Log" icon="haxeui-core/styles/default/haxeui_tiny.png">
+                <vbox id="bd_log_vbox"/>
+            </box>
+            <box text="Buttons" icon="haxeui-core/styles/default/haxeui_tiny.png" disabled="true">
+                <vbox id="bd_buttons_vbox"/>
+            </box>
+        </tabview>
+	</grid>
+</vbox>

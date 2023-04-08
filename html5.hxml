@@ -1,0 +1,16 @@
+# class path -cp is supplied by hxbld.cmd
+
+# haxe pkg deps
+--library haxeui-core
+--library haxeui-html5
+
+# main home page
+--each
+--js html/Main.js
+--main Main
+
+# config
+# --next
+# --js html/BDConfig.js
+# --main BDConfig
+

@@ -12,29 +12,56 @@ using Microsoft.Playwright;
 
 namespace BizDeck
 {
-    public class DevToolsRecorder : IRecorder
+    public class Recorder
     {
         private BizDeckConfig config;
+        private IBrowser browser;
+        private IBrowserContext context;
+        private IPage page;
         private HttpClient edge_client;
-        private Process browser;
+        // private Process browser;
         private string json_list_url;
         private string browser_cmd_line_args;
 
         private List<ClientWebSocket> debug_websock_list;
         private List<byte[]> debug_websock_buffer_list;
 
-        public DevToolsRecorder(BizDeckConfig cfg)
+        public Recorder(BizDeckConfig cfg)
         {
-            edge_client = new HttpClient();
             config = cfg;
+            edge_client = new HttpClient();
             browser_cmd_line_args = $"--remote-debugging-port={config.EdgeRecorderPort} "
                                             + $" --user-data-dir={config.EdgeUserDataDir}";
             json_list_url = $"http://localhost:{config.EdgeRecorderPort}/json/list";
             browser = null;
         }
 
+        private void OnContextRequest(object sender, IRequest r)
+        {
+            $"OnContextRequest: sender:{sender}, r:{r}".Info();
+        }
+
+        private void OnContextPage(object sender, IPage p)
+        {
+            $"OnContextPage: sender:{sender}, p:{p.APIRequest.ToString()}".Info();
+        }
+
+        private void OnContextClose(object sender, IBrowserContext c)
+        {
+            $"OnContextClose: sender:{sender}, c:{c}".Info();
+        }
+
         public async Task StartBrowser()
         {
+            using var playwright = await Playwright.CreateAsync();
+            browser = await playwright.Chromium.LaunchAsync(new() { Headless = false });
+            context = await browser.NewContextAsync();
+            context.Request += OnContextRequest;
+            context.Page += OnContextPage;
+            context.Close += OnContextClose;
+
+            page = await context.NewPageAsync();
+            /*
             if (browser != null)
             {
                 $"Recorder browser already running: Id:{browser.Id}, Handle:{browser.Handle}".Info();
@@ -91,7 +118,7 @@ namespace BizDeck
                 $"Recorder /json/list timeout".Error();
                 // TODO: add code here to redirect the browser to an
                 // error page about msedge.exe instances.
-            }
+            } */
         }
 
         public async Task ReceiveAsync()
@@ -125,6 +152,7 @@ namespace BizDeck
                 recv_task = await Task<WebSocketReceiveResult>.WhenAny(task_list).ConfigureAwait(false);
                 recv_result = recv_task.Result;
                 $"Recorder recv_result:{recv_result.ToString()}".Info();
+
             }
         }
 

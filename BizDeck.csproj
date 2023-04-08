@@ -5,10 +5,13 @@
     <TargetFramework>net5.0-windows</TargetFramework>
     <ApplicationIcon />
     <StartupObject />
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>    
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="HidSharp" Version="2.1.0" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.32.0" />
     <PackageReference Include="Selenium.WebDriver" Version="4.8.1" />
     <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
   </ItemGroup>

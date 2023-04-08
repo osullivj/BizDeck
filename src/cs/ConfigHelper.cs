@@ -2,25 +2,29 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using CommandLine;
 
 namespace BizDeck {
+
     public class ConfigHelper {
+        private CmdLineOptions options;
+        public ConfigHelper(CmdLineOptions opts) { options = opts; }
         public string LocalAppDataPath {
-            get => Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            get => options.bdroot;
         }
 
         public string ConfigPath {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "config", "config.json"});
+            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", "config.json"});
         }
 
         public string LayoutPath
         {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "config", "layout.json" });
+            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", "layout.json" });
         }
 
         public string LayoutRulesPath
         {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "config", "layout_rules.json" });
+            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", "layout_rules.json" });
         }
 
         public string LogDir {

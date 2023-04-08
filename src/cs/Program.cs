@@ -9,6 +9,7 @@
     using EmbedIO.WebApi;
     using EmbedIO.Files;
     using EmbedIO.Actions;
+    using CommandLine;
     using Swan.Logging;
 
     class Program
@@ -22,12 +23,13 @@
         /// <param name="args">The arguments.</param>
         static void Main(string[] args)
         {
+            // First parse cmd line opts...
+            var parser = new Parser();
+            var result = parser.ParseArguments<CmdLineOptions>(args);
             // first load the config
-            var config_helper = new ConfigHelper();
+            var config_helper = new ConfigHelper(result.Value);
             var config = config_helper.LoadConfig();
             var url = string.Format("http://localhost:{0}/", config.HTTPServerPort);
-            if (args.Length > 0)
-                url = args[0];
             if (config.Console)
             {
                 Win32.AllocConsole();
@@ -45,8 +47,18 @@
                 var exitSignal = new ManualResetEvent(false);
                 // Now connect to StreamDeck, and start async read
                 var stream_deck = DeviceManager.SetupDevice(config);
-                stream_deck.ButtonMap = button_action_map;
-                var hid_stream_task = stream_deck.ReadAsync();
+                if (stream_deck == null)
+                {
+                    // TODO: this error condition should pop up a browser
+                    // instance with an explanatory error message, and two
+                    // options: exit or retry
+                    $"StreamDeck init failed - is it plugged in?".Error();
+                }
+                else
+                {
+                    stream_deck.ButtonMap = button_action_map;
+                    var hid_stream_task = stream_deck.ReadAsync();
+                }
                 // Wait for any key to be pressed before disposing of our web server.
                 // In a service, we'd manage the lifecycle of our web server using
                 // something like a BackgroundWorker or a ManualResetEvent.

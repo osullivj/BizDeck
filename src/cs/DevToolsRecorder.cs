@@ -14,7 +14,7 @@ namespace BizDeck
 {
     public class DevToolsRecorder : IRecorder
     {
-        private BizDeckConfig config;
+        private ConfigHelper config_helper;
         private HttpClient edge_client;
         private Process browser;
         private string json_list_url;
@@ -23,13 +23,13 @@ namespace BizDeck
         private List<ClientWebSocket> debug_websock_list;
         private List<byte[]> debug_websock_buffer_list;
 
-        public DevToolsRecorder(BizDeckConfig cfg)
+        public DevToolsRecorder(ConfigHelper ch)
         {
             edge_client = new HttpClient();
-            config = cfg;
-            browser_cmd_line_args = $"--remote-debugging-port={config.EdgeRecorderPort} "
-                                            + $" --user-data-dir={config.EdgeUserDataDir}";
-            json_list_url = $"http://localhost:{config.EdgeRecorderPort}/json/list";
+            config_helper = ch;
+            browser_cmd_line_args = $"--remote-debugging-port={config_helper.BizDeckConfig.EdgeRecorderPort} "
+                                            + $" --user-data-dir={config_helper.GetFullLogPath()}";
+            json_list_url = $"http://localhost:{config_helper.BizDeckConfig.EdgeRecorderPort}/json/list";
             browser = null;
         }
 
@@ -52,8 +52,8 @@ namespace BizDeck
             // TODO: add code to check for msedge.exe instance, and popup
             // warning....
             browser = new Process();
-            browser.StartInfo.FileName = config.EdgePath;
-            $"Recorder browser starting with {config.EdgePath} {browser_cmd_line_args}".Info();
+            browser.StartInfo.FileName = config_helper.BizDeckConfig.EdgePath;
+            $"Recorder browser starting with {config_helper.BizDeckConfig.EdgePath} {browser_cmd_line_args}".Info();
             browser.StartInfo.Arguments = browser_cmd_line_args;
             browser.Start();
             $"Recorder browser: Id:{browser.Id}, Handle:{browser.Handle}".Info();
@@ -61,7 +61,7 @@ namespace BizDeck
             // debugger port, and one to timeout. If the timeout completes first
             // we know that the edge instance launched here was not the first, and
             // that the pre-existing instance is running without a debug port.
-            var http_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config.EdgeJsonListTimeout));
+            var http_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.EdgeJsonListTimeout));
             debug_websock_list = new List<ClientWebSocket>();
             debug_websock_buffer_list = new List<byte[]>();
             try
@@ -76,7 +76,7 @@ namespace BizDeck
                 foreach (DevToolsJsonListResponse response in json_list_arr)
                 {
                     var websock = new ClientWebSocket();
-                    var ws_connect_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config.EdgeJsonListTimeout));
+                    var ws_connect_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.EdgeJsonListTimeout));
                     task_list.Add(websock.ConnectAsync(new System.Uri(response.WebSocketDebuggerUrl), ws_connect_cancel_token_source.Token));
                     debug_websock_list.Add(websock);
                     debug_websock_buffer_list.Add(new byte[1024]);

@@ -10,7 +10,7 @@ namespace BizDeck
     {
         private static readonly int SupportedVid = 4057;
         /// Return a list of connected Stream Deck devices supported by DeckSurf.
-        public static IEnumerable<ConnectedDevice> GetDeviceList()
+        public static IEnumerable<ConnectedDevice> GetDeviceList(ConfigHelper ch)
         {
             var connectedDevices = new List<ConnectedDevice>();
             var deviceList = DeviceList.Local.GetHidDevices();
@@ -25,7 +25,7 @@ namespace BizDeck
                         case DeviceModel.MK_2:
                         case DeviceModel.XL:
                             {
-                                connectedDevices.Add(new StreamDeck(device.VendorID, device.ProductID, device.DevicePath, device.GetFriendlyName(), (DeviceModel)device.ProductID));
+                                connectedDevices.Add(new StreamDeck(device.VendorID, device.ProductID, device.DevicePath, device.GetFriendlyName(), (DeviceModel)device.ProductID, ch));
                                 break;
                             }
 
@@ -43,18 +43,17 @@ namespace BizDeck
             return connectedDevices;
         }
 
-        public static ConnectedDevice SetupDevice(BizDeckConfig config)
+        public static ConnectedDevice SetupDevice(ConfigHelper ch)
         {
             try
             {
-                var devices = GetDeviceList();
+                var devices = GetDeviceList(ch);
                 if (devices != null && devices.Any())
                 {
                     // assume just one StreamDeck connected and take first
                     // entry on device list
                     var connected_device = devices.ElementAt(0);
-                    // targetDevice.SetupDeviceButtonMap(config.ButtonMap);
-                    connected_device.ButtonList = config.ButtonMap;
+                    connected_device.ButtonList = ch.BizDeckConfig.ButtonMap;
                     return connected_device;
                 }
                 else

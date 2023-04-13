@@ -36,8 +36,21 @@ namespace BizDeck {
             get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "html" });
         }
 
+        public BizDeckConfig BizDeckConfig { set; get; }
+
+        public string GetFullIconPath(string button_image_path)
+        {
+            return Path.Combine(new string[] { LocalAppDataPath, "BizDeck", button_image_path });
+        }
+
+        public string GetFullLogPath()
+        {
+            return Path.Combine(new string[] { LocalAppDataPath, "BizDeck", BizDeckConfig.EdgeUserDataDir });
+        }
+
         public BizDeckConfig LoadConfig() {
-            return JsonSerializer.Deserialize<BizDeckConfig>(File.ReadAllText(ConfigPath));
+            BizDeckConfig = JsonSerializer.Deserialize<BizDeckConfig>(File.ReadAllText(ConfigPath));
+            return BizDeckConfig;
         }
 
         public BizDeckLayoutRules LoadLayoutRules()

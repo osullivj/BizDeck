@@ -16,12 +16,10 @@ namespace BizDeck
         private static readonly int ImageReportHeaderLength = 8;
         private static readonly int ImageReportPayloadLength = ImageReportLength - ImageReportHeaderLength;
         private byte[] keyPressBuffer = new byte[1024];
+        private ConfigHelper config_helper;
 
-        public ConnectedDevice()
-        {
-        }
-
-        public ConnectedDevice(int vid, int pid, string path, string name, DeviceModel model)
+        public ConnectedDevice(int vid, int pid, string path, string name, DeviceModel model,
+            ConfigHelper ch)
         {
             this.VId = vid;
             this.PId = pid;
@@ -31,6 +29,7 @@ namespace BizDeck
             this.UnderlyingDevice = DeviceList.Local.GetHidDeviceOrNull(this.VId, this.PId);
             this.ButtonCount = DeviceConstants.constants[model].ButtonCount;
             this.ButtonSize = DeviceConstants.constants[model].ButtonSize;
+            this.config_helper = ch;
         }
 
         public delegate void ReceivedButtonPressHandler(object source, ButtonPressEventArgs e);
@@ -48,6 +47,8 @@ namespace BizDeck
         private HidDevice UnderlyingDevice { get; }
         private HidStream UnderlyingInputStream { get; set; }
         private List<ButtonMapping> button_list;
+        private int current_page = 0;
+        private int current_desktop = 0;
 
         public List<ButtonMapping> ButtonList {
             get => button_list;
@@ -130,9 +131,10 @@ namespace BizDeck
             {
                 if (button.ButtonIndex <= this.ButtonCount - 1)
                 {
-                    if (File.Exists(button.ButtonImagePath))
+                    string button_path = config_helper.GetFullIconPath(button.ButtonImagePath);
+                    if (File.Exists(button_path))
                     {
-                        byte[] imageBuffer = File.ReadAllBytes(button.ButtonImagePath);
+                        byte[] imageBuffer = File.ReadAllBytes(button_path);
 
                         // TODO: Need to make sure that I am using device-agnostic button sizes.
                         imageBuffer = ImageHelpers.ResizeImage(imageBuffer, ButtonSize, ButtonSize);
@@ -140,6 +142,23 @@ namespace BizDeck
                     }
                 }
             }
+        }
+
+        public void NextPage()
+        {
+            current_page = (current_page + 1) % 4;
+            button_list[0].ButtonImagePath = $"icons\\page{current_page + 1}.png";
+            $"NextPage: {button_list[0].ButtonImagePath}".Info();
+            SetupDeviceButtons();
+        }
+
+        public int NextDesktop()
+        {
+            current_desktop = (current_desktop + 1) % 4;
+            button_list[1].ButtonImagePath = $"icons\\desk{current_desktop + 1}.png";
+            $"NextDesktop: {button_list[1].ButtonImagePath}".Info();
+            SetupDeviceButtons();
+            return current_desktop;
         }
 
 

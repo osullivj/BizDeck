@@ -8,13 +8,13 @@ import js.html.WebSocket;
 class BizDeckWebSocket {
 	public var ws:WebSocket;
 	public function new(url:String) {
-		this.ws = new WebSocket(url);
+		this.ws = new WebSocket(url, "json");
 		this.ws.onopen = function() {
 			trace("CONNECT");
-			this.ws.send("TestString");
 		};	
 		this.ws.onmessage = function(e) {
 			trace("RECEIVE: " + e.data);
+			this.ws.send('{type:"hello",data:{}}');
 		};
 		this.ws.onclose = function() {
 			trace("DISCONNECT");
@@ -26,6 +26,6 @@ class BizDeckWebSocket {
 class MainView extends VBox {
     public function new() {
         super();
-		var ws = new BizDeckWebSocket("ws://localhost:9271");
+		var ws = new BizDeckWebSocket("ws://localhost:9271/ws");
     }
 }

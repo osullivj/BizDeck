@@ -11,8 +11,8 @@ namespace BizDeck
     /// </summary>
     public class StreamDeck : ConnectedDevice
     {
-        public StreamDeck(int vid, int pid, string path, string name, DeviceModel model)
-            : base(vid, pid, path, name, model)
+        public StreamDeck(int vid, int pid, string path, string name, DeviceModel model, ConfigHelper ch)
+            : base(vid, pid, path, name, model, ch)
         {
         }
     }

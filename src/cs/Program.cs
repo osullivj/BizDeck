@@ -16,7 +16,7 @@
     {
         private const bool UseFileCache = true;
         private static Dictionary<string, ButtonAction> button_action_map = new Dictionary<string, ButtonAction>();
-        private static Recorder recorder;
+        private static ConnectedDevice stream_deck = null;
         /// <summary>
         /// Defines the entry point of the application.
         /// </summary>
@@ -37,7 +37,6 @@
 
             var recorder = new Recorder(config);
             InitLogging(config_helper.LogDir);
-            InitButtonActionMap(url, new Layout(config_helper), recorder);
 
             // Our web server is disposable.
             using (var server = CreateWebServer(url, config_helper.HtmlDir))  {
@@ -46,7 +45,7 @@
                 var http_server_task = server.RunAsync();
                 var exitSignal = new ManualResetEvent(false);
                 // Now connect to StreamDeck, and start async read
-                var stream_deck = DeviceManager.SetupDevice(config);
+                stream_deck = DeviceManager.SetupDevice(config_helper);
                 if (stream_deck == null)
                 {
                     // TODO: this error condition should pop up a browser
@@ -56,6 +55,7 @@
                 }
                 else
                 {
+                    InitButtonActionMap(url, recorder);
                     stream_deck.ButtonMap = button_action_map;
                     var hid_stream_task = stream_deck.ReadAsync();
                 }
@@ -73,13 +73,13 @@
         // Create and configure our web server.
         private static WebServer CreateWebServer(string url, string html_path)
         {
+            var websock = new BizDeckWebSockModule();
             var server = new WebServer(o => o
                     .WithUrlPrefix(url)
                     .WithMode(HttpListenerMode.EmbedIO))
                 // First, we will configure our web server by adding Modules.
                 .WithLocalSessionManager()
-                .WithWebApi("/api", m => m
-                    .WithController<PeopleController>())
+                .WithModule(websock)
                 .WithStaticFolder("/", html_path, true, m => m
                     .WithContentCaching(UseFileCache)) // Add static files after other modules to avoid conflicts
                 .WithModule(new ActionModule("/", HttpVerbs.Any, ctx => ctx.SendDataAsync(new { Message = "Error" })));
@@ -98,10 +98,10 @@
             Logger.RegisterLogger(logger);
         }
 
-        private static void InitButtonActionMap(string biz_deck_gui_url, Layout layout, Recorder recorder)
+        private static void InitButtonActionMap(string biz_deck_gui_url, Recorder recorder)
         {
+            button_action_map["page"] = new Pager(stream_deck);
             button_action_map["gui"] = new ShowBizDeckGUI(biz_deck_gui_url);
-            button_action_map["snap_layout"] = new SnapLayout(layout);
             button_action_map["start_recording"] = new StartRecording(recorder);
             button_action_map["stop_recording"] = new StopRecording(recorder);
         }

@@ -2,15 +2,17 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net5.0-windows10.0.19041</TargetFramework>
     <ApplicationIcon />
     <StartupObject />
-    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>    
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>    
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="HidSharp" Version="2.1.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis" Version="4.5.0" />
     <PackageReference Include="Microsoft.Playwright" Version="1.32.0" />
     <PackageReference Include="Selenium.WebDriver" Version="4.8.1" />
     <PackageReference Include="System.Drawing.Common" Version="6.0.0" />

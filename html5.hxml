@@ -8,9 +8,3 @@
 --each
 --js html/Main.js
 --main Main
-
-# config
-# --next
-# --js html/BDConfig.js
-# --main BDConfig
-

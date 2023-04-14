@@ -1,8 +1,10 @@
 package ;
 
 import haxe.ui.containers.VBox;
+import haxe.ui.containers.Box;
 import haxe.ui.events.MouseEvent;
 import js.html.WebSocket;
+import js.Browser;
 
 
 class BizDeckWebSocket {
@@ -10,22 +12,26 @@ class BizDeckWebSocket {
 	public function new(url:String) {
 		this.ws = new WebSocket(url, "json");
 		this.ws.onopen = function() {
-			trace("CONNECT");
+			trace("ws.conn");
 		};	
 		this.ws.onmessage = function(e) {
-			trace("RECEIVE: " + e.data);
+			trace("ws.recv: " + e.data);
 			this.ws.send('{type:"hello",data:{}}');
 		};
 		this.ws.onclose = function() {
-			trace("DISCONNECT");
+			trace("ws.disconn");
 		};
 	}
 }
 
 @:build(haxe.ui.ComponentBuilder.build("main-view.xml"))
 class MainView extends VBox {
+	var websock:BizDeckWebSocket;
+	var websock_url:String;
     public function new() {
         super();
-		var ws = new BizDeckWebSocket("ws://localhost:9271/ws");
-    }
+		var port = js.Browser.document.location.port;
+		this.websock_url = "ws://localhost:" + port + "/ws";
+		this.websock = new BizDeckWebSocket(this.websock_url);
+	}
 }

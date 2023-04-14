@@ -1,16 +1,12 @@
 <vbox style="padding: 5px;" width="100%" styleName="default-background">
     <grid>
         <!--  top tabview -->
-        <tabview id="bd_tabview1" width="240" height="100">
-			<box text="Config">
-				<textarea id="bd_config_json" text="" width="100%" height="100%"/>
-            </box>
-            <box text="Log">
-                <vbox id="bd_log_vbox"/>
-            </box>
-            <box text="Buttons">
-                <vbox id="bd_buttons_vbox"/>
-            </box>
+        <tabview id="bd_main_tabview" width="240" height="100">
+			<box text="Config" id="bd_config_box">
+				<textarea id="bd_config_textarea"/>
+			</box>
+            <box text="Log" id="bd_log_tab"/>
+            <box text="Buttons" id="bd_buttons_tab"/>
         </tabview>
 	</grid>
 </vbox>

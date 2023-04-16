@@ -8,9 +8,11 @@ namespace BizDeck
 {
     class BizDeckWebSockModule : WebSocketModule
     {
-        public BizDeckWebSockModule() :
+        ConfigHelper config_helper;
+        public BizDeckWebSockModule(ConfigHelper ch) :
             base("/ws", true)
         {
+            config_helper = ch;
             AddProtocol("json");
         }
 
@@ -20,7 +22,7 @@ namespace BizDeck
         {
             string text = Encoding.GetString(rxBuffer);
             JsEvent evt = JsonUtils.DeserializeFromJson<JsEvent>(text);
-            $"Got message of type {evt.Type}".Info();
+            $"OnMessageReceivedAsync: Type:{evt.Type}, Data:{evt.Data}".Info();
 
             if (evt.Type == "spam")
             {
@@ -40,6 +42,9 @@ namespace BizDeck
         {
             Logger.Info("client connected");
             await SendTargetedEvent(context, new JsEvent("connected")).ConfigureAwait(false);
+            JsEvent config_event = new JsEvent("config");
+            config_event.Data = this.config_helper;
+            await SendTargetedEvent(context, config_event);
 
         }
 

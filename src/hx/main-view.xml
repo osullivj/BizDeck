@@ -1,9 +1,14 @@
-<vbox style="padding: 5px;" width="100%" styleName="default-background">
-    <grid>
+<vbox style="padding: 5px;" width="100%" height="100%" styleName="default-background">
+    <grid  width="100%" height="100%">
         <!--  top tabview -->
-        <tabview id="bd_main_tabview" width="240" height="100">
-			<box text="Config" id="bd_config_box">
-				<textarea id="bd_config_textarea"/>
+        <tabview id="bd_main_tabview" width="100%" height="100%">
+			<box text="Config" id="bd_config_box" width="100%" height="100%">
+				<tableview id="bd_config_tableview" virtual="true" width="100%" height="100%">
+					<header>
+						<column text="Field"/>
+						<column text="Value"/>
+					</header>
+				</tableview>
 			</box>
             <box text="Log" id="bd_log_tab"/>
             <box text="Buttons" id="bd_buttons_tab"/>

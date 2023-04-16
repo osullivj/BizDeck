@@ -88,7 +88,7 @@ namespace BizDeck
                 await ReceiveAsync();
             }
             catch (OperationCanceledException ex) {
-                $"Recorder /json/list timeout".Error();
+                $"Recorder /json/list timeout:{ex.ToString()}".Error();
                 // TODO: add code here to redirect the browser to an
                 // error page about msedge.exe instances.
             }

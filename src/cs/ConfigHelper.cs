@@ -52,23 +52,5 @@ namespace BizDeck {
             BizDeckConfig = JsonSerializer.Deserialize<BizDeckConfig>(File.ReadAllText(ConfigPath));
             return BizDeckConfig;
         }
-
-        public BizDeckLayoutRules LoadLayoutRules()
-        {
-            return JsonSerializer.Deserialize<BizDeckLayoutRules>(File.ReadAllText(LayoutRulesPath));
-        }
-
-        public void SaveLayout(List<DesktopWindow> desktop_window_list)
-        {
-            var options = new JsonSerializerOptions() { WriteIndented = true };
-            var new_layout = new BizDeckLayout(desktop_window_list);
-            var json_string = JsonSerializer.Serialize<BizDeckLayout>(new_layout, options);
-            File.WriteAllText(LayoutPath, json_string);
-        }
-
-        public BizDeckLayout LoadLayout()
-        {
-            return JsonSerializer.Deserialize<BizDeckLayout>(File.ReadAllText(LayoutPath));
-        }
     }
 }

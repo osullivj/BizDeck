@@ -34,8 +34,6 @@ namespace BizDeck
 
         public delegate void ReceivedButtonPressHandler(object source, ButtonPressEventArgs e);
 
-        public event ReceivedButtonPressHandler OnButtonPress;
-
         public int VId { get; private set; }
         public int PId { get; private set; }
         public string Path { get; private set; }

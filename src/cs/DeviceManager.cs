@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Swan.Logging;
 
 namespace BizDeck
 {
@@ -61,8 +62,9 @@ namespace BizDeck
                     return null;
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
+                $"SetupDevice: {ex.ToString()}".Error();
                 return null;
             }
         }

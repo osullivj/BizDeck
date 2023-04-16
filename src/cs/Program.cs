@@ -39,7 +39,7 @@
             InitLogging(config_helper.LogDir);
 
             // Our web server is disposable.
-            using (var server = CreateWebServer(url, config_helper.HtmlDir))  {
+            using (var server = CreateWebServer(url, config_helper))  {
                 // Once we've registered our modules and configured them, we
                 // call the RunAsync() method.
                 var http_server_task = server.RunAsync();
@@ -71,16 +71,16 @@
 
 
         // Create and configure our web server.
-        private static WebServer CreateWebServer(string url, string html_path)
+        private static WebServer CreateWebServer(string url, ConfigHelper ch)
         {
-            var websock = new BizDeckWebSockModule();
+            var websock = new BizDeckWebSockModule(ch);
             var server = new WebServer(o => o
                     .WithUrlPrefix(url)
                     .WithMode(HttpListenerMode.EmbedIO))
                 // First, we will configure our web server by adding Modules.
                 .WithLocalSessionManager()
                 .WithModule(websock)
-                .WithStaticFolder("/", html_path, true, m => m
+                .WithStaticFolder("/", ch.HtmlDir, true, m => m
                     .WithContentCaching(UseFileCache)) // Add static files after other modules to avoid conflicts
                 .WithModule(new ActionModule("/", HttpVerbs.Any, ctx => ctx.SendDataAsync(new { Message = "Error" })));
 

@@ -17,16 +17,6 @@ namespace BizDeck {
             get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", "config.json"});
         }
 
-        public string LayoutPath
-        {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", "layout.json" });
-        }
-
-        public string LayoutRulesPath
-        {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", "layout_rules.json" });
-        }
-
         public string LogDir {
             get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "logs"});
         }

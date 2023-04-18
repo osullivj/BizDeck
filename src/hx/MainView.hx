@@ -53,17 +53,6 @@ class MainView extends VBox {
 		var port = js.Browser.document.location.port;
 		this.websock_url = "ws://localhost:" + port + "/ws";
 		this.websock = new BizDeckWebSocket(this);
-		// register on click handler for Buttons tab
-		var tabview:TabView = this.findComponent("bd_main_tabview");
-		tabview.onClick  = on_tab_click;
-	}
-	
-	public function on_tab_click(e:UIEvent) {
-		trace("mv.on_tab_click: " + e.type);
-		var btn_tv:TableView = this.findComponent("bd_buttons_tableview");	
-		var tabview:TabView = this.findComponent("bd_main_tabview");
-		btn_tv.clearContents(false);
-		btn_tv.dataSource = buttons_data_source;
 	}
 	
 	public function on_config(config:Dynamic) {
@@ -75,7 +64,7 @@ class MainView extends VBox {
 		buttons_data_source = new ArrayDataSource<Dynamic>();		
 		// clear table contents: false means don't clear headers
 		cfg_tv.clearContents(false);
-		btn_tv.clearContents(false);		
+		btn_tv.clearContents(false);
 		var cfg:haxe.DynamicAccess<Dynamic> = config;
 		for (key in cfg.keys()) {
 			var val:Any = cfg.get(key);

@@ -1,9 +1,11 @@
 package ;
 
+import haxe.Serializer;
 import haxe.ui.containers.VBox;
 import haxe.ui.containers.Box;
 import haxe.ui.containers.TableView;
 import haxe.ui.containers.TabView;
+import haxe.ui.components.Image;
 import haxe.ui.data.ArrayDataSource;
 import haxe.ui.events.MouseEvent;
 import haxe.ui.events.UIEvent;
@@ -27,8 +29,12 @@ class BizDeckWebSocket {
 			trace("ws.recv: " + e.data);
 			var obj = haxe.Json.parse(e.data);
 			switch obj.Type {
-				case "connected": this.connected = true;
-				case "config": this.mainview.on_config(obj.Data);
+				case "connected":
+					this.connected = true;
+				case "config": {
+					this.mainview.on_config(obj.Data);
+					this.mainview.rightsize_icons();
+				}
 			}
 		};
 		this.websock.onclose = function() {
@@ -53,6 +59,15 @@ class MainView extends VBox {
 		var port = js.Browser.document.location.port;
 		this.websock_url = "ws://localhost:" + port + "/ws";
 		this.websock = new BizDeckWebSocket(this);
+	}
+	
+	public function rightsize_icons() {
+		var btn_tv:TableView = this.findComponent("bd_buttons_tableview");
+		var box_list:Array<Box> = this.findComponents("bd_icon_box", Box);
+		trace("mv.rightsize_icons: " + box_list.length);		
+		for (box in box_list) {
+			trace("mv.rightsize_icons: " + Serializer.run(box));
+		}
 	}
 	
 	public function on_config(config:Dynamic) {

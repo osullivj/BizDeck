@@ -16,8 +16,8 @@
 						<label id="bd_name" horizontalAlign="center" />
 					</item-renderer>
 					<item-renderer verticalAlign="center">
-						<box style="height:256px;width:256px">
-							<image id="bd_icon" scaleMode="none"/>
+						<box style="width:256;height:256" styleName="bd_icon_box">
+							<image id="bd_icon"/>
 						</box>
 					</item-renderer>
 				</tableview>

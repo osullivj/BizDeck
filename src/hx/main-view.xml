@@ -1,17 +1,28 @@
-<vbox style="padding: 5px;" width="100%" height="100%" styleName="default-background">
+<vbox id="bd_top_vbox" style="padding: 5px;" width="100%" height="100%" styleName="default-background">
         <!--  top tabview -->
         <tabview id="bd_main_tabview" width="100%" height="100%">
-            <box text="Buttons" id="bd_buttons_box" width="100%" height="50%">
+            <box text="Buttons" id="bd_buttons_box" width="100%" height="100%">
 			    <spacer height="5%" />
 				<tableview id="bd_buttons_tableview" virtual="true" width="100%" height="100%">
 					<header width="100%">
-						<column id="bd_index" text="Index" width="20%"/>
+						<column id="bd_index" text="Index" width="40%"/>
 						<column id="bd_name" text="Name" width="40%"/>
-						<column id="bd_icon" text="Icon" width="40%"/>
+						<column id="bd_icon" text="Icon" width="20%"/>
 					</header>
+					<item-renderer verticalAlign="center">
+						<label id="bd_index" horizontalAlign="center" />
+					</item-renderer>
+					<item-renderer verticalAlign="center">
+						<label id="bd_name" horizontalAlign="center" />
+					</item-renderer>
+					<item-renderer verticalAlign="center">
+						<box style="height:256px;width:256px">
+							<image id="bd_icon" scaleMode="none"/>
+						</box>
+					</item-renderer>
 				</tableview>
 			</box>		
-			<box text="Config" id="bd_config_box" width="100%" height="50%">
+			<box text="Config" id="bd_config_box" width="100%" height="100%">
 				<spacer height="5%" />
 				<tableview id="bd_config_tableview" virtual="true" width="100%" height="100%">
 					<header width="100%">

@@ -10,8 +10,8 @@ namespace BizDeck
 {
     public class StopRecording : ButtonAction
     {
-        private Recorder recorder;
-        public StopRecording(Recorder r) { recorder = r; }
+        private IRecorder recorder;
+        public StopRecording(IRecorder r) { recorder = r; }
         public override void Run()
         {
             

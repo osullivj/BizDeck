@@ -1,35 +1,41 @@
 <vbox id="bd_top_vbox" style="padding: 5px;" width="100%" height="100%" styleName="default-background">
-        <!--  top tabview -->
-        <tabview id="bd_main_tabview" width="100%" height="100%">
-            <box text="Buttons" id="bd_buttons_box" width="100%" height="100%">
-			    <spacer height="5%" />
-				<tableview id="bd_buttons_tableview" virtual="true" width="100%" height="100%">
-					<header width="100%">
-						<column id="bd_index" text="Index" width="40%"/>
-						<column id="bd_name" text="Name" width="40%"/>
-						<column id="bd_icon" text="Icon" width="20%"/>
-					</header>
-					<item-renderer verticalAlign="center">
-						<label id="bd_index" horizontalAlign="center" />
-					</item-renderer>
-					<item-renderer verticalAlign="center">
-						<label id="bd_name" horizontalAlign="center" />
-					</item-renderer>
-					<item-renderer verticalAlign="center">
-						<box style="width:256;height:256" styleName="bd_icon_box">
-							<image id="bd_icon"/>
-						</box>
-					</item-renderer>
-				</tableview>
-			</box>		
-			<box text="Config" id="bd_config_box" width="100%" height="100%">
-				<spacer height="5%" />
-				<tableview id="bd_config_tableview" virtual="true" width="100%" height="100%">
-					<header width="100%">
-						<column id="bd_setting" text="Setting" width="40%"/>
-						<column id="bd_value" text="Value" width="60%"/>
-					</header>				
-				</tableview>
-			</box>
-        </tabview>
+	<style>
+	.bd_icon_box {
+		width:256;
+		height:256;
+	}
+	</style>
+	<!--  top tabview -->
+    <tabview id="bd_main_tabview" width="100%" height="100%">
+        <box text="Buttons" id="bd_buttons_box" width="100%" height="100%">
+			<spacer height="5%" />
+			<tableview id="bd_buttons_tableview" virtual="true" width="100%" height="100%">
+				<header width="100%">
+					<column id="bd_index" text="Index" width="40%"/>
+					<column id="bd_name" text="Name" width="40%"/>
+					<column id="bd_icon" text="Icon" width="20%"/>
+				</header>
+				<item-renderer verticalAlign="center">
+					<label id="bd_index" horizontalAlign="center" />
+				</item-renderer>
+				<item-renderer verticalAlign="center">
+					<label id="bd_name" horizontalAlign="center" />
+				</item-renderer>
+				<item-renderer verticalAlign="center">
+					<box style="width:256;height:256" styleName="bd_icon_box">
+						<image id="bd_icon"/>
+					</box>
+				</item-renderer>
+			</tableview>
+		</box>		
+		<box text="Config" id="bd_config_box" width="100%" height="100%">
+			<spacer height="5%" />
+			<tableview id="bd_config_tableview" virtual="true" width="100%" height="100%">
+				<header width="100%">
+					<column id="bd_setting" text="Setting" width="40%"/>
+					<column id="bd_value" text="Value" width="60%"/>
+				</header>				
+			</tableview>
+		</box>
+    </tabview>
 </vbox>

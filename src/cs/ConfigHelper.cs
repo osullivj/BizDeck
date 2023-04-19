@@ -42,5 +42,12 @@ namespace BizDeck {
             BizDeckConfig = JsonSerializer.Deserialize<BizDeckConfig>(File.ReadAllText(ConfigPath));
             return BizDeckConfig;
         }
+
+        public BizDeckSteps LoadSteps(string name)
+        {
+            var steps_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", $"{name}.json" });
+            var steps = JsonSerializer.Deserialize<BizDeckSteps>(File.ReadAllText(steps_path));
+            return steps;
+        }
     }
 }

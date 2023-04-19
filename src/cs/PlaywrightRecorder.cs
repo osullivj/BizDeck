@@ -12,7 +12,7 @@ using Microsoft.Playwright;
 
 namespace BizDeck
 {
-    public class Recorder
+    public class PlaywrightRecorder:IRecorder
     {
         private BizDeckConfig config;
         private IBrowser browser;
@@ -26,7 +26,7 @@ namespace BizDeck
         private List<ClientWebSocket> debug_websock_list;
         private List<byte[]> debug_websock_buffer_list;
 
-        public Recorder(BizDeckConfig cfg)
+        public PlaywrightRecorder(BizDeckConfig cfg)
         {
             config = cfg;
             edge_client = new HttpClient();

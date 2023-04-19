@@ -17,6 +17,7 @@
         private const bool UseFileCache = true;
         private static Dictionary<string, ButtonAction> button_action_map = new Dictionary<string, ButtonAction>();
         private static ConnectedDevice stream_deck = null;
+        private static ConfigHelper config_helper = null;
         /// <summary>
         /// Defines the entry point of the application.
         /// </summary>
@@ -27,7 +28,7 @@
             var parser = new Parser();
             var result = parser.ParseArguments<CmdLineOptions>(args);
             // first load the config
-            var config_helper = new ConfigHelper(result.Value);
+            config_helper = new ConfigHelper(result.Value);
             var config = config_helper.LoadConfig();
             var url = string.Format("http://localhost:{0}/", config.HTTPServerPort);
             if (config.Console)
@@ -35,7 +36,7 @@
                 Win32.AllocConsole();
             }
 
-            var recorder = new Recorder(config);
+            var recorder = new DevToolsRecorder(config_helper);
             InitLogging(config_helper.LogDir);
 
             // Our web server is disposable.
@@ -98,12 +99,18 @@
             Logger.RegisterLogger(logger);
         }
 
-        private static void InitButtonActionMap(string biz_deck_gui_url, Recorder recorder)
+        private static void InitButtonActionMap(string biz_deck_gui_url, IRecorder recorder)
         {
             button_action_map["page"] = new Pager(stream_deck);
             button_action_map["gui"] = new ShowBizDeckGUI(biz_deck_gui_url);
             button_action_map["start_recording"] = new StartRecording(recorder);
             button_action_map["stop_recording"] = new StopRecording(recorder);
+            foreach (ButtonMapping bm in config_helper.BizDeckConfig.ButtonMap)
+            {
+                if (!button_action_map.ContainsKey(bm.Name)) {
+                    button_action_map[bm.Name] = new StepsButton(config_helper, bm.Name);
+                }
+            }
         }
     }
 }

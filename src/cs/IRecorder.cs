@@ -12,7 +12,7 @@ using Microsoft.Playwright;
 
 namespace BizDeck
 {
-    interface IRecorder
+    public interface IRecorder
     {
         public Task StartBrowser();
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.WebSockets;
 using System.Net.Http;
 using System.Text;
@@ -20,9 +21,8 @@ namespace BizDeck
         private string json_list_url;
         private string browser_cmd_line_args;
 
-        private List<ClientWebSocket> debug_websock_list;
-        private List<byte[]> debug_websock_buffer_list;
-
+        private ClientWebSocket debug_websock;
+        private byte[] debug_websock_buffer = new Byte[8192];
         public DevToolsRecorder(ConfigHelper ch)
         {
             edge_client = new HttpClient();
@@ -33,12 +33,12 @@ namespace BizDeck
             browser = null;
         }
 
-        public async Task StartBrowser()
+        public bool StartBrowser()
         {
             if (browser != null)
             {
                 $"Recorder browser already running: Id:{browser.Id}, Handle:{browser.Handle}".Info();
-                return;
+                return false;
             }
             // https://learn.microsoft.com/en-us/microsoft-edge/devtools-protocol-chromium/
             // msedge.exe --remote-debugging-port=9222
@@ -48,7 +48,7 @@ namespace BizDeck
             // running instance of msegde.exe. If there is, it will have been
             // started without a debug port, and browser.Start() will just
             // give us another tab, which is a child proc spawned from the
-            // parent existing msedge.exe image, which has no debig port.
+            // parent existing msedge.exe image, which has no debug port.
             // TODO: add code to check for msedge.exe instance, and popup
             // warning....
             browser = new Process();
@@ -57,13 +57,24 @@ namespace BizDeck
             browser.StartInfo.Arguments = browser_cmd_line_args;
             browser.Start();
             $"Recorder browser: Id:{browser.Id}, Handle:{browser.Handle}".Info();
+            return true;
+        }
+
+        public bool HasBrowser()
+        {
+            if (browser == null)
+                return false;
+            return true;
+        }
+
+        public async Task StartRecording() { 
             // Now tee up two tasks: one to await the /json/list result from the
             // debugger port, and one to timeout. If the timeout completes first
             // we know that the edge instance launched here was not the first, and
             // that the pre-existing instance is running without a debug port.
             var http_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.EdgeJsonListTimeout));
-            debug_websock_list = new List<ClientWebSocket>();
-            debug_websock_buffer_list = new List<byte[]>();
+            debug_websock = new ClientWebSocket();
+            var ws_connect_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.EdgeJsonListTimeout));
             try
             {
                 var json_list_str = await edge_client.GetStringAsync(json_list_url,
@@ -73,17 +84,31 @@ namespace BizDeck
                 // and connect to each of the debug websocket URLs. 
                 List<DevToolsJsonListResponse> json_list_arr = JsonSerializer.Deserialize<List<DevToolsJsonListResponse>>(json_list_str);
                 var task_list = new List<Task>(json_list_arr.Count);
+                DevToolsJsonListResponse real_tab_response = null;
                 foreach (DevToolsJsonListResponse response in json_list_arr)
                 {
-                    var websock = new ClientWebSocket();
-                    var ws_connect_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.EdgeJsonListTimeout));
-                    task_list.Add(websock.ConnectAsync(new System.Uri(response.WebSocketDebuggerUrl), ws_connect_cancel_token_source.Token));
-                    debug_websock_list.Add(websock);
-                    debug_websock_buffer_list.Add(new byte[1024]);
+                    if (response.Url.Contains("edge"))
+                    {
+                        // ignore the websocks for edge:// connections as well as https://edgeservices.bing.com/edges
+                        continue;
+                    }
+                    else
+                    {
+                        real_tab_response = response;
+                        break;
+                    }
                 }
-                // Wait on the connection tasks
-                await Task.WhenAll(task_list);
-                $"Recorder /json/list complete".Info();
+                if (real_tab_response == null)
+                {
+                    $"DevToolsRecorder.StartBrowser: no candidate websock found".Error();
+                    // TODO: signal error to user, terminate recording session
+                    return;
+                }
+                else
+                {
+                    $"DevToolsRecorder.StartBrowser: connecting to {real_tab_response.WebSocketDebuggerUrl} for {real_tab_response.Url}".Info();
+                }
+                await debug_websock.ConnectAsync(new System.Uri(real_tab_response.WebSocketDebuggerUrl), ws_connect_cancel_token_source.Token);
                 // Should be connected to each websock now, so start listening
                 await ReceiveAsync();
             }
@@ -98,38 +123,34 @@ namespace BizDeck
         {
             // TODO: how to cancel or close the streams on stop recording
             // or ctrl-C or error
-            $"Recorder. /json/list complete: {debug_websock_list.Count} debug sessions".Info();
-            var task_list = new List<Task<WebSocketReceiveResult>>(debug_websock_list.Count);
-            // Build a task list with sync invoke of async meths to get hold
-            // of the Task object. Google Stephen Cleary's blog or read his
-            // book on C# concurrrency. With the task list we can use
-            // await Task.WhenAny to handle all the sockets in on place.
-            for (int inx = 0; inx < debug_websock_list.Count; inx++)
-            {
-                var websock = debug_websock_list[inx];
-                var buffer = debug_websock_buffer_list[inx];
-                var receive_cancel_token_source = new CancellationTokenSource();
-                var task = websock.ReceiveAsync(buffer, receive_cancel_token_source.Token);
-                task_list.Add(task);
-            }
-            $"Recorder. task_list: {task_list.Count} tasks".Info();
-            WebSocketReceiveResult recv_result;
-            var when_any_cancel_token_source = new CancellationTokenSource();
-            Task<WebSocketReceiveResult> recv_task;
+            var receive_cancel_token_source = new CancellationTokenSource();
+            WebSocketReceiveResult recv_result = null;
+            ArraySegment<Byte> seg_buffer = new ArraySegment<byte>(debug_websock_buffer);
+            // var when_any_cancel_token_source = new CancellationTokenSource();
             // TODO: how do we break out of this loop?
             // Can we use a cancel token that somehow gets signalled from Stop() ?
-            while (true)
+            while (debug_websock.State == WebSocketState.Open)
             {
-                $"Recorder. awaiting task_list".Info();
-                // TODO: line above is last logged - why are we blocked here?
-                recv_task = await Task<WebSocketReceiveResult>.WhenAny(task_list).ConfigureAwait(false);
-                recv_result = recv_task.Result;
-                $"Recorder recv_result:{recv_result.ToString()}".Info();
-            }
-        }
+                using (var ms = new MemoryStream())
+                {
+                    do
+                    {
+                        recv_result = await debug_websock.ReceiveAsync(seg_buffer, CancellationToken.None);
+                        ms.Write(seg_buffer.Array, seg_buffer.Offset, recv_result.Count);
+                    }
+                    while (!recv_result.EndOfMessage);
 
-        public async Task Start() {
-            await StartBrowser();
+                    ms.Seek(0, SeekOrigin.Begin);
+
+                    if (recv_result.MessageType == WebSocketMessageType.Text)
+                    {
+                        using (var reader = new StreamReader(ms, Encoding.UTF8))
+                        {
+                            // do stuff
+                        }
+                    }
+                }
+            }
         }
 
         public async Task Stop() {

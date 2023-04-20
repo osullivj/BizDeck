@@ -14,10 +14,9 @@ namespace BizDeck
 {
     public interface IRecorder
     {
-        public Task StartBrowser();
-
-        public Task Start();
-
+        public bool StartBrowser();
+        public bool HasBrowser();
+        public Task StartRecording();
         public Task Stop();
     }
 }

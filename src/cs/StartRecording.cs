@@ -18,8 +18,17 @@ namespace BizDeck
         }
         public async override Task RunAsync()
         {
-            $"StartRecording awaiting...".Info();
-            await recorder.Start();
+            if (!recorder.HasBrowser())
+            {
+                $"Starting browser...".Info();
+                recorder.StartBrowser();
+            }
+            else
+            {
+                // TODO make the record button blink?
+                $"Start recording...".Info();
+                await recorder.StartRecording();
+            }
         }
     }
 }

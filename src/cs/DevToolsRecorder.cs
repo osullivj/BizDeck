@@ -23,6 +23,8 @@ namespace BizDeck
 
         private ClientWebSocket debug_websock;
         private byte[] debug_websock_buffer = new Byte[8192];
+        private static int command_id = 101;
+
         public DevToolsRecorder(ConfigHelper ch)
         {
             edge_client = new HttpClient();
@@ -108,7 +110,11 @@ namespace BizDeck
                 {
                     $"DevToolsRecorder.StartBrowser: connecting to {real_tab_response.WebSocketDebuggerUrl} for {real_tab_response.Url}".Info();
                 }
-                await debug_websock.ConnectAsync(new System.Uri(real_tab_response.WebSocketDebuggerUrl), ws_connect_cancel_token_source.Token);
+                var uri = new System.Uri(real_tab_response.WebSocketDebuggerUrl);
+                await debug_websock.ConnectAsync(uri, ws_connect_cancel_token_source.Token);
+                // Send Tracing.start
+                // https://chromedevtools.github.io/devtools-protocol/tot/Tracing/#method-start
+                await SendRequest("Tracing.start");
                 // Should be connected to each websock now, so start listening
                 await ReceiveAsync();
             }
@@ -117,6 +123,22 @@ namespace BizDeck
                 // TODO: add code here to redirect the browser to an
                 // error page about msedge.exe instances.
             }
+        }
+
+        public async Task SendRequest(string method)
+        {
+            // We're composing json with C# $ style in place formatting. So that means
+            // we need to use escapes for special chars...
+            // 1. Curly braces {} are used for in place vars so need to be escaped for
+            //    pass through to Newtonsoft.JSON. We escape by doubling to {{ or }}
+            //    at begin and end.
+            // 2. Quotes must be escaped with back slash. 
+            string command_json = $"{{\"id\":{command_id++},\"method\":\"{method}\"}}";
+            $"DevToolsRecorder.SendRequest: sending {command_json}".Info();
+            var encoded = Encoding.UTF8.GetBytes(command_json);
+            var buffer = new ArraySegment<Byte>(encoded, 0, encoded.Length);
+            var ws_send_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.EdgeJsonListTimeout));
+            await debug_websock.SendAsync(buffer, WebSocketMessageType.Text, true, ws_send_cancel_token_source.Token);
         }
 
         public async Task ReceiveAsync()
@@ -146,7 +168,8 @@ namespace BizDeck
                     {
                         using (var reader = new StreamReader(ms, Encoding.UTF8))
                         {
-                            // do stuff
+                            var msg = reader.ReadToEnd();
+                            $"DevToolsRecorder.ReceiveAsync: {msg}".Info();
                         }
                     }
                 }

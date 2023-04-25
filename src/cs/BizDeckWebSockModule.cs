@@ -21,7 +21,7 @@ namespace BizDeck
             IWebSocketReceiveResult rxResult)
         {
             string text = Encoding.GetString(rxBuffer);
-            JsEvent evt = JsonUtils.DeserializeFromJson<JsEvent>(text);
+            BizDeckJsonEvent evt = JsonUtils.DeserializeFromJson<BizDeckJsonEvent>(text);
             $"OnMessageReceivedAsync: Type:{evt.Type}, Data:{evt.Data}".Info();
 
             if (evt.Type == "spam")
@@ -29,7 +29,7 @@ namespace BizDeck
                 // wait some time, simulating actual work being done and then respond with a big chunk of text
                 Random rnd = new Random();
                 await Task.Delay(rnd.Next(50, 150));
-                var responseEvent = new JsEvent("spam-back")
+                var responseEvent = new BizDeckJsonEvent("spam-back")
                 {
                     Data = JsDataRow.GenerateLargeTable()
                 };
@@ -41,14 +41,14 @@ namespace BizDeck
         protected override async Task OnClientConnectedAsync(IWebSocketContext context)
         {
             Logger.Info("client connected");
-            await SendTargetedEvent(context, new JsEvent("connected")).ConfigureAwait(false);
-            JsEvent config_event = new JsEvent("config");
+            await SendTargetedEvent(context, new BizDeckJsonEvent("connected")).ConfigureAwait(false);
+            BizDeckJsonEvent config_event = new BizDeckJsonEvent("config");
             config_event.Data = this.config_helper;
             await SendTargetedEvent(context, config_event);
 
         }
 
-        private Task SendTargetedEvent(IWebSocketContext context, JsEvent jsEvent)
+        private Task SendTargetedEvent(IWebSocketContext context, BizDeckJsonEvent jsEvent)
         {
             return SendAsync(context, JsonUtils.SerializeToJson(jsEvent));
         }
@@ -60,7 +60,7 @@ namespace BizDeck
             return Task.CompletedTask;
         }
 
-        public async Task BroadcastEvent(JsEvent jsEvent)
+        public async Task BroadcastEvent(BizDeckJsonEvent jsEvent)
         {
             var json = JsonUtils.SerializeToJson(jsEvent);
             await BroadcastAsync(json).ConfigureAwait(false);

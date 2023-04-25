@@ -5,9 +5,9 @@ using Swan.Formatters;
 
 namespace BizDeck
 {
-    public class JsEvent
+    public class BizDeckJsonEvent
     {
-        public JsEvent(string type)
+        public BizDeckJsonEvent(string type)
         {
             Type = type;
             Data = new Dictionary<string, string>();

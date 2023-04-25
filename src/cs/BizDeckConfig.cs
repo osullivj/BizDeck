@@ -20,17 +20,20 @@ namespace BizDeck
         [JsonPropertyName("http_server_port")]
         public int HTTPServerPort { get; set; }
 
-        [JsonPropertyName("edge_recorder_port")]
-        public int EdgeRecorderPort { get; set; }
+        [JsonPropertyName("browser_recorder_port")]
+        public int BrowserRecorderPort { get; set; }
 
-        [JsonPropertyName("edge_json_list_timeout")]
-        public int EdgeJsonListTimeout{ get; set; }
+        [JsonPropertyName("browser_json_list_timeout")]
+        public int BrowserJsonListTimeout{ get; set; }
 
-        [JsonPropertyName("edge_user_data_dir")]
-        public string EdgeUserDataDir { get; set; }
+        [JsonPropertyName("browser_websock_timeout")]
+        public int BrowserWebsockTimeout { get; set; }
 
-        [JsonPropertyName("edge_path")]
-        public string EdgePath { get; set; }
+        [JsonPropertyName("browser_user_data_dir")]
+        public string BrowserUserDataDir { get; set; }
+
+        [JsonPropertyName("browser_path")]
+        public string BrowserPath { get; set; }
 
         [JsonPropertyName("console")]
         public bool Console { get; set; }

@@ -1,10 +1,11 @@
 {
 	"usb_hid_device_index": 0,
 	"http_server_port": 9271,
-	"edge_recorder_port": 9222,
-	"edge_json_list_timeout": 5,
-	"edge_user_data_dir":"logs",
-	"edge_path": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+	"browser_recorder_port": 9222,
+	"browser_json_list_timeout": 5,
+	"browser_websock_timeout": 1,
+	"browser_user_data_dir":"logs",
+	"browser_path": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
 	"console": true,
 	"button_map": [
 		{

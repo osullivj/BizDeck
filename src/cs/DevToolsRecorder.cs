@@ -29,9 +29,9 @@ namespace BizDeck
         {
             edge_client = new HttpClient();
             config_helper = ch;
-            browser_cmd_line_args = $"--remote-debugging-port={config_helper.BizDeckConfig.EdgeRecorderPort} "
+            browser_cmd_line_args = $"--remote-debugging-port={config_helper.BizDeckConfig.BrowserRecorderPort} "
                                             + $" --user-data-dir={config_helper.GetFullLogPath()}";
-            json_list_url = $"http://localhost:{config_helper.BizDeckConfig.EdgeRecorderPort}/json/list";
+            json_list_url = $"http://localhost:{config_helper.BizDeckConfig.BrowserRecorderPort}/json/list";
             browser = null;
         }
 
@@ -54,8 +54,8 @@ namespace BizDeck
             // TODO: add code to check for msedge.exe instance, and popup
             // warning....
             browser = new Process();
-            browser.StartInfo.FileName = config_helper.BizDeckConfig.EdgePath;
-            $"Recorder browser starting with {config_helper.BizDeckConfig.EdgePath} {browser_cmd_line_args}".Info();
+            browser.StartInfo.FileName = config_helper.BizDeckConfig.BrowserPath;
+            $"Recorder browser starting with {config_helper.BizDeckConfig.BrowserPath} {browser_cmd_line_args}".Info();
             browser.StartInfo.Arguments = browser_cmd_line_args;
             browser.Start();
             $"Recorder browser: Id:{browser.Id}, Handle:{browser.Handle}".Info();
@@ -74,13 +74,13 @@ namespace BizDeck
             // debugger port, and one to timeout. If the timeout completes first
             // we know that the edge instance launched here was not the first, and
             // that the pre-existing instance is running without a debug port.
-            var http_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.EdgeJsonListTimeout));
+            var http_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.BrowserJsonListTimeout));
             debug_websock = new ClientWebSocket();
-            var ws_connect_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.EdgeJsonListTimeout));
+            var ws_connect_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.BrowserJsonListTimeout));
             try
             {
                 var json_list_str = await edge_client.GetStringAsync(json_list_url,
-                                                        http_cancel_token_source.Token);
+                                                        http_cancel_token_source.Token).ConfigureAwait(false);
                 $"Recorder browser: json/list:{json_list_str}".Info();
                 // Now we have a list from DevTools, so we deserialize,
                 // and connect to each of the debug websocket URLs. 
@@ -111,12 +111,12 @@ namespace BizDeck
                     $"DevToolsRecorder.StartBrowser: connecting to {real_tab_response.WebSocketDebuggerUrl} for {real_tab_response.Url}".Info();
                 }
                 var uri = new System.Uri(real_tab_response.WebSocketDebuggerUrl);
-                await debug_websock.ConnectAsync(uri, ws_connect_cancel_token_source.Token);
+                await debug_websock.ConnectAsync(uri, ws_connect_cancel_token_source.Token).ConfigureAwait(false);
                 // Send Tracing.start
                 // https://chromedevtools.github.io/devtools-protocol/tot/Tracing/#method-start
-                await SendRequest("Tracing.start");
+                await SendRequest("Tracing.start", config_helper.TraceConfig).ConfigureAwait(false);
                 // Should be connected to each websock now, so start listening
-                await ReceiveAsync();
+                await ReceiveAsync().ConfigureAwait(false);
             }
             catch (OperationCanceledException ex) {
                 $"Recorder /json/list timeout:{ex.ToString()}".Error();
@@ -125,20 +125,26 @@ namespace BizDeck
             }
         }
 
-        public async Task SendRequest(string method)
+        public async Task SendRequest(string method, string parms=null)
         {
             // We're composing json with C# $ style in place formatting. So that means
             // we need to use escapes for special chars...
             // 1. Curly braces {} are used for in place vars so need to be escaped for
             //    pass through to Newtonsoft.JSON. We escape by doubling to {{ or }}
             //    at begin and end.
-            // 2. Quotes must be escaped with back slash. 
-            string command_json = $"{{\"id\":{command_id++},\"method\":\"{method}\"}}";
+            // 2. Quotes must be escaped with back slash.
+            // https://www.newtonsoft.com/json/help/html/SerializingCollections.htm
+            string command_json = $"{{\"id\":{command_id++},\"method\":\"{method}\"";
+            if (parms != null)
+            {
+                command_json += $",\"params\":{parms}";
+            }
+            command_json += "}";
             $"DevToolsRecorder.SendRequest: sending {command_json}".Info();
             var encoded = Encoding.UTF8.GetBytes(command_json);
             var buffer = new ArraySegment<Byte>(encoded, 0, encoded.Length);
-            var ws_send_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.EdgeJsonListTimeout));
-            await debug_websock.SendAsync(buffer, WebSocketMessageType.Text, true, ws_send_cancel_token_source.Token);
+            var ws_send_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.BrowserWebsockTimeout));
+            await debug_websock.SendAsync(buffer, WebSocketMessageType.Text, true, ws_send_cancel_token_source.Token).ConfigureAwait(false);
         }
 
         public async Task ReceiveAsync()
@@ -157,7 +163,7 @@ namespace BizDeck
                 {
                     do
                     {
-                        recv_result = await debug_websock.ReceiveAsync(seg_buffer, CancellationToken.None);
+                        recv_result = await debug_websock.ReceiveAsync(seg_buffer, CancellationToken.None).ConfigureAwait(false);
                         ms.Write(seg_buffer.Array, seg_buffer.Offset, recv_result.Count);
                     }
                     while (!recv_result.EndOfMessage);
@@ -177,7 +183,7 @@ namespace BizDeck
         }
 
         public async Task Stop() {
-            await Task.Delay(0);
+            await SendRequest("Tracing.end").ConfigureAwait(false);
         }
     }
 }

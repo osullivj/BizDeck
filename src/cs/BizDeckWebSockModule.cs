@@ -44,7 +44,7 @@ namespace BizDeck
             await SendTargetedEvent(context, new BizDeckJsonEvent("connected")).ConfigureAwait(false);
             BizDeckJsonEvent config_event = new BizDeckJsonEvent("config");
             config_event.Data = this.config_helper;
-            await SendTargetedEvent(context, config_event);
+            await SendTargetedEvent(context, config_event).ConfigureAwait(false);
 
         }
 

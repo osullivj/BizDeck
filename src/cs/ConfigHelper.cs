@@ -17,6 +17,11 @@ namespace BizDeck {
             get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", "config.json"});
         }
 
+        public string TraceConfigPath
+        {
+            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", "trace_config.json" });
+        }
+
         public string LogDir {
             get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "logs"});
         }
@@ -28,6 +33,8 @@ namespace BizDeck {
 
         public BizDeckConfig BizDeckConfig { set; get; }
 
+        public string TraceConfig { get; private set; }
+
         public string GetFullIconPath(string button_image_path)
         {
             return Path.Combine(new string[] { LocalAppDataPath, "BizDeck", button_image_path });
@@ -35,10 +42,11 @@ namespace BizDeck {
 
         public string GetFullLogPath()
         {
-            return Path.Combine(new string[] { LocalAppDataPath, "BizDeck", BizDeckConfig.EdgeUserDataDir });
+            return Path.Combine(new string[] { LocalAppDataPath, "BizDeck", BizDeckConfig.BrowserUserDataDir });
         }
 
         public BizDeckConfig LoadConfig() {
+            TraceConfig = File.ReadAllText(TraceConfigPath);
             BizDeckConfig = JsonSerializer.Deserialize<BizDeckConfig>(File.ReadAllText(ConfigPath));
             return BizDeckConfig;
         }

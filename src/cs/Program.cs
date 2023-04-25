@@ -5,6 +5,7 @@
     using System.IO;
     using System.Linq;
     using System.Threading;
+    using System.Threading.Tasks;
     using EmbedIO;
     using EmbedIO.WebApi;
     using EmbedIO.Files;
@@ -44,6 +45,7 @@
                 // Once we've registered our modules and configured them, we
                 // call the RunAsync() method.
                 var http_server_task = server.RunAsync();
+                http_server_task.ConfigureAwait(false);
                 var exitSignal = new ManualResetEvent(false);
                 // Now connect to StreamDeck, and start async read
                 stream_deck = DeviceManager.SetupDevice(config_helper);
@@ -58,7 +60,10 @@
                 {
                     InitButtonActionMap(url, recorder);
                     stream_deck.ButtonMap = button_action_map;
-                    var hid_stream_task = stream_deck.ReadAsync();
+                    var stream_deck_task = stream_deck.ReadAsync();
+                    stream_deck_task.ConfigureAwait(false);
+                    // Blocks this main thread waiting on the two tasks
+                    Task.WaitAll(http_server_task, stream_deck_task);
                 }
                 // Wait for any key to be pressed before disposing of our web server.
                 // In a service, we'd manage the lifecycle of our web server using

@@ -17,7 +17,7 @@ namespace BizDeck
         public async override Task RunAsync()
         {
             Run();
-            await Task.Delay(0);
+            await Task.Delay(0).ConfigureAwait(false);
         }
     }
 }

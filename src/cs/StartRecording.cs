@@ -27,7 +27,7 @@ namespace BizDeck
             {
                 // TODO make the record button blink?
                 $"Start recording...".Info();
-                await recorder.StartRecording();
+                await recorder.StartRecording().ConfigureAwait(false);
             }
         }
     }

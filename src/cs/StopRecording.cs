@@ -18,7 +18,7 @@ namespace BizDeck
         }
         public async override Task RunAsync()
         {
-            await recorder.Stop();
+            await recorder.Stop().ConfigureAwait(false);
         }
     }
 }

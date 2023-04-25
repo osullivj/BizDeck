@@ -64,7 +64,7 @@ namespace BizDeck
             Array.Clear(keyPressBuffer, 0, keyPressBuffer.Length);
             int bytes_read = 0;
             $"ConnectedDevice.ReadAsync awaiting stream...".Info();
-            while ((bytes_read = await UnderlyingInputStream.ReadAsync(this.keyPressBuffer, 0, this.keyPressBuffer.Length)) > 0)
+            while ((bytes_read = await UnderlyingInputStream.ReadAsync(this.keyPressBuffer, 0, this.keyPressBuffer.Length).ConfigureAwait(false)) > 0)
             {
 
                 var button_data = new ArraySegment<byte>(this.keyPressBuffer, ButtonPressHeaderOffset, ButtonCount).ToArray();

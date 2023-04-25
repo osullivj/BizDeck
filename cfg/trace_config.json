@@ -1,0 +1,5 @@
+{
+	"recording_mode":"record-until-full",
+	"included_categories":["*"],
+	"excluded_vategories":[]
+}

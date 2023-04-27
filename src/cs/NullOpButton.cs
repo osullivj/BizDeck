@@ -1,17 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Swan.Logging;
+﻿using System.Threading.Tasks;
 
 namespace BizDeck
 {
     public class NullOpButton:ButtonAction
     {
-        public NullOpButton() { }
+        private BizDeckLogger logger;
+        public NullOpButton() {
+            logger = new(this);
+        }
+
         public override void Run() {
-            $"NullOpButton".Info();
+            logger.Info("Run");
         }
 
         public async override Task RunAsync()

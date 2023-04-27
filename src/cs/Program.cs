@@ -11,7 +11,6 @@
     using EmbedIO.Files;
     using EmbedIO.Actions;
     using CommandLine;
-    using Swan.Logging;
 
     class Program
     {
@@ -38,23 +37,25 @@
             }
 
             var recorder = new DevToolsRecorder(config_helper);
-            InitLogging(config_helper.LogDir);
+            BizDeckLogger.InitLogging(config_helper.LogDir);
+            var logger = new BizDeckLogger(typeof(Program));
 
             // Our web server is disposable.
-            using (var server = CreateWebServer(url, config_helper))  {
+            using (var server = CreateWebServer(url, config_helper, logger))  {
                 // Once we've registered our modules and configured them, we
                 // call the RunAsync() method.
                 var http_server_task = server.RunAsync();
                 http_server_task.ConfigureAwait(false);
                 var exitSignal = new ManualResetEvent(false);
                 // Now connect to StreamDeck, and start async read
-                stream_deck = DeviceManager.SetupDevice(config_helper);
+                var device_manager = new DeviceManager(config_helper);
+                stream_deck = device_manager.SetupDevice();
                 if (stream_deck == null)
                 {
                     // TODO: this error condition should pop up a browser
                     // instance with an explanatory error message, and two
                     // options: exit or retry
-                    $"StreamDeck init failed - is it plugged in?".Error();
+                    logger.Error("StreamDeck init failed - is it plugged in?");
                 }
                 else
                 {
@@ -77,7 +78,7 @@
 
 
         // Create and configure our web server.
-        private static WebServer CreateWebServer(string url, ConfigHelper ch)
+        private static WebServer CreateWebServer(string url, ConfigHelper ch, BizDeckLogger logger)
         {
             var websock = new BizDeckWebSockModule(ch);
             var server = new WebServer(o => o
@@ -91,18 +92,11 @@
                 .WithModule(new ActionModule("/", HttpVerbs.Any, ctx => ctx.SendDataAsync(new { Message = "Error" })));
 
             // Listen for state changes.
-            server.StateChanged += (s, e) => $"WebServer New State - {e.NewState}".Info();
-
+            server.StateChanged += (s, e) => logger.Info($"StateChanged: NewState[{e.NewState}]");
             return server;
         }
 
-        private static void InitLogging(string log_dir) {
-            // Swan's FileLogger takes care of inserting a date
-            // suffix in the log path as 2nd paran true means "daily"
-            var log_path = Path.Combine(new string[] { log_dir, "biz_deck.log" });
-            var logger = new FileLogger(log_path, true);
-            Logger.RegisterLogger(logger);
-        }
+
 
         private static void InitButtonActionMap(string biz_deck_gui_url, IRecorder recorder)
         {

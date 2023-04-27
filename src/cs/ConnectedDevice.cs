@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using HidSharp;
-using Swan.Logging;
 
 namespace BizDeck
 {
@@ -17,6 +16,7 @@ namespace BizDeck
         private static readonly int ImageReportPayloadLength = ImageReportLength - ImageReportHeaderLength;
         private byte[] keyPressBuffer = new byte[1024];
         private ConfigHelper config_helper;
+        private BizDeckLogger logger;
 
         public ConnectedDevice(int vid, int pid, string path, string name, DeviceModel model,
             ConfigHelper ch)
@@ -30,6 +30,7 @@ namespace BizDeck
             this.ButtonCount = DeviceConstants.constants[model].ButtonCount;
             this.ButtonSize = DeviceConstants.constants[model].ButtonSize;
             this.config_helper = ch;
+            logger = new(this);
         }
 
         public delegate void ReceivedButtonPressHandler(object source, ButtonPressEventArgs e);
@@ -63,20 +64,21 @@ namespace BizDeck
             UnderlyingInputStream.ReadTimeout = Timeout.Infinite;
             Array.Clear(keyPressBuffer, 0, keyPressBuffer.Length);
             int bytes_read = 0;
-            $"ConnectedDevice.ReadAsync awaiting stream...".Info();
-            while ((bytes_read = await UnderlyingInputStream.ReadAsync(this.keyPressBuffer, 0, this.keyPressBuffer.Length).ConfigureAwait(false)) > 0)
+            logger.Info("ReadAsync awaiting stream...");
+            bytes_read = await UnderlyingInputStream.ReadAsync(this.keyPressBuffer, 0, this.keyPressBuffer.Length).ConfigureAwait(false);
+            while (bytes_read > 0)
             {
 
                 var button_data = new ArraySegment<byte>(this.keyPressBuffer, ButtonPressHeaderOffset, ButtonCount).ToArray();
                 var pressed_button = Array.IndexOf(button_data, (byte)1);
                 var button_kind = ButtonEventKind.DOWN;
-                $"ConnectedDevice.ReadAsync pressed:{pressed_button}, kind:{button_kind}".Info();
+                logger.Info($"ReadAsync: pressed[{pressed_button}], kind[{button_kind}]");
                 if (pressed_button == -1)
                 {
                     button_kind = ButtonEventKind.UP;
                     pressed_button = LastButton;
                     var button_entry = ButtonList.FirstOrDefault(x => x.ButtonIndex == pressed_button);
-                    $"ConnectedDevice.ReadAsync entry:{button_entry.Name}".Info();
+                    logger.Info($"ReadAsync: entry[{button_entry.Name}]");
                     if (button_entry != null)
                     {
                         // ConfigureAwait(false) to signal that we can resume on any thread
@@ -87,6 +89,7 @@ namespace BizDeck
                 {
                     LastButton = pressed_button;
                 }
+                bytes_read = await UnderlyingInputStream.ReadAsync(this.keyPressBuffer, 0, this.keyPressBuffer.Length).ConfigureAwait(false);
             }
         }
 
@@ -146,7 +149,7 @@ namespace BizDeck
         {
             current_page = (current_page + 1) % 4;
             button_list[0].ButtonImagePath = $"icons\\page{current_page + 1}.png";
-            $"NextPage: {button_list[0].ButtonImagePath}".Info();
+            logger.Info($"NextPage: path[{button_list[0].ButtonImagePath}]");
             SetupDeviceButtons();
         }
 
@@ -154,7 +157,7 @@ namespace BizDeck
         {
             current_desktop = (current_desktop + 1) % 4;
             button_list[1].ButtonImagePath = $"icons\\desk{current_desktop + 1}.png";
-            $"NextDesktop: {button_list[1].ButtonImagePath}".Info();
+            logger.Info($"NextDesktop: path[{button_list[1].ButtonImagePath}]");
             SetupDeviceButtons();
             return current_desktop;
         }

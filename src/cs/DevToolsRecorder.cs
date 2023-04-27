@@ -8,8 +8,6 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Swan.Logging;
-using Microsoft.Playwright;
 
 namespace BizDeck
 {
@@ -24,9 +22,12 @@ namespace BizDeck
         private ClientWebSocket debug_websock;
         private byte[] debug_websock_buffer = new Byte[8192];
         private static int command_id = 101;
+        CancellationTokenSource ws_recv_cancel_token_source;
+        BizDeckLogger logger;
 
         public DevToolsRecorder(ConfigHelper ch)
         {
+            logger = new(this);
             edge_client = new HttpClient();
             config_helper = ch;
             browser_cmd_line_args = $"--remote-debugging-port={config_helper.BizDeckConfig.BrowserRecorderPort} "
@@ -39,7 +40,7 @@ namespace BizDeck
         {
             if (browser != null)
             {
-                $"Recorder browser already running: Id:{browser.Id}, Handle:{browser.Handle}".Info();
+                logger.Info($"StartBrowser: browser already running Id[{browser.Id}], Handle:[{browser.Handle}]");
                 return false;
             }
             // https://learn.microsoft.com/en-us/microsoft-edge/devtools-protocol-chromium/
@@ -55,10 +56,10 @@ namespace BizDeck
             // warning....
             browser = new Process();
             browser.StartInfo.FileName = config_helper.BizDeckConfig.BrowserPath;
-            $"Recorder browser starting with {config_helper.BizDeckConfig.BrowserPath} {browser_cmd_line_args}".Info();
+            logger.Info($"StartBrowser: browser starting with path[{config_helper.BizDeckConfig.BrowserPath}], args:[{browser_cmd_line_args}]");
             browser.StartInfo.Arguments = browser_cmd_line_args;
             browser.Start();
-            $"Recorder browser: Id:{browser.Id}, Handle:{browser.Handle}".Info();
+            logger.Info($"StartBrowser: Id:[{browser.Id}], Handle:[{browser.Handle}]");
             return true;
         }
 
@@ -81,7 +82,7 @@ namespace BizDeck
             {
                 var json_list_str = await edge_client.GetStringAsync(json_list_url,
                                                         http_cancel_token_source.Token).ConfigureAwait(false);
-                $"Recorder browser: json/list:{json_list_str}".Info();
+                logger.Info($"StartRecording: json/list:[{json_list_str}]");
                 // Now we have a list from DevTools, so we deserialize,
                 // and connect to each of the debug websocket URLs. 
                 List<DevToolsJsonListResponse> json_list_arr = JsonSerializer.Deserialize<List<DevToolsJsonListResponse>>(json_list_str);
@@ -102,13 +103,14 @@ namespace BizDeck
                 }
                 if (real_tab_response == null)
                 {
-                    $"DevToolsRecorder.StartBrowser: no candidate websock found".Error();
+                    logger.Error($"StartRecording: no candidate websock found");
                     // TODO: signal error to user, terminate recording session
                     return;
                 }
                 else
                 {
-                    $"DevToolsRecorder.StartBrowser: connecting to {real_tab_response.WebSocketDebuggerUrl} for {real_tab_response.Url}".Info();
+                    string details = $"{real_tab_response.WebSocketDebuggerUrl} for {real_tab_response.Url}";
+                    logger.Info($"StartRecording: connecting to {details}");
                 }
                 var uri = new System.Uri(real_tab_response.WebSocketDebuggerUrl);
                 await debug_websock.ConnectAsync(uri, ws_connect_cancel_token_source.Token).ConfigureAwait(false);
@@ -119,7 +121,7 @@ namespace BizDeck
                 await ReceiveAsync().ConfigureAwait(false);
             }
             catch (OperationCanceledException ex) {
-                $"Recorder /json/list timeout:{ex.ToString()}".Error();
+                logger.Error($"Recorder /json/list timeout:{ex.ToString()}");
                 // TODO: add code here to redirect the browser to an
                 // error page about msedge.exe instances.
             }
@@ -140,7 +142,7 @@ namespace BizDeck
                 command_json += $",\"params\":{parms}";
             }
             command_json += "}";
-            $"DevToolsRecorder.SendRequest: sending {command_json}".Info();
+            logger.Info($"SendRequest: sending {command_json}");
             var encoded = Encoding.UTF8.GetBytes(command_json);
             var buffer = new ArraySegment<Byte>(encoded, 0, encoded.Length);
             var ws_send_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.BrowserWebsockTimeout));
@@ -151,19 +153,16 @@ namespace BizDeck
         {
             // TODO: how to cancel or close the streams on stop recording
             // or ctrl-C or error
-            var receive_cancel_token_source = new CancellationTokenSource();
+            ws_recv_cancel_token_source = new CancellationTokenSource();
             WebSocketReceiveResult recv_result = null;
             ArraySegment<Byte> seg_buffer = new ArraySegment<byte>(debug_websock_buffer);
-            // var when_any_cancel_token_source = new CancellationTokenSource();
-            // TODO: how do we break out of this loop?
-            // Can we use a cancel token that somehow gets signalled from Stop() ?
             while (debug_websock.State == WebSocketState.Open)
             {
                 using (var ms = new MemoryStream())
                 {
                     do
                     {
-                        recv_result = await debug_websock.ReceiveAsync(seg_buffer, CancellationToken.None).ConfigureAwait(false);
+                        recv_result = await debug_websock.ReceiveAsync(seg_buffer, ws_recv_cancel_token_source.Token).ConfigureAwait(false);
                         ms.Write(seg_buffer.Array, seg_buffer.Offset, recv_result.Count);
                     }
                     while (!recv_result.EndOfMessage);
@@ -175,7 +174,7 @@ namespace BizDeck
                         using (var reader = new StreamReader(ms, Encoding.UTF8))
                         {
                             var msg = reader.ReadToEnd();
-                            $"DevToolsRecorder.ReceiveAsync: {msg}".Info();
+                            logger.Info($"ReceiveAsync: msg[{msg}]");
                         }
                     }
                 }
@@ -183,6 +182,7 @@ namespace BizDeck
         }
 
         public async Task Stop() {
+            ws_recv_cancel_token_source.Cancel();
             await SendRequest("Tracing.end").ConfigureAwait(false);
         }
     }

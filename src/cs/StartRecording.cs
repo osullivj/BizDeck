@@ -1,32 +1,33 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Swan.Logging;
 
 namespace BizDeck
 {
     public class StartRecording : ButtonAction
     {
         private IRecorder recorder;
-        public StartRecording(IRecorder r) { recorder = r; }
+        private BizDeckLogger logger;
+
+        public StartRecording(IRecorder r) {
+            logger = new(this);
+            recorder = r;
+        }
+
         public override void Run()
         {
-            
+
         }
         public async override Task RunAsync()
         {
             if (!recorder.HasBrowser())
             {
-                $"Starting browser...".Info();
+                logger.Info("Starting browser...");
                 recorder.StartBrowser();
             }
             else
             {
                 // TODO make the record button blink?
-                $"Start recording...".Info();
+                logger.Info("Start recording...");
                 await recorder.StartRecording().ConfigureAwait(false);
             }
         }

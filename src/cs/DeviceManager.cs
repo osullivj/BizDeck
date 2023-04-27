@@ -2,16 +2,23 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Swan.Logging;
 
 namespace BizDeck
 {
     // Manage connected Stream Deck devices.
     public class DeviceManager
     {
+        private BizDeckLogger logger;
+        private ConfigHelper config_helper;
         private static readonly int SupportedVid = 4057;
+
+        public DeviceManager(ConfigHelper ch)
+        {
+            config_helper = ch;
+            logger = new(this);
+        }
         /// Return a list of connected Stream Deck devices supported by DeckSurf.
-        public static IEnumerable<ConnectedDevice> GetDeviceList(ConfigHelper ch)
+        public IEnumerable<ConnectedDevice> GetDeviceList()
         {
             var connectedDevices = new List<ConnectedDevice>();
             var deviceList = DeviceList.Local.GetHidDevices();
@@ -26,7 +33,9 @@ namespace BizDeck
                         case DeviceModel.MK_2:
                         case DeviceModel.XL:
                             {
-                                connectedDevices.Add(new StreamDeck(device.VendorID, device.ProductID, device.DevicePath, device.GetFriendlyName(), (DeviceModel)device.ProductID, ch));
+                                connectedDevices.Add(new StreamDeck(device.VendorID, 
+                                    device.ProductID, device.DevicePath, device.GetFriendlyName(), 
+                                                        (DeviceModel)device.ProductID, config_helper));
                                 break;
                             }
 
@@ -44,17 +53,17 @@ namespace BizDeck
             return connectedDevices;
         }
 
-        public static ConnectedDevice SetupDevice(ConfigHelper ch)
+        public ConnectedDevice SetupDevice()
         {
             try
             {
-                var devices = GetDeviceList(ch);
+                var devices = GetDeviceList();
                 if (devices != null && devices.Any())
                 {
                     // assume just one StreamDeck connected and take first
                     // entry on device list
                     var connected_device = devices.ElementAt(0);
-                    connected_device.ButtonList = ch.BizDeckConfig.ButtonMap;
+                    connected_device.ButtonList = config_helper.BizDeckConfig.ButtonMap;
                     return connected_device;
                 }
                 else
@@ -64,18 +73,17 @@ namespace BizDeck
             }
             catch (Exception ex)
             {
-                $"SetupDevice: {ex.ToString()}".Error();
+                logger.Error($"SetupDevice: {ex.ToString()}");
                 return null;
             }
         }
 
-        public static bool IsSupported(int vid, int pid)
+        public bool IsSupported(int vid, int pid)
         {
             if (vid == SupportedVid && Enum.IsDefined(typeof(DeviceModel), (byte)pid))
             {
                 return true;
             }
-
             return false;
         }
     }

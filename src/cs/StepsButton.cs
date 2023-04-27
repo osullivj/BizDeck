@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Swan.Logging;
 
 namespace BizDeck
 {
@@ -11,12 +10,14 @@ namespace BizDeck
     {
         BizDeckSteps steps = null;
         string name = null;
+        BizDeckLogger logger;
         public StepsButton(ConfigHelper ch, string name) {
+            logger = new(this);
             this.name = name;
             steps = ch.LoadSteps(name);
         }
         public override void Run() {
-            $"StepsButton.Run {name}:{steps.ExeDocUrl}".Info();
+            logger.Info($"Run: {name}:{steps.ExeDocUrl}");
             // start default browser - or new tab - and point it at 
             // our web server
             var process = new System.Diagnostics.Process() {
@@ -27,7 +28,7 @@ namespace BizDeck
             // If this blocks with no visible error, check the path in your
             // steps json very carefully!
             process.Start();
-            $"StepsButton.Runing {name}:{steps.ExeDocUrl}".Info();
+            logger.Info($"Run: running {name}:{steps.ExeDocUrl}");
         }
 
         public async override Task RunAsync()

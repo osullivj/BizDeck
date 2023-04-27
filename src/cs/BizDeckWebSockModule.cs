@@ -1,17 +1,17 @@
 ﻿using System;
-using System.Threading;
 using EmbedIO.WebSockets;
 using System.Threading.Tasks;
-using Swan.Logging;
 
 namespace BizDeck
 {
     class BizDeckWebSockModule : WebSocketModule
     {
         ConfigHelper config_helper;
+        BizDeckLogger logger;
         public BizDeckWebSockModule(ConfigHelper ch) :
             base("/ws", true)
         {
+            logger = new BizDeckLogger(this);
             config_helper = ch;
             AddProtocol("json");
         }
@@ -22,7 +22,7 @@ namespace BizDeck
         {
             string text = Encoding.GetString(rxBuffer);
             BizDeckJsonEvent evt = JsonUtils.DeserializeFromJson<BizDeckJsonEvent>(text);
-            $"OnMessageReceivedAsync: Type:{evt.Type}, Data:{evt.Data}".Info();
+            logger.Info($"OnMessageReceivedAsync: WebsockID[{context.Id}], Type[{evt.Type}], Data[{evt.Data}]");
 
             if (evt.Type == "spam")
             {
@@ -40,7 +40,7 @@ namespace BizDeck
         /// <inheritdoc />
         protected override async Task OnClientConnectedAsync(IWebSocketContext context)
         {
-            Logger.Info("client connected");
+            logger.Info($"OnClientConnectedAsync: WebsockID[{context.Id}]");
             await SendTargetedEvent(context, new BizDeckJsonEvent("connected")).ConfigureAwait(false);
             BizDeckJsonEvent config_event = new BizDeckJsonEvent("config");
             config_event.Data = this.config_helper;
@@ -56,7 +56,7 @@ namespace BizDeck
         /// <inheritdoc />
         protected override Task OnClientDisconnectedAsync(IWebSocketContext context)
         {
-            Logger.Info("client disconnected");
+            logger.Info($"OnClientDisconnectedAsync: WebsockID[{context.Id}], Local[{context.IsLocal}], Remote[{context.RemoteEndPoint.Address}]");
             return Task.CompletedTask;
         }
 

@@ -1,5 +1,5 @@
 {
 	"recording_mode":"record-until-full",
-	"included_categories":["*"],
-	"excluded_vategories":[]
+	"included_categories":["browsing_data","browser","devtools.timeline","navigation"],
+	"excluded_vategories":["cc","__metadata","ServiceWorker","scheduler.long_tasks","render.scheduler","power","gpu"]
 }

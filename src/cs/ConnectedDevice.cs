@@ -68,7 +68,6 @@ namespace BizDeck
             bytes_read = await UnderlyingInputStream.ReadAsync(this.keyPressBuffer, 0, this.keyPressBuffer.Length).ConfigureAwait(false);
             while (bytes_read > 0)
             {
-
                 var button_data = new ArraySegment<byte>(this.keyPressBuffer, ButtonPressHeaderOffset, ButtonCount).ToArray();
                 var pressed_button = Array.IndexOf(button_data, (byte)1);
                 var button_kind = ButtonEventKind.DOWN;

@@ -1,6 +1,8 @@
 ﻿using System;
-using EmbedIO.WebSockets;
 using System.Threading.Tasks;
+using EmbedIO.WebSockets;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace BizDeck
 {
@@ -21,7 +23,7 @@ namespace BizDeck
             IWebSocketReceiveResult rxResult)
         {
             string text = Encoding.GetString(rxBuffer);
-            BizDeckJsonEvent evt = JsonUtils.DeserializeFromJson<BizDeckJsonEvent>(text);
+            BizDeckJsonEvent evt = JsonConvert.DeserializeObject<BizDeckJsonEvent>(text);
             logger.Info($"OnMessageReceivedAsync: WebsockID[{context.Id}], Type[{evt.Type}], Data[{evt.Data}]");
 
             if (evt.Type == "spam")
@@ -50,7 +52,7 @@ namespace BizDeck
 
         private Task SendTargetedEvent(IWebSocketContext context, BizDeckJsonEvent jsEvent)
         {
-            return SendAsync(context, JsonUtils.SerializeToJson(jsEvent));
+            return SendAsync(context, JsonConvert.SerializeObject(jsEvent));
         }
 
         /// <inheritdoc />
@@ -62,7 +64,7 @@ namespace BizDeck
 
         public async Task BroadcastEvent(BizDeckJsonEvent jsEvent)
         {
-            var json = JsonUtils.SerializeToJson(jsEvent);
+            var json = JsonConvert.SerializeObject(jsEvent);
             await BroadcastAsync(json).ConfigureAwait(false);
         }
     }

@@ -117,7 +117,7 @@ namespace BizDeck
                 }
                 else
                 {
-                    string details = $"{real_tab_response.WebSocketDebuggerUrl} for {real_tab_response.Url}";
+                    string details = $"debuggerURL[{real_tab_response.WebSocketDebuggerUrl}] for browserURL[{real_tab_response.Url}]";
                     logger.Info($"StartRecording: connecting to {details}");
                 }
                 var uri = new System.Uri(real_tab_response.WebSocketDebuggerUrl);
@@ -168,7 +168,7 @@ namespace BizDeck
             inflight_ws_request_cache[command_id++] = command_json;
         }
 
-        private void OnResponse(string json_msg)
+        private bool OnResponse(string json_msg)
         {
             // JObject dev_tools_obj = JObject.Parse(json_msg);
             dynamic dobj = JObject.Parse(json_msg);
@@ -199,6 +199,11 @@ namespace BizDeck
             // there's no id field at top level of message
             else if (method_name_token != null) {
                 string method = dobj.method;
+                if (method == "Tracing.tracingComplete")
+                {
+                    // End of trace data, so we can drop the socket connection.
+                    return false;
+                }
                 // "params" is a C# keyword, so we cannot ref dobj.params
                 // The field itself should be an array
                 JObject params_obj = dobj["params"] as JObject;
@@ -211,13 +216,20 @@ namespace BizDeck
                 else
                 {
                     foreach( JToken jtok in value_array) {
-                        logger.Info($"OnResponse: method[{method}] parm[{jtok}]");
+                        // __metadata gets sent even if in traceConfig.excludedCategories
+                        JObject parm = jtok as JObject;
+                        string cat = (string)parm["cat"];
+                        if (cat != "__metadata")
+                        {
+                            logger.Info($"OnResponse: method[{method}] parm[{parm}]");
+                        }
                     }
                     logger.Info($"OnResponse: params not JArray msg[{json_msg}]");
                     good_trace_response_cache.Add(json_msg);
                 }
                 logger.Info($"OnResponse: method[{method}] with parms[{dobj["params"]}]");
             }
+            return true;
         }
 
         private async Task ReceiveAsync()
@@ -246,7 +258,15 @@ namespace BizDeck
                         {
                             var msg = reader.ReadToEnd();
                             logger.Info($"ReceiveAsync: msg[{msg}]");
-                            OnResponse(msg);
+                            bool keep_websock_open = OnResponse(msg);
+                            if (!keep_websock_open)
+                            {
+
+                                var ws_close_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.BrowserJsonListTimeout));
+                                await debug_websock.CloseAsync(WebSocketCloseStatus.NormalClosure,
+                                    "Tracing.tracingComplete recved", ws_close_cancel_token_source.Token);
+                                logger.Info($"ReceiveAsync: websock closed");
+                            }
                         }
                     }
                 }

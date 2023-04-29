@@ -1,5 +1,7 @@
 {
-	"recording_mode":"record-until-full",
-	"included_categories":["browsing_data","browser","devtools.timeline","navigation"],
-	"excluded_vategories":["cc","__metadata","ServiceWorker","scheduler.long_tasks","render.scheduler","power","gpu"]
+	"traceConfig": {
+		"recordMode":"record-until-full",
+		"includedCategories":["browsing_data","browser","devtools.timeline","navigation"],
+		"excludedCategories":["cc","__metadata","ServiceWorker","scheduler.long_tasks","render.scheduler","power","gpu"]
+	}
 }

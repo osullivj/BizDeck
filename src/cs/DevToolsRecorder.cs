@@ -13,6 +13,8 @@ using Newtonsoft.Json.Linq;
 
 namespace BizDeck
 {
+    public delegate void Del(string message);
+
     public class DevToolsRecorder : IRecorder
     {
         private ConfigHelper config_helper;
@@ -31,6 +33,7 @@ namespace BizDeck
         private List<string> unmatched_response_cache = new();
         private List<string> bad_trace_response_cache = new();
         private List<string> good_trace_response_cache = new();
+        private List<string> key_trace_response_cache = new();
         BizDeckLogger logger;
 
         public DevToolsRecorder(ConfigHelper ch)
@@ -224,7 +227,6 @@ namespace BizDeck
                             logger.Info($"OnResponse: method[{method}] parm[{parm}]");
                         }
                     }
-                    logger.Info($"OnResponse: params not JArray msg[{json_msg}]");
                     good_trace_response_cache.Add(json_msg);
                 }
                 logger.Info($"OnResponse: method[{method}] with parms[{dobj["params"]}]");
@@ -245,7 +247,7 @@ namespace BizDeck
                 {
                     do
                     {
-                        recv_result = await debug_websock.ReceiveAsync(seg_buffer, ws_recv_cancel_token_source.Token).ConfigureAwait(false);
+                        recv_result = await debug_websock.ReceiveAsync(seg_buffer, ws_recv_cancel_token_source.Token);
                         ms.Write(seg_buffer.Array, seg_buffer.Offset, recv_result.Count);
                     }
                     while (!recv_result.EndOfMessage);
@@ -274,9 +276,9 @@ namespace BizDeck
         }
 
         public async Task Stop() {
-            await SendRequest("Tracing.end").ConfigureAwait(false);
+            await SendRequest("Tracing.end");
             // Now recv the trace results...
-            await ReceiveAsync().ConfigureAwait(false);
+            await ReceiveAsync();
             // TODO add code to print cache states
             // Close the browser instance; if we leave it running it will
             // hog the websock listener port.

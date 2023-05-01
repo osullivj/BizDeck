@@ -1,10 +1,8 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Text.Json.Serialization;
 
 namespace BizDeck
 {
-    /// <summary>
-    /// Assign icons to buttons.
-    /// </summary>
     public class ButtonMapping
     {
         [JsonPropertyName("name")]
@@ -15,5 +13,8 @@ namespace BizDeck
 
         [JsonPropertyName("button_image_path")]
         public string ButtonImagePath { get; set; }
+
+        [JsonPropertyName("action")]
+        public string Action { get; set; }
     }
 }

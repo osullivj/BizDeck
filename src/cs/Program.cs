@@ -59,7 +59,7 @@
                 }
                 else
                 {
-                    InitButtonActionMap(url, recorder);
+                    InitButtonActionMap(url, recorder, logger);
                     stream_deck.ButtonMap = button_action_map;
                     var stream_deck_task = stream_deck.ReadAsync();
                     stream_deck_task.ConfigureAwait(false);
@@ -98,7 +98,7 @@
 
 
 
-        private static void InitButtonActionMap(string biz_deck_gui_url, IRecorder recorder)
+        private static void InitButtonActionMap(string biz_deck_gui_url, IRecorder recorder, BizDeckLogger logger)
         {
             button_action_map["page"] = new Pager(stream_deck);
             button_action_map["gui"] = new ShowBizDeckGUI(biz_deck_gui_url);
@@ -107,7 +107,17 @@
             foreach (ButtonMapping bm in config_helper.BizDeckConfig.ButtonMap)
             {
                 if (!button_action_map.ContainsKey(bm.Name)) {
-                    button_action_map[bm.Name] = new StepsButton(config_helper, bm.Name);
+                    switch (bm.Action) {
+                        case "steps":
+                            button_action_map[bm.Name] = new StepsButton(config_helper, bm.Name);
+                            break;
+                        case "app":
+                            button_action_map[bm.Name] = new AppButton(config_helper, bm.Name);
+                            break;
+                        default:
+                            logger.Info($"InitButtonActionMap: unknown action[{bm.Action}] for button[{bm.Name}]");
+                            break;
+                    }
                 }
             }
         }

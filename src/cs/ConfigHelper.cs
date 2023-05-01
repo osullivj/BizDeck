@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text.Json;
 
 namespace BizDeck {
@@ -42,15 +43,32 @@ namespace BizDeck {
         }
 
         public BizDeckConfig LoadConfig() {
-            TraceConfig = File.ReadAllText(TraceConfigPath);
-            BizDeckConfig = JsonSerializer.Deserialize<BizDeckConfig>(File.ReadAllText(ConfigPath));
-            return BizDeckConfig;
+            try
+            {
+                TraceConfig = File.ReadAllText(TraceConfigPath);
+                BizDeckConfig = JsonSerializer.Deserialize<BizDeckConfig>(File.ReadAllText(ConfigPath));
+                return BizDeckConfig;
+            }
+            catch (JsonException ex)
+            {
+                // Since we cannot load the config file, we cannot start the web server and
+                // we don't know where the location of log dir. So stdout is the best we can do...
+                System.Console.Write($"{ex.ToString()}");   
+            }
+            return null;
         }
 
-        public BizDeckSteps LoadSteps(string name)
+        public AppLaunch LoadAppLaunch(string name)
+        {
+            var app_launch_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", $"{name}.json" });
+            var launch = JsonSerializer.Deserialize<AppLaunch>(File.ReadAllText(app_launch_path));
+            return launch;
+        }
+
+        public string LoadSteps(string name)
         {
             var steps_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", $"{name}.json" });
-            var steps = JsonSerializer.Deserialize<BizDeckSteps>(File.ReadAllText(steps_path));
+            var steps = File.ReadAllText(steps_path);
             return steps;
         }
     }

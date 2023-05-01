@@ -4,10 +4,9 @@ using System.Text.Json.Serialization;
 namespace BizDeck
 {
     /// <summary>
-    /// Configuration profile that represents the mapping of buttons on a Stream Deck device
-    /// to icons, as well as HTTP port, USD device index, and true/false for a DOS box console.
+    /// JSON deserialize object for app launch config.
     /// </summary>
-    public class BizDeckSteps
+    public class AppLaunch
     {
         [JsonPropertyName("exe_doc_url")]
         public string ExeDocUrl { get; set; }

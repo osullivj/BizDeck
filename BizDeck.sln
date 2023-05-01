@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BizDeck", "BizDeck.csproj",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EmbedIO", "..\..\bld\embedio\src\EmbedIO\EmbedIO.csproj", "{1F98C0E5-3D58-406C-B1E9-0A973CB3F169}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PuppeteerSharp", "..\..\bld\puppeteer-sharp\lib\PuppeteerSharp\PuppeteerSharp.csproj", "{A653391C-3B63-4760-AED7-98F9AAFED718}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +33,14 @@ Global
 		{1F98C0E5-3D58-406C-B1E9-0A973CB3F169}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1F98C0E5-3D58-406C-B1E9-0A973CB3F169}.Release|x64.ActiveCfg = Release|Any CPU
 		{1F98C0E5-3D58-406C-B1E9-0A973CB3F169}.Release|x64.Build.0 = Release|Any CPU
+		{A653391C-3B63-4760-AED7-98F9AAFED718}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A653391C-3B63-4760-AED7-98F9AAFED718}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A653391C-3B63-4760-AED7-98F9AAFED718}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A653391C-3B63-4760-AED7-98F9AAFED718}.Debug|x64.Build.0 = Debug|Any CPU
+		{A653391C-3B63-4760-AED7-98F9AAFED718}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A653391C-3B63-4760-AED7-98F9AAFED718}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A653391C-3B63-4760-AED7-98F9AAFED718}.Release|x64.ActiveCfg = Release|Any CPU
+		{A653391C-3B63-4760-AED7-98F9AAFED718}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

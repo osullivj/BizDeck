@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\bld\embedio\src\EmbedIO\EmbedIO.csproj" />
+    <ProjectReference Include="..\..\bld\puppeteer-sharp\lib\PuppeteerSharp\PuppeteerSharp.csproj" />
   </ItemGroup>
 
   <ItemGroup>

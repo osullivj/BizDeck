@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace BizDeck
 {
     public class StepsButton:ButtonAction
     {
-        string steps;
+        dynamic steps;
         string name;
         BizDeckLogger logger;
         PuppeteerDriver driver;
@@ -16,9 +18,10 @@ namespace BizDeck
         public StepsButton(ConfigHelper ch, string name) {
             logger = new(this);
             this.name = name;
-            steps = ch.LoadSteps(name);
+            steps = JObject.Parse(ch.LoadSteps(name));
             driver = new PuppeteerDriver(ch);
         }
+
         public override void Run() {
             logger.Info($"Run: {name}:{steps}");
         }

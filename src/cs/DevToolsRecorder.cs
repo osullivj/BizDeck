@@ -5,7 +5,6 @@ using System.IO;
 using System.Net.WebSockets;
 using System.Net.Http;
 using System.Text;
-// using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -13,8 +12,6 @@ using Newtonsoft.Json.Linq;
 
 namespace BizDeck
 {
-    public delegate void Del(string message);
-
     public class DevToolsRecorder : IRecorder
     {
         private ConfigHelper config_helper;

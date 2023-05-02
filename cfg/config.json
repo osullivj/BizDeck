@@ -6,6 +6,7 @@
 	"browser_websock_timeout": 1,
 	"browser_user_data_dir":"logs",
 	"browser_path": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+	"selector_index": 1,
 	"console": true,
 	"button_map": [
 		{

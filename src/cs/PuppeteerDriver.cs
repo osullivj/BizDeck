@@ -133,8 +133,11 @@ namespace BizDeck
 			JArray selectors = (JArray)step["selectors"];
 			string selector = (string)(selectors[selector_index][0]);
 			string new_value = (string)step["value"];
+			string extra_value = "";
+			if (step.ContainsKey("extra_value"))
+				extra_value = (string)step["extra_value"];
 			var element_handle = await current_page.QuerySelectorAsync(selector);
-			await element_handle.TypeAsync(new_value+"\r");
+			await element_handle.TypeAsync(new_value+extra_value);
 			return true;
 		}
 	}

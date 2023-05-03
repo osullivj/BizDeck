@@ -29,7 +29,7 @@ namespace BizDeck
         public async override Task RunAsync()
         {
             Run();
-            await driver.PlaySteps(steps).ConfigureAwait(false);
+            await driver.PlaySteps(name, steps).ConfigureAwait(false);
         }
     }
 }

@@ -32,16 +32,17 @@ namespace BizDeck
 			dispatchers["change"] = this.Change;
 
 			// setup browser process launch options
-			launch_options.Headless = false;
+			launch_options.Headless = config_helper.BizDeckConfig.Headless;
 			launch_options.ExecutablePath = config_helper.BizDeckConfig.BrowserPath;
 			launch_options.UserDataDir = config_helper.GetFullLogPath();
-			launch_options.Devtools = false;
+			launch_options.Devtools = config_helper.BizDeckConfig.DevTools;
 			launch_options.Args = new string[1] { $"--remote-debugging-port={config_helper.BizDeckConfig.BrowserRecorderPort}" };
 		}
 
-		public async Task<bool> PlaySteps(dynamic chrome_recording)
+		public async Task<bool> PlaySteps(string name, dynamic chrome_recording)
         {
-			logger.Info($"PlaySteps: browser[{launch_options}]");
+			logger.Info($"PlaySteps: playing {name} on browser[{launch_options.ExecutablePath}]");
+			logger.Info($"PlaySteps: UserDataDir[{launch_options.UserDataDir}], Headless[{launch_options.Headless}], Devtools[{launch_options.Devtools}]");
 			// Clear state left over from previous PlaySteps
 			current_page = null;
 			pending_viewport_step = null;
@@ -60,6 +61,10 @@ namespace BizDeck
                     {
 						logger.Error($"PlaySteps: step failed index[{step_index}], type[{step_type}]");
 						return false;
+                    }
+					else
+                    {
+						logger.Info($"PlaySteps: step ok index[{step_index}], type[{step_type}]");
                     }
 				}
 				else
@@ -118,16 +123,18 @@ namespace BizDeck
 		public async Task<bool> Click(JObject step)
         {
 			JArray selectors = (JArray)step["selectors"];
-			string element_id = (string)selectors[selector_index];
-			await current_page.ClickAsync(element_id);
+			string selector = (string)(selectors[selector_index][0]);
+			await current_page.ClickAsync(selector);
 			return true;
         }
 
 		public async Task<bool> Change(JObject step)
 		{
 			JArray selectors = (JArray)step["selectors"];
-			string element_id = (string)selectors[selector_index];
-			var element_handle = await current_page.QuerySelectorAsync(element_id);
+			string selector = (string)(selectors[selector_index][0]);
+			string new_value = (string)step["value"];
+			var element_handle = await current_page.QuerySelectorAsync(selector);
+			await element_handle.TypeAsync(new_value);
 			return true;
 		}
 	}

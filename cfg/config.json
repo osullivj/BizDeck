@@ -5,9 +5,11 @@
 	"browser_json_list_timeout": 5,
 	"browser_websock_timeout": 1,
 	"browser_user_data_dir":"logs",
-	"browser_path": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+	"browser_path": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
 	"selector_index": 1,
 	"console": true,
+	"devtools": false,
+	"headless": false,
 	"button_map": [
 		{
 			"name": "page",

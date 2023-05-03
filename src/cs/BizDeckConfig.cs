@@ -41,6 +41,12 @@ namespace BizDeck
         [JsonPropertyName("console")]
         public bool Console { get; set; }
 
+        [JsonPropertyName("devtools")]
+        public bool DevTools { get; set; }
+
+        [JsonPropertyName("headless")]
+        public bool Headless { get; set; }
+
         [JsonPropertyName("button_map")]
         public List<ButtonMapping> ButtonMap { get; set; }
     }

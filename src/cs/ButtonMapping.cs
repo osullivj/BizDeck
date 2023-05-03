@@ -8,10 +8,11 @@ namespace BizDeck
         [JsonPropertyName("name")]
         public string Name { get; set; }
 
-        [JsonPropertyName("button_index")]
+        // Indexes are assigned by ConfigHelper code,
+        // and not set from JSON
         public int ButtonIndex { get; set; }
 
-        [JsonPropertyName("button_image_path")]
+        [JsonPropertyName("image")]
         public string ButtonImagePath { get; set; }
 
         [JsonPropertyName("action")]

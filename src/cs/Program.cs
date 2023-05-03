@@ -36,7 +36,7 @@
                 Win32.AllocConsole();
             }
 
-            var recorder = new DevToolsRecorder(config_helper);
+            // var recorder = new DevToolsRecorder(config_helper);
             BizDeckLogger.InitLogging(config_helper.LogDir);
             var logger = new BizDeckLogger(typeof(Program));
 
@@ -59,7 +59,7 @@
                 }
                 else
                 {
-                    InitButtonActionMap(url, recorder, logger);
+                    InitButtonActionMap(url, logger);
                     stream_deck.ButtonMap = button_action_map;
                     var stream_deck_task = stream_deck.ReadAsync();
                     stream_deck_task.ConfigureAwait(false);
@@ -98,12 +98,12 @@
 
 
 
-        private static void InitButtonActionMap(string biz_deck_gui_url, IRecorder recorder, BizDeckLogger logger)
+        private static void InitButtonActionMap(string biz_deck_gui_url, BizDeckLogger logger)
         {
             button_action_map["page"] = new Pager(stream_deck);
             button_action_map["gui"] = new ShowBizDeckGUI(biz_deck_gui_url);
-            button_action_map["start_recording"] = new StartRecording(recorder);
-            button_action_map["stop_recording"] = new StopRecording(recorder);
+            // button_action_map["start_recording"] = new StartRecording(recorder);
+            // button_action_map["stop_recording"] = new StopRecording(recorder);
             foreach (ButtonMapping bm in config_helper.BizDeckConfig.ButtonMap)
             {
                 if (!button_action_map.ContainsKey(bm.Name)) {

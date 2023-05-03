@@ -134,7 +134,7 @@ namespace BizDeck
 			string selector = (string)(selectors[selector_index][0]);
 			string new_value = (string)step["value"];
 			var element_handle = await current_page.QuerySelectorAsync(selector);
-			await element_handle.TypeAsync(new_value);
+			await element_handle.TypeAsync(new_value+"\r");
 			return true;
 		}
 	}

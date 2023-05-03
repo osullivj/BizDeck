@@ -47,6 +47,11 @@ namespace BizDeck {
             {
                 TraceConfig = File.ReadAllText(TraceConfigPath);
                 BizDeckConfig = JsonSerializer.Deserialize<BizDeckConfig>(File.ReadAllText(ConfigPath));
+                int index = 0;
+                foreach (ButtonMapping bm in BizDeckConfig.ButtonMap)
+                {
+                    bm.ButtonIndex = index++;
+                }
                 return BizDeckConfig;
             }
             catch (JsonException ex)

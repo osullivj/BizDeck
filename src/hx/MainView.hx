@@ -5,12 +5,14 @@ import haxe.ui.containers.VBox;
 import haxe.ui.containers.Box;
 import haxe.ui.containers.TableView;
 import haxe.ui.containers.TabView;
+import haxe.ui.containers.dialogs.Dialog.DialogEvent;
 import haxe.ui.components.Image;
 import haxe.ui.data.ArrayDataSource;
 import haxe.ui.events.MouseEvent;
 import haxe.ui.events.UIEvent;
 import js.html.WebSocket;
 import js.Browser;
+import DialogView;
 
 
 class BizDeckWebSocket {
@@ -50,6 +52,8 @@ class MainView extends VBox {
 	public var websock_url:String;
 	private var config_data_source:ArrayDataSource<Dynamic>;
 	private var buttons_data_source:ArrayDataSource<Dynamic>;
+	private var del_buttons_data_source:ArrayDataSource<Dynamic>;	
+	private var config:haxe.DynamicAccess<Dynamic>;
 	
     public function new() {
         super();
@@ -58,6 +62,7 @@ class MainView extends VBox {
 		var port = js.Browser.document.location.port;
 		this.websock_url = "ws://localhost:" + port + "/ws";
 		this.websock = new BizDeckWebSocket(this);
+		this.config = null;
 	}
 	
 	public function on_button_add_button(e) {
@@ -66,26 +71,37 @@ class MainView extends VBox {
 
 	public function on_button_del_button(e) {
 		trace("Del clicked!");
+	    var dialog = new BizDeckDeleteButtonDialog(this.del_buttons_data_source);
+        dialog.onDialogClosed = function(e:DialogEvent) {
+            trace(e.button);
+        }
+        dialog.showDialog();
 	}
 
-	public function on_config(config:Dynamic) {
-		// Add button handlers...
+	public function on_config(cfg:Dynamic) {
+		this.config = cfg;
+		// Add button handlers that raise add and del dialogs
 		var add_button = this.findComponent("bd_add_btn_btn");
 		var del_button = this.findComponent("bd_del_btn_btn");
 		add_button.onClick = this.on_button_add_button;
 		del_button.onClick = this.on_button_del_button;
+		
 		// yes, we're splitting the contents of config.json
 		// across two TableViews. Refactor needed....
 		var cfg_tv:TableView = this.findComponent("bd_config_tableview");
 		var btn_tv:TableView = this.findComponent("bd_buttons_tableview");
+		
+		// Build data sources for two tabs in tabview...
 		config_data_source = new ArrayDataSource<Dynamic>();
-		buttons_data_source = new ArrayDataSource<Dynamic>();		
+		buttons_data_source = new ArrayDataSource<Dynamic>();
+		// ...and data source for del button listview.
+		del_buttons_data_source = new ArrayDataSource<Dynamic>();
+		
 		// clear table contents: false means don't clear headers
 		cfg_tv.clearContents(false);
 		btn_tv.clearContents(false);
-		var cfg:haxe.DynamicAccess<Dynamic> = config;
-		for (key in cfg.keys()) {
-			var val:Any = cfg.get(key);
+		for (key in config.keys()) {
+			var val:Any = config.get(key);
 			if (key == "BizDeckConfig") {
 				var subcfg:haxe.DynamicAccess<Dynamic> = val;
 				for (subkey in subcfg.keys()) {
@@ -98,6 +114,9 @@ class MainView extends VBox {
 										bd_btns_type:btn_defn.Action,
 										bd_btns_icon:btn_defn.ButtonImagePath};
 							buttons_data_source.add(btn_row);
+							var del_btn_row:Any = {bd_del_btn_name:btn_defn.Name,
+													bd_del_btn_icon:btn_defn.ButtonImagePath};
+							del_buttons_data_source.add(del_btn_row);
 							trace("mv.on_config: btn_row=" + btn_row);
 						}
 					}

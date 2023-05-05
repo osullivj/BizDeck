@@ -60,7 +60,20 @@ class MainView extends VBox {
 		this.websock = new BizDeckWebSocket(this);
 	}
 	
+	public function on_button_add_button(e) {
+		trace("Add clicked!");
+	}
+
+	public function on_button_del_button(e) {
+		trace("Del clicked!");
+	}
+
 	public function on_config(config:Dynamic) {
+		// Add button handlers...
+		var add_button = this.findComponent("bd_add_btn_btn");
+		var del_button = this.findComponent("bd_del_btn_btn");
+		add_button.onClick = this.on_button_add_button;
+		del_button.onClick = this.on_button_del_button;
 		// yes, we're splitting the contents of config.json
 		// across two TableViews. Refactor needed....
 		var cfg_tv:TableView = this.findComponent("bd_config_tableview");
@@ -80,9 +93,10 @@ class MainView extends VBox {
 					if (subkey=="ButtonMap") {
 						var button_list:haxe.DynamicAccess<Dynamic> = subval;
 						for (btn_defn in button_list) {
-							var btn_row:Any = {bd_index:btn_defn.ButtonIndex,
-										bd_name:btn_defn.Name,
-										bd_icon:btn_defn.ButtonImagePath};
+							var btn_row:Any = {bd_btns_index:btn_defn.ButtonIndex,
+										bd_btns_name:btn_defn.Name,
+										bd_btns_type:btn_defn.Action,
+										bd_btns_icon:btn_defn.ButtonImagePath};
 							buttons_data_source.add(btn_row);
 							trace("mv.on_config: btn_row=" + btn_row);
 						}

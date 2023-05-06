@@ -73,8 +73,20 @@ class MainView extends VBox {
 		trace("Del clicked!");
 	    var dialog = new BizDeckDeleteButtonDialog(this.del_buttons_data_source);
         dialog.onDialogClosed = function(e:DialogEvent) {
-            trace(e.button);
-        }
+		    trace("on_button_del_button: button:" + e.button);
+			if (e.button == "{{apply}}") {
+				var del_msg = {
+					type: "del_button",
+					data: {
+						index:dialog.list_view.selectedIndex,
+						name:dialog.list_view.selectedItem.bd_del_btn_name
+					}
+				};
+				var del_msg_json = haxe.Json.stringify(del_msg);
+				trace("on_button_del_button: send:" + del_msg_json);
+				this.websock.websock.send(del_msg_json);
+			}
+        };
         dialog.showDialog();
 	}
 

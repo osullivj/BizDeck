@@ -12,16 +12,15 @@ import haxe.ui.data.ArrayDataSource;
 
 @:build(haxe.ui.macros.ComponentMacros.build("del-btn-dlg.xml"))
 class BizDeckDeleteButtonDialog extends Dialog {
+	public var list_view:ListView;
     public function new(ds:ArrayDataSource<Dynamic>) {
         super();
 		// Connect the data source from MainView to 
 		// out ListView
-		var lv:ListView = this.findComponent("bd_del_btn_listview");
-		lv.dataSource = ds;
+		list_view = this.findComponent("bd_del_btn_listview");
+		list_view.dataSource = ds;
 		trace("BizDeckDeleteButtonDialog: ds["+ds+"]");
 		// Two std modal buttons
         buttons = DialogButton.CANCEL | DialogButton.APPLY;
-		// TODO: add handler to detect list selection...
-		
     }
 }

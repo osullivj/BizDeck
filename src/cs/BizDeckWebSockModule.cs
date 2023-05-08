@@ -26,28 +26,36 @@ namespace BizDeck
             BizDeckJsonEvent evt = JsonConvert.DeserializeObject<BizDeckJsonEvent>(text);
             logger.Info($"OnMessageReceivedAsync: WebsockID[{context.Id}], Type[{evt.Type}], Data[{evt.Data}]");
 
-            if (evt.Type == "spam")
+            if (evt.Type == "del_button")
             {
-                // wait some time, simulating actual work being done and then respond with a big chunk of text
-                Random rnd = new Random();
-                await Task.Delay(rnd.Next(50, 150));
-                var responseEvent = new BizDeckJsonEvent("spam-back")
+                string button_name = (string)evt.Data;
+                // resume on any thread so we free this thread for more websock event handling
+                bool ok = await config_helper.DeleteButton(button_name).ConfigureAwait(false);
+                if (!ok)
                 {
-                    Data = JsDataRow.GenerateLargeTable()
-                };
-                await SendTargetedEvent(context, responseEvent).ConfigureAwait(false);
+                    logger.Error($"OnMessageReceivedAsync: del_button failed for name[{button_name}]");
+                }
+                else
+                {
+                    // Update the Buttons tab on the GUI
+                    await SendConfig(context);
+                }
             }
         }
 
-        /// <inheritdoc />
         protected override async Task OnClientConnectedAsync(IWebSocketContext context)
         {
             logger.Info($"OnClientConnectedAsync: WebsockID[{context.Id}]");
             await SendTargetedEvent(context, new BizDeckJsonEvent("connected")).ConfigureAwait(false);
+            await SendConfig(context);
+        }
+
+        protected async Task SendConfig(IWebSocketContext context)
+        {
+            logger.Info($"SendConfig: WebsockID[{context.Id}]");
             BizDeckJsonEvent config_event = new BizDeckJsonEvent("config");
             config_event.Data = this.config_helper;
             await SendTargetedEvent(context, config_event).ConfigureAwait(false);
-
         }
 
         private Task SendTargetedEvent(IWebSocketContext context, BizDeckJsonEvent jsEvent)

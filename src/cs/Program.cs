@@ -37,7 +37,7 @@
             }
 
             // var recorder = new DevToolsRecorder(config_helper);
-            BizDeckLogger.InitLogging(config_helper.LogDir);
+            BizDeckLogger.InitLogging(config_helper);
             var logger = new BizDeckLogger(typeof(Program));
 
             // Our web server is disposable.

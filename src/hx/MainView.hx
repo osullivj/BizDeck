@@ -77,10 +77,7 @@ class MainView extends VBox {
 			if (e.button == "{{apply}}") {
 				var del_msg = {
 					type: "del_button",
-					data: {
-						index:dialog.list_view.selectedIndex,
-						name:dialog.list_view.selectedItem.bd_del_btn_name
-					}
+					data: dialog.list_view.selectedItem.bd_del_btn_name
 				};
 				var del_msg_json = haxe.Json.stringify(del_msg);
 				trace("on_button_del_button: send:" + del_msg_json);
@@ -126,9 +123,12 @@ class MainView extends VBox {
 										bd_btns_type:btn_defn.Action,
 										bd_btns_icon:btn_defn.ButtonImagePath};
 							buttons_data_source.add(btn_row);
-							var del_btn_row:Any = {bd_del_btn_name:btn_defn.Name,
+							if (btn_defn.Action != "native") {
+								var del_btn_row:Any = {bd_del_btn_name:btn_defn.Name,
+													bd_del_btn_type:btn_defn.Action,
 													bd_del_btn_icon:btn_defn.ButtonImagePath};
-							del_buttons_data_source.add(del_btn_row);
+								del_buttons_data_source.add(del_btn_row);
+							}
 							trace("mv.on_config: btn_row=" + btn_row);
 						}
 					}

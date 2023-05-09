@@ -111,10 +111,10 @@ namespace BizDeck {
             return ok;
         }
 
-        public async Task<bool> AddButton(string button_type)
+        public async Task<bool> AddButton(dynamic button_data)
         {
             // BizDeckConfig.ButtonMap.RemoveAll(button => button.Name == name);
-            logger.Info($"AddButton: recved type[{button_type}]");
+            logger.Info($"AddButton: recved button_data[{button_data}]");
             bool ok = await SaveConfig();
             return ok;
         }

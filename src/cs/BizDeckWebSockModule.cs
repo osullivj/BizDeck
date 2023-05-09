@@ -28,15 +28,15 @@ namespace BizDeck
             switch (evt.Type)
             {
                 case "del_button":
-                    await RaiseDeleteButtonDialog(context, (string)evt.Data);
+                    await HandleDeleteButtonDialogResult(context, (string)evt.Data);
                     break;
                 case "add_button":
-                    await RaiseAddButtonDialog(context);
+                    await HandleAddButtonDialogResult(context, evt.Data);
                     break;
             }
         }
 
-        protected async Task RaiseDeleteButtonDialog(IWebSocketContext ctx, string button_name)
+        protected async Task HandleDeleteButtonDialogResult(IWebSocketContext ctx, string button_name)
         {
             // resume on any thread so we free this thread for more websock event handling
             bool ok = await config_helper.DeleteButton(button_name).ConfigureAwait(false);
@@ -51,10 +51,10 @@ namespace BizDeck
             }
         }
 
-        protected async Task RaiseAddButtonDialog(IWebSocketContext ctx)
+        protected async Task HandleAddButtonDialogResult(IWebSocketContext ctx, dynamic event_data)
         {
             // resume on any thread so we free this thread for more websock event handling
-            bool ok = await config_helper.AddButton("").ConfigureAwait(false);
+            bool ok = await config_helper.AddButton(event_data).ConfigureAwait(false);
             if (!ok)
             {
                 logger.Error($"RaiseAddButtonDialog: add_button failed for name[]");

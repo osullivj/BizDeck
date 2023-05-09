@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<dialog width="350" height="300" title="Add button">
+    <vbox width="100%" height="100%">
+      <!--  top tabview -->
+      <tabview id="bd_add_btn_tabview" width="100%" height="100%">
+        <vbox text="App" id="bd_app_btns_box" width="100%" height="100%">
+          <spacer height="5%" />
+          <grid columns="3" width="100%">
+            <label text="Executable:" verticalAlign="center" />
+            <textfield id="bd_exe_path_textfield" placeholder="" />
+            <button id="bd_exe_path_btn" text="Choose app" />
+            <label text="Args:" verticalAlign="center" />
+            <textfield id="bd_exe_args_textfield" placeholder="" />
+            <button id="bd_exe_args_btn" text="Choose doc" />
+          </grid>
+          <horizontalrule width="100%"/>
+          <spacer width="100%"/>
+          <button id="bd_add_app_btn" text="Add app" horizontalAlign="right"/>
+        </vbox>
+        <vbox text="Steps" id="bd_steps_btns_box" width="100%" height="100%">
+          <spacer height="5%" />
+          <grid columns="3">
+            <label text="Steps:" verticalAlign="center" />
+            <textfield id="bd_steps_path_textfield" placeholder="" />
+            <button id="bd_exe_args_btn" text="Choose steps JSON" />
+          </grid>
+          <horizontalrule width="100%"/>
+          <spacer width="100%"/>
+          <button id="bd_add_steps_btn" text="Add steps" horizontalAlign="right"/>
+        </vbox>
+      </tabview>
+	  </vbox>
+</dialog>

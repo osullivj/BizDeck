@@ -109,7 +109,15 @@ namespace BizDeck {
             logger.Info($"DeleteButton: removed name[{name}]");
             bool ok = await SaveConfig();
             return ok;
-         }
+        }
+
+        public async Task<bool> AddButton(string button_type)
+        {
+            // BizDeckConfig.ButtonMap.RemoveAll(button => button.Name == name);
+            logger.Info($"AddButton: recved type[{button_type}]");
+            bool ok = await SaveConfig();
+            return ok;
+        }
 
         public AppLaunch LoadAppLaunch(string name)
         {

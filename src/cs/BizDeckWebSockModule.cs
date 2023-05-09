@@ -25,21 +25,44 @@ namespace BizDeck
             string text = Encoding.GetString(rxBuffer);
             BizDeckJsonEvent evt = JsonConvert.DeserializeObject<BizDeckJsonEvent>(text);
             logger.Info($"OnMessageReceivedAsync: WebsockID[{context.Id}], Type[{evt.Type}], Data[{evt.Data}]");
-
-            if (evt.Type == "del_button")
+            switch (evt.Type)
             {
-                string button_name = (string)evt.Data;
-                // resume on any thread so we free this thread for more websock event handling
-                bool ok = await config_helper.DeleteButton(button_name).ConfigureAwait(false);
-                if (!ok)
-                {
-                    logger.Error($"OnMessageReceivedAsync: del_button failed for name[{button_name}]");
-                }
-                else
-                {
-                    // Update the Buttons tab on the GUI
-                    await SendConfig(context);
-                }
+                case "del_button":
+                    await RaiseDeleteButtonDialog(context, (string)evt.Data);
+                    break;
+                case "add_button":
+                    await RaiseAddButtonDialog(context);
+                    break;
+            }
+        }
+
+        protected async Task RaiseDeleteButtonDialog(IWebSocketContext ctx, string button_name)
+        {
+            // resume on any thread so we free this thread for more websock event handling
+            bool ok = await config_helper.DeleteButton(button_name).ConfigureAwait(false);
+            if (!ok)
+            {
+                logger.Error($"RaiseDeleteButtonDialog: del_button failed for name[{button_name}]");
+            }
+            else
+            {
+                // Update the Buttons tab on the GUI
+                await SendConfig(ctx);
+            }
+        }
+
+        protected async Task RaiseAddButtonDialog(IWebSocketContext ctx)
+        {
+            // resume on any thread so we free this thread for more websock event handling
+            bool ok = await config_helper.AddButton("").ConfigureAwait(false);
+            if (!ok)
+            {
+                logger.Error($"RaiseAddButtonDialog: add_button failed for name[]");
+            }
+            else
+            {
+                // Update the Buttons tab on the GUI
+                await SendConfig(ctx);
             }
         }
 

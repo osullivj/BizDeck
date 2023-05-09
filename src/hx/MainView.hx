@@ -67,6 +67,21 @@ class MainView extends VBox {
 	
 	public function on_button_add_button(e) {
 		trace("Add clicked!");
+
+	    var dialog = new BizDeckAddButtonDialog();
+        dialog.onDialogClosed = function(e:DialogEvent) {
+		    trace("on_button_add_button: button:" + e.button);
+			if (e.button == "{{apply}}") {
+				var add_msg = {
+					type: "add_button",
+					data: ""
+				};
+				var add_msg_json = haxe.Json.stringify(add_msg);
+				trace("on_button_add_button: send:" + add_msg_json);
+				this.websock.websock.send(add_msg_json);
+			}
+        };
+        dialog.showDialog();
 	}
 
 	public function on_button_del_button(e) {

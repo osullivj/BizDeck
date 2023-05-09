@@ -52,7 +52,8 @@ class MainView extends VBox {
 	public var websock_url:String;
 	private var config_data_source:ArrayDataSource<Dynamic>;
 	private var buttons_data_source:ArrayDataSource<Dynamic>;
-	private var del_buttons_data_source:ArrayDataSource<Dynamic>;	
+	private var del_buttons_data_source:ArrayDataSource<Dynamic>;
+	private var button_file_names:Array<String>;
 	private var config:haxe.DynamicAccess<Dynamic>;
 	
     public function new() {
@@ -67,14 +68,16 @@ class MainView extends VBox {
 	
 	public function on_button_add_button(e) {
 		trace("Add clicked!");
-
-	    var dialog = new BizDeckAddButtonDialog();
+	    var dialog = new BizDeckAddButtonDialog(button_file_names);
         dialog.onDialogClosed = function(e:DialogEvent) {
 		    trace("on_button_add_button: button:" + e.button);
-			if (e.button == "{{apply}}") {
+			if (e.button == "{{ok}}") {
 				var add_msg = {
 					type: "add_button",
-					data: ""
+					data: {
+						name:dialog.script_name_text_field.text,
+						json:dialog.script_text_area.text
+					}
 				};
 				var add_msg_json = haxe.Json.stringify(add_msg);
 				trace("on_button_add_button: send:" + add_msg_json);
@@ -120,6 +123,7 @@ class MainView extends VBox {
 		buttons_data_source = new ArrayDataSource<Dynamic>();
 		// ...and data source for del button listview.
 		del_buttons_data_source = new ArrayDataSource<Dynamic>();
+		button_file_names = new Array<String>();
 		
 		// clear table contents: false means don't clear headers
 		cfg_tv.clearContents(false);
@@ -138,6 +142,7 @@ class MainView extends VBox {
 										bd_btns_type:btn_defn.Action,
 										bd_btns_icon:btn_defn.ButtonImagePath};
 							buttons_data_source.add(btn_row);
+							button_file_names.push(btn_defn.Name + ".json");
 							if (btn_defn.Action != "native") {
 								var del_btn_row:Any = {bd_del_btn_name:btn_defn.Name,
 													bd_del_btn_type:btn_defn.Action,

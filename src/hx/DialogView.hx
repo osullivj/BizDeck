@@ -5,11 +5,34 @@ import haxe.ui.notifications.NotificationManager;
 import haxe.ui.containers.dialogs.CollapsibleDialog;
 import haxe.ui.containers.ListView;
 import haxe.ui.containers.dialogs.Dialog;
+import haxe.ui.containers.dialogs.Dialogs.SelectedFileInfo;
+import haxe.ui.containers.dialogs.Dialogs.FileDialogTypes;
+import haxe.ui.containers.dialogs.Dialogs.FileDialogExtensionInfo;
+import haxe.ui.containers.dialogs.OpenFileDialog;
 import haxe.ui.containers.dialogs.MessageBox.MessageBoxType;
 import haxe.ui.components.Button;
 import haxe.ui.components.TextField;
+import haxe.ui.components.TextArea;
 import haxe.ui.events.MouseEvent;
 import haxe.ui.data.ArrayDataSource;
+import haxe.ui.backend.OpenFileDialogBase.OpenFileDialogOptions;
+
+class BizDeckFileDialogTypes extends FileDialogTypes {    
+    public static var DOCS(get, null):Array<FileDialogExtensionInfo>;
+    private static function get_DOCS():Array<FileDialogExtensionInfo> {
+        return [{label: "Documents", extension: "doc, docx, xls, xlsx, txt, csv"}];
+    }
+    
+    public static var EXES(get, null):Array<FileDialogExtensionInfo>;
+    private static function get_EXES():Array<FileDialogExtensionInfo> {
+        return [{label: "Executables", extension: "exe"}];
+    }
+    
+    public static var JSON(get, null):Array<FileDialogExtensionInfo>;
+    private static function get_JSON():Array<FileDialogExtensionInfo> {
+        return [{label: "JSON", extension: "json, jsn"}];
+    }
+}
 
 @:build(haxe.ui.macros.ComponentMacros.build("del-btn-dlg.xml"))
 class BizDeckDeleteButtonDialog extends Dialog {
@@ -29,24 +52,60 @@ class BizDeckDeleteButtonDialog extends Dialog {
 @:build(haxe.ui.macros.ComponentMacros.build("add-btn-dlg.xml"))
 class BizDeckAddButtonDialog extends Dialog {
 	// fields for "Add App"
-	public var add_app_btn:Button;
-	public var exe_path_textfield:TextField;
-	public var exe_args_textfield:TextField;
-	// fields for "Add Steps"
-	public var add_steps_btn:Button;
-	public var steps_path_textfield:TextField;
-    public function new() {
+	public var choose_btn:Button;
+	public var script_name_text_field:TextField;
+	public var script_text_area:TextArea;
+	public var select_script_dialog_options:OpenFileDialogOptions;
+	public var button_file_names:Array<String>;
+	public var script_name_ok:Bool;
+
+    public function new(bfn:Array<String>) {
         super();
-		// Get hold of the Add buttons so we can attach onClick methods
-		add_app_btn = this.findComponent("bd_add_app_btn");
-		add_steps_btn = this.findComponent("bd_add_steps_btn");
-		add_app_btn.onClick = function(e) { trace(e);}
-		add_app_btn.onClick = function(e) { trace(e);}
+		button_file_names = bfn;
+		script_name_ok = true;
 		// hook up the fields in the dialog
-		exe_path_textfield = this.findComponent("bd_exe_path_textfield");
-		exe_args_textfield = this.findComponent("bd_exe_args_textfield");
-		steps_path_textfield = this.findComponent("bd_steps_path_textfield");
-		// Just one std model as we use the Add* buttons for APPLY/OK
-        buttons = DialogButton.CANCEL;
-    }
+		script_name_text_field = this.findComponent("bd_script_name_text_field");
+		script_text_area = this.findComponent("bd_script_text_area");
+		// Cancel and OK modal buttons
+        buttons = DialogButton.CANCEL | DialogButton.OK;
+		select_script_dialog_options = {
+            readContents: true,
+            title: "Select JSON script",
+            readAsBinary: false,
+			multiple: false,
+            extensions: BizDeckFileDialogTypes.JSON
+		};
+		// Add click handles for the choose buttons
+		choose_btn = this.findComponent("bd_choose_script_btn");
+		choose_btn.onClick = function(e) {
+			file_chooser_dialog(select_script_dialog_options, this.on_script_chosen);
+		};
+	}
+
+	public function on_script_chosen(script){
+		this.script_name_text_field.text = script.name;
+		this.script_text_area.text = script.text;
+		if (button_file_names.contains(script.name)) {
+			NotificationManager.instance.addNotification({
+				title:"Bad script name",
+				body:script.name + " already exists. Please rename."
+			});
+			script_name_ok = false;
+		}
+	}
+
+	public function file_chooser_dialog(options, callback) {
+		var file_dialog = new OpenFileDialog();
+		file_dialog.options = options;
+		file_dialog.onDialogClosed = function(e) {
+			if (e.button == DialogButton.OK) {
+				if (file_dialog.selectedFiles.length > 0) {
+					var selected_file = file_dialog.selectedFiles[0];
+					trace("onDialogClose: file["+selected_file+"]");
+					callback(selected_file);
+				}
+			}
+		};
+		file_dialog.show();
+	}
 }

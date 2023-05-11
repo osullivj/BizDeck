@@ -135,8 +135,12 @@ namespace BizDeck {
             bm.ButtonIndex = BizDeckConfig.ButtonMap.Count;
             bm.ButtonImagePath = "icons\\record2.png";
             // Is is an app launch or steps?
-            var launch = JsonSerializer.Deserialize<AppLaunch>(script);
-            if (launch.ExeDocUrl == null)
+            (bool launch_ok, AppLaunch launch, string launch_error) = ValidateAppLaunch(script);
+            if (launch_ok)
+            {
+                bm.Action = "app";
+            }
+            else
             {
                 if (!script.Contains("steps"))
                 {
@@ -144,13 +148,11 @@ namespace BizDeck {
                 }
                 bm.Action = "steps";
             }
-            else
-            {
-                bm.Action = "app";
-            }
             // Save the script contents into the cfg dir
             string script_path = Path.Combine(new string[] { ConfigDir, script_name });
-            await File.WriteAllTextAsync(ConfigPath, script);
+            await File.WriteAllTextAsync(script_path, script);
+            // Add the newly created button to config button map
+            BizDeckConfig.ButtonMap.Add(bm);
             (bool saveOK, string errmsg) = await SaveConfig();
             if (!saveOK)
             {
@@ -159,11 +161,11 @@ namespace BizDeck {
             return (true, $"{LogDir}/{script_name} created for button index:{bm.ButtonIndex}, name:{bm.Name}");
         }
 
-        public AppLaunch LoadAppLaunch(string name)
+        public async Task<(bool, AppLaunch, string)> LoadAppLaunch(string name)
         {
             var app_launch_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", $"{name}.json" });
-            var launch = JsonSerializer.Deserialize<AppLaunch>(File.ReadAllText(app_launch_path));
-            return launch;
+            var launch_json = await File.ReadAllTextAsync(app_launch_path);
+            return ValidateAppLaunch(launch_json);
         }
 
         public string LoadSteps(string name)
@@ -171,6 +173,16 @@ namespace BizDeck {
             var steps_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", $"{name}.json" });
             var steps = File.ReadAllText(steps_path);
             return steps;
+        }
+
+        protected (bool, AppLaunch, string) ValidateAppLaunch(string launch_json)
+        {
+            var launch = JsonSerializer.Deserialize<AppLaunch>(launch_json);
+            if (launch == null)
+                return (false, null, "null app_launch");
+            if (launch.ExeDocUrl == null)
+                return (false, null, "exe_doc_url field not supplied");
+            return (true, launch, "");
         }
     }
 }

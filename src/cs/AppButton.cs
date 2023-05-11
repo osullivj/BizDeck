@@ -9,13 +9,18 @@ namespace BizDeck
     public class AppButton:ButtonAction
     {
         AppLaunch app_launch = null;
+        ConfigHelper config_helper;
         string name = null;
         BizDeckLogger logger;
-        public AppButton(ConfigHelper ch, string name) {
+        BizDeckWebSockModule websock;
+
+        public AppButton(ConfigHelper ch, string name, BizDeckWebSockModule ws) {
             logger = new(this);
             this.name = name;
-            app_launch = ch.LoadAppLaunch(name);
+            config_helper = ch;
+            websock = ws;
         }
+
         public override void Run() {
             logger.Info($"Run: {name}:{app_launch.ExeDocUrl}");
             // start default browser - or new tab - and point it at 
@@ -33,8 +38,18 @@ namespace BizDeck
 
         public async override Task RunAsync()
         {
-            Run();
-            await Task.Delay(0).ConfigureAwait(false);
+            if (app_launch == null)
+            {
+                (bool ok, AppLaunch launch, string error) = await config_helper.LoadAppLaunch(name);
+                if (!ok)
+                {
+                    logger.Error($"RunAsync: {error}");
+                    await websock.SendNotification(null, $"{name} app launch failed", error);
+                    return;
+                }
+                app_launch = launch;
+            }
+            if (app_launch != null) Run();
         }
     }
 }

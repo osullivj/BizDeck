@@ -18,6 +18,7 @@
         private static Dictionary<string, ButtonAction> button_action_map = new Dictionary<string, ButtonAction>();
         private static ConnectedDevice stream_deck = null;
         private static ConfigHelper config_helper = null;
+        private static BizDeckWebSockModule websock = null;
         /// <summary>
         /// Defines the entry point of the application.
         /// </summary>
@@ -39,7 +40,10 @@
             // var recorder = new DevToolsRecorder(config_helper);
             BizDeckLogger.InitLogging(config_helper);
             var logger = new BizDeckLogger(typeof(Program));
-
+            // Create websock here so that CreateWebServer can get from
+            // the static member var, and we can pass it to button actions
+            // enabling them to send notifications to the GUI on fails
+            websock = new BizDeckWebSockModule(config_helper);
             // Our web server is disposable.
             using (var server = CreateWebServer(url, config_helper, logger))  {
                 // Once we've registered our modules and configured them, we
@@ -52,13 +56,15 @@
                 stream_deck = device_manager.SetupDevice();
                 if (stream_deck == null)
                 {
-                    // TODO: this error condition should pop up a browser
-                    // instance with an explanatory error message, and two
-                    // options: exit or retry
                     logger.Error("StreamDeck init failed - is it plugged in?");
+                    // TODO: figure out how to do a pending awaitable...
+                    // await websock.SendNotification(null, "StreamDeck Init Failure", "Is it plugged in?");
                 }
                 else
                 {
+                    // Let the websock module know about the stream deck
+                    // so it can resend buttons as necessary
+                    websock.StreamDeck = stream_deck;
                     InitButtonActionMap(url, logger);
                     stream_deck.ButtonMap = button_action_map;
                     var stream_deck_task = stream_deck.ReadAsync();
@@ -76,11 +82,9 @@
             }
         }
 
-
         // Create and configure our web server.
         private static WebServer CreateWebServer(string url, ConfigHelper ch, BizDeckLogger logger)
         {
-            var websock = new BizDeckWebSockModule(ch);
             var server = new WebServer(o => o
                     .WithUrlPrefix(url)
                     .WithMode(HttpListenerMode.EmbedIO))
@@ -96,8 +100,6 @@
             return server;
         }
 
-
-
         private static void InitButtonActionMap(string biz_deck_gui_url, BizDeckLogger logger)
         {
             button_action_map["page"] = new Pager(stream_deck);
@@ -112,7 +114,7 @@
                             button_action_map[bm.Name] = new StepsButton(config_helper, bm.Name);
                             break;
                         case "app":
-                            button_action_map[bm.Name] = new AppButton(config_helper, bm.Name);
+                            button_action_map[bm.Name] = new AppButton(config_helper, bm.Name, websock);
                             break;
                         default:
                             logger.Info($"InitButtonActionMap: unknown action[{bm.Action}] for button[{bm.Name}]");

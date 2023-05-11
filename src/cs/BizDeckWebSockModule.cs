@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace BizDeck
 {
-    class BizDeckWebSockModule : WebSocketModule
+    public class BizDeckWebSockModule : WebSocketModule
     {
         ConfigHelper config_helper;
         BizDeckLogger logger;
@@ -18,7 +18,8 @@ namespace BizDeck
             AddProtocol("json");
         }
 
-        /// <inheritdoc />
+        public ConnectedDevice StreamDeck { get; set; }
+        
         protected override async Task OnMessageReceivedAsync(IWebSocketContext context, byte[] rxBuffer,
             IWebSocketReceiveResult rxResult)
         {
@@ -50,8 +51,9 @@ namespace BizDeck
             }
             else
             {
-                // Update the Buttons tab on the GUI
+                // Update the Buttons tab on the GUI and StreamDeck
                 await SendConfig(ctx);
+                StreamDeck.ButtonList = config_helper.BizDeckConfig.ButtonMap;
             }
         }
 
@@ -66,8 +68,9 @@ namespace BizDeck
             }
             else
             {
-                // Update the Buttons tab on the GUI
+                // Update the Buttons tab on the GUI and StreamDeck
                 await SendConfig(ctx);
+                StreamDeck.ButtonList = config_helper.BizDeckConfig.ButtonMap;
             }
         }
 
@@ -86,7 +89,7 @@ namespace BizDeck
             await SendTargetedEvent(context, config_event).ConfigureAwait(false);
         }
 
-        protected async Task SendNotification(IWebSocketContext context, string title, string body, 
+        public async Task SendNotification(IWebSocketContext context, string title, string body, 
                                                                             bool fade=false)
         {
             logger.Info($"SendNotification: WebsockID[{context.Id}] title[{title}] body[{body}]");
@@ -96,7 +99,14 @@ namespace BizDeck
             data.Add("body", body);
             if (!fade) data.Add("expiryMs", -1);
             notification_event.Data = data;
-            await SendTargetedEvent(context, notification_event).ConfigureAwait(false);
+            if (context != null)
+            {
+                await SendTargetedEvent(context, notification_event).ConfigureAwait(false);
+            }
+            else
+            {
+                await BroadcastEvent(notification_event).ConfigureAwait(false);
+            }
         }
 
         private Task SendTargetedEvent(IWebSocketContext context, BizDeckJsonEvent jsEvent)

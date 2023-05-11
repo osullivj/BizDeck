@@ -25,13 +25,16 @@ namespace BizDeck
             string text = Encoding.GetString(rxBuffer);
             BizDeckJsonEvent evt = JsonConvert.DeserializeObject<BizDeckJsonEvent>(text);
             logger.Info($"OnMessageReceivedAsync: WebsockID[{context.Id}], Type[{evt.Type}], Data[{evt.Data}]");
-            switch (evt.Type)
-            {
+            JObject data = (JObject)evt.Data;
+            switch (evt.Type) { 
                 case "del_button":
-                    await HandleDeleteButtonDialogResult(context, (string)evt.Data);
+                    await HandleDeleteButtonDialogResult(context, (string)data);
                     break;
                 case "add_button":
-                    await HandleAddButtonDialogResult(context, evt.Data);
+                    if (data.ContainsKey("name") && data.ContainsKey("json"))
+                    {
+                        await HandleAddButtonDialogResult(context, (string)data["name"], (string)data["json"]);
+                    }
                     break;
             }
         }
@@ -39,10 +42,11 @@ namespace BizDeck
         protected async Task HandleDeleteButtonDialogResult(IWebSocketContext ctx, string button_name)
         {
             // resume on any thread so we free this thread for more websock event handling
-            bool ok = await config_helper.DeleteButton(button_name).ConfigureAwait(false);
+            (bool ok, string msg) = await config_helper.DeleteButton(button_name);
             if (!ok)
-            {
+            { 
                 logger.Error($"RaiseDeleteButtonDialog: del_button failed for name[{button_name}]");
+                await SendNotification(ctx, "Delete button failed", msg);
             }
             else
             {
@@ -51,13 +55,14 @@ namespace BizDeck
             }
         }
 
-        protected async Task HandleAddButtonDialogResult(IWebSocketContext ctx, dynamic event_data)
+        protected async Task HandleAddButtonDialogResult(IWebSocketContext ctx, string script_name, string script)
         {
             // resume on any thread so we free this thread for more websock event handling
-            bool ok = await config_helper.AddButton(event_data).ConfigureAwait(false);
+            (bool ok, string msg) = await config_helper.AddButton(script_name, script);
             if (!ok)
             {
-                logger.Error($"RaiseAddButtonDialog: add_button failed for name[]");
+                logger.Error($"RaiseAddButtonDialog: add_button failed for name[{script_name}]");
+                await SendNotification(ctx, "Add button failed", msg);
             }
             else
             {
@@ -79,6 +84,19 @@ namespace BizDeck
             BizDeckJsonEvent config_event = new BizDeckJsonEvent("config");
             config_event.Data = this.config_helper;
             await SendTargetedEvent(context, config_event).ConfigureAwait(false);
+        }
+
+        protected async Task SendNotification(IWebSocketContext context, string title, string body, 
+                                                                            bool fade=false)
+        {
+            logger.Info($"SendNotification: WebsockID[{context.Id}] title[{title}] body[{body}]");
+            BizDeckJsonEvent notification_event = new BizDeckJsonEvent("notification");
+            JObject data = new();
+            data.Add("title", title);
+            data.Add("body", body);
+            if (!fade) data.Add("expiryMs", -1);
+            notification_event.Data = data;
+            await SendTargetedEvent(context, notification_event).ConfigureAwait(false);
         }
 
         private Task SendTargetedEvent(IWebSocketContext context, BizDeckJsonEvent jsEvent)

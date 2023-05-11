@@ -1,5 +1,7 @@
 package ;
 
+import haxe.ui.notifications.NotificationType;
+import haxe.ui.notifications.NotificationManager;
 import haxe.Serializer;
 import haxe.ui.containers.VBox;
 import haxe.ui.containers.Box;
@@ -33,9 +35,10 @@ class BizDeckWebSocket {
 			switch obj.Type {
 				case "connected":
 					this.connected = true;
-				case "config": {
+				case "config":
 					this.mainview.on_config(obj.Data);
-				}
+				case "notification":
+					NotificationManager.instance.addNotification(obj.Data);
 			}
 		};
 		this.websock.onclose = function() {
@@ -43,6 +46,10 @@ class BizDeckWebSocket {
 			this.connected = false;
 			this.websock = null;
 		};
+	}
+
+	public function send_notification(notification:Dynamic) {
+		trace("send_notification: " + notification);
 	}
 }
 

@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 
 namespace BizDeck {
+
     public class ConfigHelper {
         private CmdLineOptions cmd_line_options;
         private BizDeckLogger logger;
@@ -31,12 +32,17 @@ namespace BizDeck {
         }
 
         public string ConfigPath {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", "config.json"});
+            get => Path.Combine(new string[] { ConfigDir, "config.json"});
         }
 
         public string TraceConfigPath
         {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", "trace_config.json" });
+            get => Path.Combine(new string[] { ConfigDir, "trace_config.json" });
+        }
+
+        public string ConfigDir
+        {
+            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg"});
         }
 
         public string LogDir {
@@ -84,7 +90,7 @@ namespace BizDeck {
             return null;
         }
 
-        public async Task<bool> SaveConfig()
+        public async Task<(bool,string)> SaveConfig()
         {
             try
             {
@@ -97,26 +103,60 @@ namespace BizDeck {
             {
                 // Since we cannot load the config file, we cannot start the web server and
                 // we don't know where the location of log dir. So stdout is the best we can do...
-                logger.Error($"SaveConfig: JSON serialization fail {ex}");
-                return false;
+                string error_msg = $"SaveConfig: JSON serialization fail {ex}";
+                logger.Error(error_msg);
+                return (false, error_msg);
             }
-            return true;
+            return (true, ConfigPath);
         }
 
-        public async Task<bool> DeleteButton(string name)
+        public async Task<(bool,string)> DeleteButton(string name)
         {
             BizDeckConfig.ButtonMap.RemoveAll(button => button.Name == name);
             logger.Info($"DeleteButton: removed name[{name}]");
-            bool ok = await SaveConfig();
-            return ok;
+            return await SaveConfig();
         }
 
-        public async Task<bool> AddButton(dynamic button_data)
+        public async Task<(bool,string)> AddButton(string script_name, string script)
         {
-            // BizDeckConfig.ButtonMap.RemoveAll(button => button.Name == name);
-            logger.Info($"AddButton: recved button_data[{button_data}]");
-            bool ok = await SaveConfig();
-            return ok;
+            // name will have an extenstion like .json, so remove it...
+            string button_name = Path.GetFileNameWithoutExtension(script_name);
+            logger.Info($"AddButton: script_name[{script_name}] button_name[{button_name}]");
+            // Does the button already exist?
+            int index = BizDeckConfig.ButtonMap.FindIndex(button => button.Name == button_name);
+            if ( index != -1)
+            {
+                return (false, $"{ConfigDir}\\{script_name} already exists");
+            }
+            // Create the new button mapping now so we can populate as we
+            // apply checks to the script type.
+            ButtonMapping bm = new();
+            bm.Name = button_name;
+            bm.ButtonIndex = BizDeckConfig.ButtonMap.Count;
+            bm.ButtonImagePath = "icons\\record2.png";
+            // Is is an app launch or steps?
+            var launch = JsonSerializer.Deserialize<AppLaunch>(script);
+            if (launch == null)
+            {
+                if (!script.Contains("steps"))
+                {
+                    return (false, "Script is not an app launch or recorder steps");
+                }
+                bm.Action = "steps";
+            }
+            else
+            {
+                bm.Action = "app";
+            }
+            // Save the script contents into the cfg dir
+            string script_path = Path.Combine(new string[] { ConfigDir, script_name });
+            await File.WriteAllTextAsync(ConfigPath, script);
+            (bool saveOK, string errmsg) = await SaveConfig();
+            if (!saveOK)
+            {
+                return (false, $"{ConfigPath} save failed for new button {script_name}");
+            }
+            return (true, $"{LogDir}/{script_name} created for button index:{bm.ButtonIndex}, name:{bm.Name}");
         }
 
         public AppLaunch LoadAppLaunch(string name)

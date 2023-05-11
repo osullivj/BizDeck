@@ -136,7 +136,7 @@ namespace BizDeck {
             bm.ButtonImagePath = "icons\\record2.png";
             // Is is an app launch or steps?
             var launch = JsonSerializer.Deserialize<AppLaunch>(script);
-            if (launch == null)
+            if (launch.ExeDocUrl == null)
             {
                 if (!script.Contains("steps"))
                 {

@@ -4,8 +4,8 @@ namespace BizDeck
 {
     public class Pager:ButtonAction
     {
-        ConnectedDevice stream_deck = null;
-        public Pager(ConnectedDevice sd) { stream_deck = sd; }
+        ConnectedDeck stream_deck = null;
+        public Pager(ConnectedDeck sd) { stream_deck = sd; }
         public override void Run() {
             stream_deck.NextPage();
         }

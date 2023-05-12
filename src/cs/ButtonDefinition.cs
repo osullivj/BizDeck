@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Text.Json.Serialization;
 
-namespace BizDeck
-{
-    public class ButtonMapping
-    {
+namespace BizDeck {
+
+    public class ButtonDefinition {
         [JsonPropertyName("name")]
         public string Name { get; set; }
 

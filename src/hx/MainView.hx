@@ -132,7 +132,10 @@ class MainView extends VBox {
 		del_buttons_data_source = new ArrayDataSource<Dynamic>();
 		button_file_names = new Array<String>();
 		
-		// clear table contents: false means don't clear headers
+		// Clear table contents: false means don't clear headers
+		// Note that where JSON key names are quoted they must
+		// match the property names in ConfigHelper.cs and
+		// BizDeckConfig.cs
 		cfg_tv.clearContents(false);
 		btn_tv.clearContents(false);
 		for (key in config.keys()) {
@@ -141,7 +144,7 @@ class MainView extends VBox {
 				var subcfg:haxe.DynamicAccess<Dynamic> = val;
 				for (subkey in subcfg.keys()) {
 					var subval:Any = subcfg.get(subkey);
-					if (subkey=="ButtonMap") {
+					if (subkey=="ButtonList") {
 						var button_list:haxe.DynamicAccess<Dynamic> = subval;
 						for (btn_defn in button_list) {
 							var btn_row:Any = {bd_btns_index:btn_defn.ButtonIndex,

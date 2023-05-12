@@ -69,20 +69,17 @@ namespace BizDeck {
         }
 
         public BizDeckConfig LoadConfig() {
-            try
-            {
+            try {
                 TraceConfig = File.ReadAllText(TraceConfigPath);
-                BizDeckConfig = JsonSerializer.Deserialize<BizDeckConfig>(File.ReadAllText(ConfigPath), 
-                                                                                json_serializer_options);
+                string config_json = File.ReadAllText(ConfigPath);
+                BizDeckConfig = JsonSerializer.Deserialize<BizDeckConfig>(config_json, json_serializer_options);
                 int index = 0;
-                foreach (ButtonMapping bm in BizDeckConfig.ButtonMap)
-                {
+                foreach (ButtonDefinition bm in BizDeckConfig.ButtonList) {
                     bm.ButtonIndex = index++;
                 }
                 return BizDeckConfig;
             }
-            catch (JsonException ex)
-            {
+            catch (JsonException ex) {
                 // Since we cannot load the config file, we cannot start the web server and
                 // we don't know where the location of log dir. So stdout is the best we can do...
                 System.Console.Write($"{ex.ToString()}");   
@@ -112,7 +109,7 @@ namespace BizDeck {
 
         public async Task<(bool,string)> DeleteButton(string name)
         {
-            BizDeckConfig.ButtonMap.RemoveAll(button => button.Name == name);
+            BizDeckConfig.ButtonList.RemoveAll(button => button.Name == name);
             logger.Info($"DeleteButton: removed name[{name}]");
             return await SaveConfig();
         }
@@ -123,27 +120,24 @@ namespace BizDeck {
             string button_name = Path.GetFileNameWithoutExtension(script_name);
             logger.Info($"AddButton: script_name[{script_name}] button_name[{button_name}]");
             // Does the button already exist?
-            int index = BizDeckConfig.ButtonMap.FindIndex(button => button.Name == button_name);
+            int index = BizDeckConfig.ButtonList.FindIndex(button => button.Name == button_name);
             if ( index != -1)
             {
                 return (false, $"{ConfigDir}\\{script_name} already exists");
             }
             // Create the new button mapping now so we can populate as we
             // apply checks to the script type.
-            ButtonMapping bm = new();
+            ButtonDefinition bm = new();
             bm.Name = button_name;
-            bm.ButtonIndex = BizDeckConfig.ButtonMap.Count;
+            bm.ButtonIndex = BizDeckConfig.ButtonList.Count;
             bm.ButtonImagePath = "icons\\record2.png";
             // Is is an app launch or steps?
             (bool launch_ok, AppLaunch launch, string launch_error) = ValidateAppLaunch(script);
-            if (launch_ok)
-            {
+            if (launch_ok) {
                 bm.Action = "app";
             }
-            else
-            {
-                if (!script.Contains("steps"))
-                {
+            else {
+                if (!script.Contains("steps")) {
                     return (false, "Script is not an app launch or recorder steps");
                 }
                 bm.Action = "steps";
@@ -152,7 +146,7 @@ namespace BizDeck {
             string script_path = Path.Combine(new string[] { ConfigDir, script_name });
             await File.WriteAllTextAsync(script_path, script);
             // Add the newly created button to config button map
-            BizDeckConfig.ButtonMap.Add(bm);
+            BizDeckConfig.ButtonList.Add(bm);
             (bool saveOK, string errmsg) = await SaveConfig();
             if (!saveOK)
             {

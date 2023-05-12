@@ -11,7 +11,7 @@ namespace BizDeck
     {
         public BizDeckConfig()
         {
-            this.ButtonMap = new List<ButtonMapping>();
+            this.ButtonList = new List<ButtonDefinition>();
         }
 
         [JsonPropertyName("usb_hid_device_index")]
@@ -47,7 +47,7 @@ namespace BizDeck
         [JsonPropertyName("headless")]
         public bool Headless { get; set; }
 
-        [JsonPropertyName("button_map")]
-        public List<ButtonMapping> ButtonMap { get; set; }
+        [JsonPropertyName("button_list")]
+        public List<ButtonDefinition> ButtonList { get; set; }
     }
 }

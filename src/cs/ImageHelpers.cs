@@ -134,5 +134,23 @@ namespace BizDeck {
 
             return img;
         }
+
+        public static bool CreateLabelledIcon(string bg_img_path, int button_size, string label) {
+            byte[] image_buffer = File.ReadAllBytes(bg_img_path);
+            Image icon_image = ImageHelpers.GetImage(image_buffer);
+            Graphics drawing = Graphics.FromImage(icon_image);
+
+            Brush textBrush = new SolidBrush(Color.White);
+            drawing.TextRenderingHint = TextRenderingHint.AntiAlias;
+            drawing.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+            // drawing.DrawString(label, Font., textBrush, 0, 0);
+            drawing.Save();
+
+            textBrush.Dispose();
+            drawing.Dispose();
+            // TODO: Need to make sure that I am using device-agnostic button sizes.
+            image_buffer = ImageHelpers.ResizeImage(image_buffer, button_size, button_size);
+            return true;
+        }
     }
 }

@@ -6,6 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using HidSharp;
 
+// TODO: caching. SetCurrently SetupDeviceButtons loads the icons from file
+// and does the image resize every time. We should cache the correctly sized
+// images in local buffers to accelerate this process.
+
 namespace BizDeck {
     public class ConnectedDeck {
         private const int ButtonPressHeaderOffset = 4;
@@ -145,7 +149,8 @@ namespace BizDeck {
 
         public void NextPage() {
             // TODO: this just changes the top left page button. We also need to send
-            // the Nth tranche of buttons to match the page content.
+            // the Nth tranche of buttons to match the page content. The caching and 
+            // buffering we need will make this neater to implement.
             current_page = (current_page + 1) % 4;
             button_list[0].ButtonImagePath = $"icons\\page{current_page + 1}.png";
             logger.Info($"NextPage: path[{button_list[0].ButtonImagePath}]");

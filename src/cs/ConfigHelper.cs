@@ -130,7 +130,7 @@ namespace BizDeck {
             ButtonDefinition bm = new();
             bm.Name = button_name;
             bm.ButtonIndex = BizDeckConfig.ButtonList.Count;
-            bm.ButtonImagePath = "icons\\record2.png";
+            bm.ButtonImagePath = "icons\\bg1.png";
             // Is is an app launch or steps?
             (bool launch_ok, AppLaunch launch, string launch_error) = ValidateAppLaunch(script);
             if (launch_ok) {

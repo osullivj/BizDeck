@@ -91,8 +91,13 @@ namespace BizDeck {
             // TODO: Need to replace this with device-specific logic
             // since not every device is 96x96.
             for (int i = 0; i < this.ButtonCount; i++) {
-                 this.SetKey(i, DeviceConstants.XLDefaultBlackButton);
+                ClearKey(i);
             }
+        }
+
+        public void ClearKey(int index) {
+            logger.Info($"ClearKey: index[{index}]");
+            this.SetKey(index, DeviceConstants.XLDefaultBlackButton);
         }
 
         public void SetBrightness(byte percentage) {
@@ -110,6 +115,8 @@ namespace BizDeck {
         }
 
         public void SetupDeviceButtons( ) {
+            logger.Info($"SetupDeviceButtons: ButtonDefnList.Count[{ButtonDefnList.Count}]");
+            int last_index = 0;
             foreach (var button in button_list) {
                 if (button.ButtonIndex <= this.ButtonCount - 1) {
                     string button_path = config_helper.GetFullIconPath(button.ButtonImagePath);
@@ -118,7 +125,20 @@ namespace BizDeck {
                         // TODO: Need to make sure that I am using device-agnostic button sizes.
                         imageBuffer = ImageHelpers.ResizeImage(imageBuffer, ButtonSize, ButtonSize);
                         this.SetKey(button.ButtonIndex, imageBuffer);
+                        last_index = button.ButtonIndex;
                     }
+                }
+            }
+            // On our first visit here the ButtonActionMap hasn't been created yet.
+            // See the init order in the Server ctor.
+            if (ButtonActionMap != null) {
+                logger.Info($"SetupDeviceButtons: ButtonActionMap.Count[{ButtonActionMap.Count}]");
+                int keys_to_clear = ButtonActionMap.Count - ButtonDefnList.Count;
+                // If we're invoked by the ButtonDefnList property, it will be because a button
+                // has been added or deleted. If deleted, then we'll need to blank the deleted keys.
+                while (keys_to_clear > 0) {
+                    ClearKey(ButtonDefnList.Count + keys_to_clear - 1);
+                    --keys_to_clear;
                 }
             }
         }

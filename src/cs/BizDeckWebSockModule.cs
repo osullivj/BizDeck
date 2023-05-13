@@ -48,10 +48,9 @@ namespace BizDeck
             }
             else
             {
-                // Update the Buttons tab on the GUI and StreamDeck
+                // Update the Buttons tab on the GUI and the StreamDeck
                 await SendConfig(ctx);
-                StreamDeck.ButtonDefnList = config_helper.BizDeckConfig.ButtonList;
-                MainServerObject.RebuildButtonActionMap();
+                MainServerObject.RebuildButtonMaps();
             }
         }
 
@@ -78,10 +77,10 @@ namespace BizDeck
             }
             else
             {
-                // Update the Buttons tab on the GUI and StreamDeck
+                // Update the Buttons tab on the GUI and the StreamDeck. 
                 await SendConfig(ctx);
                 StreamDeck.ButtonDefnList = config_helper.BizDeckConfig.ButtonList;
-                MainServerObject.RebuildButtonActionMap();
+                MainServerObject.RebuildButtonMaps();
             }
         }
 

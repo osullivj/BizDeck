@@ -14,7 +14,8 @@ namespace BizDeck
         };
         public static readonly Dictionary<DeviceModel, Constants> constants 
             = new Dictionary<DeviceModel, Constants>
-            { 
+            {
+                {DeviceModel.NULL, new Constants(0, 0)},
                 {DeviceModel.XL, new Constants(32, 96)},
                 {DeviceModel.MK_2, new Constants(15, 72)},
                 {DeviceModel.MINI, new Constants(6, 72)},

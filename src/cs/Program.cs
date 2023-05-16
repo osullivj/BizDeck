@@ -9,7 +9,6 @@ using CommandLine;
 namespace BizDeck {
 
     class Program {
-        private const bool UseFileCache = true;
 
         static void Main(string[] args) {
             // First parse cmd line opts...

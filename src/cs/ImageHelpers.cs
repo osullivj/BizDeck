@@ -9,37 +9,41 @@ using System.Runtime.InteropServices;
 
 namespace BizDeck {
     public class ImageHelpers {
- 
-        public static byte[] ResizeImage(byte[] buffer, int width, int height) {
-            Image currentImage = GetImage(buffer);
-            var targetRectangle = new Rectangle(0, 0, width, height);
-            var targetImage = new Bitmap(width, height, PixelFormat.Format24bppRgb);
-            targetImage.SetResolution(currentImage.HorizontalResolution, currentImage.VerticalResolution);
 
-            using (var graphics = Graphics.FromImage(targetImage)) {
+        public static Image ResizeImage(byte[] buffer, int width, int height) {
+            (Image original_image, MemoryStream original_stream) = GetImage(buffer);
+            var target_rectangle = new Rectangle(0, 0, width, height);
+            var target_image = new Bitmap(width, height, PixelFormat.Format24bppRgb);
+            target_image.SetResolution(original_image.HorizontalResolution, original_image.VerticalResolution);
+
+            using (var graphics = Graphics.FromImage(target_image)) {
                 graphics.CompositingMode = CompositingMode.SourceCopy;
                 graphics.CompositingQuality = CompositingQuality.HighQuality;
                 graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
                 graphics.SmoothingMode = SmoothingMode.HighQuality;
                 graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                graphics.DrawImage(currentImage, targetRectangle, 0, 0, currentImage.Width, currentImage.Height, GraphicsUnit.Pixel);
+                graphics.DrawImage(original_image, target_rectangle, 0, 0, original_image.Width,
+                                                    original_image.Height, GraphicsUnit.Pixel);
             }
 
             // TODO: I am not sure if every image needs to be rotated, but
             // in my limited experiments, this seems to be the case.
-            targetImage.RotateFlip(RotateFlipType.Rotate180FlipNone);
-
-            using var bufferStream = new MemoryStream();
-            targetImage.Save(bufferStream, ImageFormat.Jpeg);
-            return bufferStream.ToArray();
+            target_image.RotateFlip(RotateFlipType.Rotate180FlipNone);
+            return target_image;
         }
 
-        public static Image GetImage(byte[] buffer) {
-            Image image = null;
-            using (MemoryStream ms = new(buffer)) {
-                image = Image.FromStream(ms);
-            }
-            return image;
+        public static byte[] GetJpegFromImage(Image image) { 
+            using var buffer_stream = new MemoryStream();
+            image.Save(buffer_stream, ImageFormat.Jpeg);
+            return buffer_stream.ToArray();
+        }
+
+        // Image.Save(...) fails if the MemoryStream is closed before the Save
+        // https://stackoverflow.com/questions/336387/image-save-throws-a-gdi-exception-because-the-memory-stream-is-closed
+        public static (Image, MemoryStream) GetImage(byte[] buffer) {
+            MemoryStream ms = new(buffer);
+            Image image = Image.FromStream(ms);
+            return (image, ms);
         }
 
         public static byte[] GetImageBuffer(Image image) {
@@ -133,24 +137,6 @@ namespace BizDeck {
             drawing.Dispose();
 
             return img;
-        }
-
-        public static bool CreateLabelledIcon(string bg_img_path, int button_size, string label) {
-            byte[] image_buffer = File.ReadAllBytes(bg_img_path);
-            Image icon_image = ImageHelpers.GetImage(image_buffer);
-            Graphics drawing = Graphics.FromImage(icon_image);
-
-            Brush textBrush = new SolidBrush(Color.White);
-            drawing.TextRenderingHint = TextRenderingHint.AntiAlias;
-            drawing.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-            // drawing.DrawString(label, Font., textBrush, 0, 0);
-            drawing.Save();
-
-            textBrush.Dispose();
-            drawing.Dispose();
-            // TODO: Need to make sure that I am using device-agnostic button sizes.
-            image_buffer = ImageHelpers.ResizeImage(image_buffer, button_size, button_size);
-            return true;
         }
     }
 }

@@ -31,6 +31,7 @@ namespace BizDeck {
             this.ButtonSize = DeviceConstants.constants[model].ButtonSize;
             this.config_helper = ch;
             logger = new(this);
+            ch.DeviceModel = model;
         }
 
         public delegate void ReceivedButtonPressHandler(object source, ButtonPressEventArgs e);
@@ -123,14 +124,9 @@ namespace BizDeck {
             int last_index = 0;
             foreach (var button in button_list) {
                 if (button.ButtonIndex <= this.ButtonCount - 1) {
-                    string button_path = config_helper.GetFullIconPath(button.ButtonImagePath);
-                    if (File.Exists(button_path)) {
-                        byte[] imageBuffer = File.ReadAllBytes(button_path);
-                        // TODO: Need to make sure that I am using device-agnostic button sizes.
-                        imageBuffer = ImageHelpers.ResizeImage(imageBuffer, ButtonSize, ButtonSize);
-                        this.SetKey(button.ButtonIndex, imageBuffer);
-                        last_index = button.ButtonIndex;
-                    }
+                    byte[] buffer = config_helper.IconCache.GetIconBufferJPEG(button.ButtonImagePath);
+                    this.SetKey(button.ButtonIndex, buffer);
+                    last_index = button.ButtonIndex;
                 }
             }
             // On our first visit here the ButtonActionMap hasn't been created yet.

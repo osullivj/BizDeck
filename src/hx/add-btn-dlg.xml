@@ -6,7 +6,7 @@
           <grid columns="3" width="100%" height="30%">
             <label text="Script:" verticalAlign="center" />
             <textfield id="bd_script_name_text_field" placeholder=""/>
-            <button id="bd_choose_script_btn" text="Choose JSON" />
+            <button id="bd_choose_script_btn" text="JSON" />
           </grid>
           <horizontalrule width="100%"/>
           <textarea id="bd_script_text_area" width="100%" height="50%"/>

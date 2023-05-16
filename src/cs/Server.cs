@@ -12,7 +12,6 @@ using CommandLine;
 
 namespace BizDeck {
     public class Server {
-        private const bool UseFileCache = true;
         private Dictionary<string, ButtonAction> button_action_map = new Dictionary<string, ButtonAction>();
         private ConnectedDeck stream_deck = null;
         private ConfigHelper config_helper = null;
@@ -44,9 +43,8 @@ namespace BizDeck {
             deck_manager = new DeckManager(config_helper);
             stream_deck = deck_manager.SetupDeck();
             if (stream_deck == null) {
+                config_helper.ThrowErrorToBrowser("StreamDeck init", "Is your StreamDeck plugged in?");
                 logger.Error("StreamDeck init failed - is it plugged in?");
-                // TODO: figure out how to do a pending awaitable...
-                // await websock.SendNotification(null, "StreamDeck Init Failure", "Is it plugged in?");
                 return false;
             }
             // Let the websock module know about the stream deck
@@ -66,8 +64,15 @@ namespace BizDeck {
             // TODO: embedio boilerplate had this exit_signal,
             // so we must figure how to do a clean exit...
             var exit_signal = new ManualResetEvent(false);
-            var stream_deck_task = stream_deck.ReadAsync();
-            stream_deck_task.ConfigureAwait(false);
+            Task stream_deck_task;
+            if (stream_deck == null) {
+                // StreamDeck init failed - maybe not plugged in?
+                stream_deck_task = Task.CompletedTask;
+            }
+            else {
+                stream_deck_task = stream_deck.ReadAsync();
+                stream_deck_task.ConfigureAwait(false);
+            }
             // Blocks this main thread waiting on the two tasks
             Task.WaitAll(http_server_task, stream_deck_task);
         }
@@ -79,8 +84,8 @@ namespace BizDeck {
                 // First, we will configure our web server by adding Modules.
                 .WithLocalSessionManager()
                 .WithModule(websock)
-                .WithStaticFolder("/", config_helper.HtmlDir, true, m => m
-                    .WithContentCaching(UseFileCache)) // Add static files after other modules to avoid conflicts
+                .WithStaticFolder("/icons", config_helper.IconsDir, false, m => m.WithoutContentCaching())
+                .WithStaticFolder("/", config_helper.HtmlDir, true, m => m.WithContentCaching())
                 .WithModule(new ActionModule("/", HttpVerbs.Any, ctx => ctx.SendDataAsync(new { Message = "Error" })));
 
             // Listen for state changes.

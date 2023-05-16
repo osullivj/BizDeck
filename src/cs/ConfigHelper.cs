@@ -8,6 +8,8 @@ namespace BizDeck {
         private CmdLineOptions cmd_line_options;
         private BizDeckLogger logger;
         private JsonSerializerOptions json_serializer_options = new();
+        private IconCache icon_cache;
+        private DeviceModel device_model = DeviceModel.NULL;
 
         public ConfigHelper(CmdLineOptions opts) {
             cmd_line_options = opts;
@@ -54,9 +56,22 @@ namespace BizDeck {
             get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "html" });
         }
 
+        public string IconsDir {
+            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "icons" });
+        }
+
         public BizDeckConfig BizDeckConfig { set; get; }
 
         public string TraceConfig { get; private set; }
+
+        public DeviceModel DeviceModel {
+            get => device_model;
+            set => device_model = value;
+        }
+        public int ButtonCount { get => DeviceConstants.constants[DeviceModel].ButtonCount; }
+        public int ButtonSize { get => DeviceConstants.constants[DeviceModel].ButtonSize; }
+
+        public IconCache IconCache { get => icon_cache; }
 
         public string GetFullIconPath(string button_image_path)
         {
@@ -77,14 +92,31 @@ namespace BizDeck {
                 foreach (ButtonDefinition bm in BizDeckConfig.ButtonList) {
                     bm.ButtonIndex = index++;
                 }
+                // Now config.json is loaded, we will have an font settings loaded,
+                // so we can create the IconCache
+                icon_cache = new IconCache(this);
                 return BizDeckConfig;
             }
             catch (JsonException ex) {
                 // Since we cannot load the config file, we cannot start the web server and
-                // we don't know where the location of log dir. So stdout is the best we can do...
-                System.Console.Write($"{ex.ToString()}");   
+                // we don't know where the location of log dir. So we present the exception
+                // in the default browser. But we do have bdroot from the cmd line, so
+                // we can save the error there...
+                ThrowErrorToBrowser("config.json", ex.ToString());
             }
             return null;
+        }
+
+        public void ThrowErrorToBrowser(string context, string error_message) {
+            string error_file_path = Path.Combine(new string[] { LocalAppDataPath, "biz_deck_error.html" });
+            string html = $"<body><h3>BizDeck {context} error</h3><p>{error_message}</p>";
+            File.WriteAllText(error_file_path, html);
+            var process = new System.Diagnostics.Process() {
+                StartInfo = new System.Diagnostics.ProcessStartInfo(error_file_path) {
+                    UseShellExecute = true
+                }
+            };
+            process.Start();
         }
 
         public async Task<(bool,string)> SaveConfig()
@@ -125,12 +157,13 @@ namespace BizDeck {
             {
                 return (false, $"{ConfigDir}\\{script_name} already exists");
             }
+            IconCache.CreateLabelledIconPNG("icons\\bg1.png", button_name);
             // Create the new button mapping now so we can populate as we
             // apply checks to the script type.
             ButtonDefinition bm = new();
             bm.Name = button_name;
             bm.ButtonIndex = BizDeckConfig.ButtonList.Count;
-            bm.ButtonImagePath = "icons\\bg1.png";
+            bm.ButtonImagePath = $"icons\\{button_name}.png";
             // Is is an app launch or steps?
             (bool launch_ok, AppLaunch launch, string launch_error) = ValidateAppLaunch(script);
             if (launch_ok) {

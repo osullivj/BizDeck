@@ -47,7 +47,16 @@ namespace BizDeck
         [JsonPropertyName("headless")]
         public bool Headless { get; set; }
 
+        [JsonPropertyName("icon_font_family")]
+        public string IconFontFamily { get; set; }
+
+        [JsonPropertyName("icon_font_size")]
+        public int IconFontSize{ get; set; }
+
         [JsonPropertyName("button_list")]
         public List<ButtonDefinition> ButtonList { get; set; }
+
+        [JsonPropertyName("background_icons")]
+        public List<string> BackgroundIcons { get; set; }
     }
 }

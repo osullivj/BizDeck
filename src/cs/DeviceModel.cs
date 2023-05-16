@@ -5,6 +5,8 @@
     /// </summary>
     public enum DeviceModel : byte
     {
+        NULL = 0x0,
+
         /// <summary>
         /// The original model of the Stream Deck device.
         /// </summary>

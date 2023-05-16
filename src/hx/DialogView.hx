@@ -5,6 +5,7 @@ import haxe.ui.notifications.NotificationManager;
 import haxe.ui.containers.dialogs.CollapsibleDialog;
 import haxe.ui.containers.ListView;
 import haxe.ui.containers.dialogs.Dialog;
+import haxe.ui.containers.dialogs.Dialogs.openTextFile;
 import haxe.ui.containers.dialogs.Dialogs.SelectedFileInfo;
 import haxe.ui.containers.dialogs.Dialogs.FileDialogTypes;
 import haxe.ui.containers.dialogs.Dialogs.FileDialogExtensionInfo;
@@ -94,11 +95,20 @@ class BizDeckAddButtonDialog extends Dialog {
 		}
 	}
 
+	public function text_file_chooser_dialog(options, callback) {
+		openTextFile("Open JSON File", BizDeckFileDialogTypes.JSON, function(selected_file) {
+            if (selected_file != null) {
+				trace("openTextFile: file["+selected_file+"]");
+				callback(selected_file);
+            }
+        });
+	}
+
 	public function file_chooser_dialog(options, callback) {
 		var file_dialog = new OpenFileDialog();
 		file_dialog.options = options;
 		file_dialog.onDialogClosed = function(e) {
-			if (e.button == DialogButton.OK) {
+			if (file_dialog.selectedFiles != null) {
 				if (file_dialog.selectedFiles.length > 0) {
 					var selected_file = file_dialog.selectedFiles[0];
 					trace("onDialogClose: file["+selected_file+"]");

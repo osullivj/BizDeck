@@ -45,7 +45,7 @@ namespace BizDeck {
 				byte[] buffer = File.ReadAllBytes(full_path);
 				Image icon_image = ImageHelpers.ResizeImage(buffer, config_helper.ButtonSize, config_helper.ButtonSize);
 				byte[] jpeg_buffer = ImageHelpers.GetJpegFromImage(icon_image);
-				return buffer;
+				return jpeg_buffer;
 			}
 			return null;
         }

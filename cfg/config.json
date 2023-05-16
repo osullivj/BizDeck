@@ -1,40 +1,56 @@
 {
-	"usb_hid_device_index": 0,
-	"http_server_port": 9271,
-	"browser_recorder_port": 9222,
-	"browser_json_list_timeout": 5,
-	"browser_websock_timeout": 1,
-	"browser_user_data_dir":"logs",
-	"browser_path": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-	"selector_index": 1,
-	"console": true,
-	"devtools": false,
-	"headless": false,
-	"button_map": [
-		{
-			"name": "page",
-			"image": "icons\\page1.png",
-			"action":"native"
-		},
-		{
-			"name": "gui",
-			"image": "icons\\gui.png",
-			"action":"native"
-		},
-		{
-			"name": "word",
-			"image": "icons\\word.png",
-			"action":"app"
-		},
-		{
-			"name": "excel",
-			"image": "icons\\excel.png",
-			"action":"app"
-		},
-		{
-			"name": "google",
-			"image": "icons\\chrome.png",
-			"action":"steps"
-		}
-	]
+  "usb_hid_device_index": 0,
+  "http_server_port": 9271,
+  "browser_recorder_port": 9222,
+  "browser_json_list_timeout": 5,
+  "browser_websock_timeout": 1,
+  "browser_user_data_dir": "logs",
+  "browser_path": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+  "selector_index": 1,
+  "console": true,
+  "devtools": false,
+  "headless": false,
+  "icon_font_family": "Arial",
+  "icon_font_size": 64,
+  "button_list": [
+    {
+      "name": "page",
+      "ButtonIndex": 0,
+      "image": "icons\\page1.png",
+      "action": "native"
+    },
+    {
+      "name": "gui",
+      "ButtonIndex": 1,
+      "image": "icons\\gui.png",
+      "action": "native"
+    },
+    {
+      "name": "word",
+      "ButtonIndex": 2,
+      "image": "icons\\word.png",
+      "action": "app"
+    },
+    {
+      "name": "excel",
+      "ButtonIndex": 3,
+      "image": "icons\\excel.png",
+      "action": "app"
+    },
+    {
+      "name": "google",
+      "ButtonIndex": 4,
+      "image": "icons\\chrome.png",
+      "action": "steps"
+    }
+  ],
+  "background_icons": [
+    "icons\\bg1.png",
+    "icons\\bg2.png",
+    "icons\\bg3.png",
+    "icons\\bg4.png",
+    "icons\\bg5.png",
+    "icons\\bg6.png",
+    "icons\\bg7.png"
+  ]
 }

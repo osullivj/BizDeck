@@ -129,6 +129,15 @@ namespace BizDeck {
                     last_index = button.ButtonIndex;
                 }
             }
+            // Clear keys not set by our config. NB is we stop BizDeck and restart with
+            // less configged buttons, those old buttons still show on the deck if we
+            // don't clear them.
+            int clear_button_index = last_index + 1;
+            while (clear_button_index < this.ButtonCount) {
+                this.ClearKey(clear_button_index);
+                clear_button_index++;
+            }
+
             // On our first visit here the ButtonActionMap hasn't been created yet.
             // See the init order in the Server ctor.
             if (ButtonActionMap != null) {

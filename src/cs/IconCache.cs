@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -50,18 +51,47 @@ namespace BizDeck {
 			return null;
         }
 
+		protected byte[] LoadIconAsPNG(string relative_path) {
+			string full_path = config_helper.GetFullIconPath(relative_path);
+			if (File.Exists(full_path)) {
+				byte[] buffer = File.ReadAllBytes(full_path);
+				return buffer;
+			}
+			return null;
+		}
+
 		public bool CreateLabelledIconPNG(string bg_img_path, string label) {
 			try {
+				// Split on underscore so we can wrap text, and
+				// calculate word sizes
+				SizeF all_words_size = new(0,0);
+				List<SizeF> word_sizes = new();
+				var words = label.Split('_').ToList();
+				words.ForEach(s => word_sizes.Add(CalculateStringSize(s)));
+				int word_height = 0;
+				foreach (SizeF sf in word_sizes) {
+					if (sf.Width > all_words_size.Width) {
+						all_words_size.Width = sf.Width;
+                    }
+					all_words_size.Height += sf.Height;
+					word_height = (int)sf.Height;
+                }
+				// Calculate the top left relative positions for the strings
+				int xindent = (256 - (int)all_words_size.Width) / 2;
+				int yindent = (256 - (word_height * words.Count)) / 2;
+
 				// Load the background png into the drawing object
-				byte[] jpeg_buffer = GetIconBufferJPEG(bg_img_path);
-				(Image bg_image, MemoryStream bg_stream) = ImageHelpers.GetImage(jpeg_buffer);
+				byte[] png_buffer = LoadIconAsPNG(bg_img_path);
+				(Image bg_image, MemoryStream bg_stream) = ImageHelpers.GetImage(png_buffer);
 				Graphics drawing = Graphics.FromImage(bg_image);
 
 				// Paint the text on to the image
 				Brush textBrush = new SolidBrush(Color.White);
 				drawing.TextRenderingHint = TextRenderingHint.AntiAlias;
 				drawing.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-				drawing.DrawString(label, font, textBrush, 0, 0);
+				for (int i = 0; i < words.Count; i++) {
+					drawing.DrawString(words[i], font, textBrush, xindent, yindent+(word_height*i));
+				}
 				drawing.Save();
 
 				// Release GDI handles
@@ -82,6 +112,15 @@ namespace BizDeck {
 				logger.Error($"CreateLabelledIcon: {ex.ToString()}");
             }
 			return false;
+		}
+
+		private SizeF CalculateStringSize(string text) {
+			Image image = new Bitmap(1, 1);
+			Graphics drawing = Graphics.FromImage(image);
+			SizeF text_size = drawing.MeasureString(text, font);
+			image.Dispose();
+			drawing.Dispose();
+			return text_size;
 		}
 	}
 }

@@ -19,17 +19,21 @@ namespace BizDeck {
         private BizDeckLogger logger;
         private IWebServer http_server;
         private DeckManager deck_manager;
+        private BizDeckStatus status = new();
         private string my_url;
 
         public Server(ConfigHelper ch) {
             logger = new(this);
             config_helper = ch;
+            // One shot copy so that hx gui can get default background from
+            // local cache avoiding hx hardwiring and using a single source of truth 
+            status.BackgroundDefault = config_helper.BizDeckConfig.BackgroundDefault;
             // TODO: config the "localhost" part of URL.
             my_url = string.Format("http://localhost:{0}/", ch.BizDeckConfig.HTTPServerPort);
             // Create websock here so that ConnectStreamDeck and CreateWebServer can get from
             // the member var, and we can pass it to button actions enabling them to send
             // notifications to the GUI on fails
-            websock = new BizDeckWebSockModule(config_helper);
+            websock = new BizDeckWebSockModule(config_helper, status);
             // First, let's connect to the StreamDeck
             ConnectStreamDeck();
             // Now we have my_url, stream_deck, websock members set we can
@@ -52,8 +56,10 @@ namespace BizDeck {
             if (stream_deck == null) {
                 config_helper.ThrowErrorToBrowser("StreamDeck init", "Is your StreamDeck plugged in?");
                 logger.Error("StreamDeck init failed - is it plugged in?");
+                status.DeckConnection = false;
                 return false;
             }
+            status.DeckConnection = true;
             // Let the websock module know about the stream deck
             // so it can resend buttons as necessary
             websock.StreamDeck = stream_deck;

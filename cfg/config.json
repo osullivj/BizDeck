@@ -52,5 +52,6 @@
     "icons\\bg5.png",
     "icons\\bg6.png",
     "icons\\bg7.png"
-  ]
+  ],
+  "background_default": "bg3"
 }

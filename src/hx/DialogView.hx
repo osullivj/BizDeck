@@ -61,7 +61,7 @@ class BizDeckAddButtonDialog extends Dialog {
 	public var button_file_names:Array<String>;
 	public var script_name_ok:Bool;
 
-    public function new(bfn:Array<String>) {
+    public function new(bfn:Array<String>, status:haxe.DynamicAccess<Dynamic>) {
         super();
 		button_file_names = bfn;
 		script_name_ok = true;
@@ -69,7 +69,7 @@ class BizDeckAddButtonDialog extends Dialog {
 		script_name_text_field = this.findComponent("bd_script_name_text_field");
 		script_text_area = this.findComponent("bd_script_text_area");
 		background_text_field = this.findComponent("bd_background_text_field");
-		background_text_field.text = "bg6";
+		background_text_field.text = status.get("BackgroundDefault");
 		// Cancel and OK modal buttons
         buttons = DialogButton.CANCEL | DialogButton.OK;
 		select_script_dialog_options = {

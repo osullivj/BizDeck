@@ -9,6 +9,7 @@ import haxe.ui.containers.TableView;
 import haxe.ui.containers.TabView;
 import haxe.ui.containers.dialogs.Dialog.DialogEvent;
 import haxe.ui.components.Image;
+import haxe.ui.components.Switch;
 import haxe.ui.data.ArrayDataSource;
 import haxe.ui.events.MouseEvent;
 import haxe.ui.events.UIEvent;
@@ -37,6 +38,8 @@ class BizDeckWebSocket {
 					this.connected = true;
 				case "config":
 					this.mainview.on_config(obj.Data);
+				case "status":
+					this.mainview.on_status(obj.Data);
 				case "notification":
 					NotificationManager.instance.addNotification(obj.Data);
 			}
@@ -62,6 +65,7 @@ class MainView extends VBox {
 	private var del_buttons_data_source:ArrayDataSource<Dynamic>;
 	private var button_file_names:Array<String>;
 	private var config:haxe.DynamicAccess<Dynamic>;
+	private var status:haxe.DynamicAccess<Dynamic>;
 	
     public function new() {
         super();
@@ -75,7 +79,7 @@ class MainView extends VBox {
 	
 	public function on_button_add_button(e) {
 		trace("Add clicked!");
-	    var dialog = new BizDeckAddButtonDialog(button_file_names);
+	    var dialog = new BizDeckAddButtonDialog(button_file_names, status);
         dialog.onDialogClosed = function(e:DialogEvent) {
 		    trace("on_button_add_button: button:" + e.button);
 			if (e.button == "{{ok}}") {
@@ -111,6 +115,17 @@ class MainView extends VBox {
 			}
         };
         dialog.showDialog();
+	}
+
+	public function on_status(stat:Dynamic) {
+		this.status = stat;
+		var connected_checkbox:Switch = this.findComponent("bd_deck_connected_checkbox");
+		for (key in status.keys()) {
+			var val:Any = status.get(key);
+			if (key == "DeckConnection") {
+				connected_checkbox.selected = val;
+			}
+		}
 	}
 
 	public function on_config(cfg:Dynamic) {

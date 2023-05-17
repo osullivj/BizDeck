@@ -10,14 +10,16 @@ namespace BizDeck
     public class BizDeckWebSockModule : WebSocketModule
     {
         ConfigHelper config_helper;
+        BizDeckStatus status;
         BizDeckLogger logger;
         List<string> add_button_request_keys = new() { "name", "json", "background" };
 
-        public BizDeckWebSockModule(ConfigHelper ch) :
+        public BizDeckWebSockModule(ConfigHelper ch, BizDeckStatus stat) :
             base("/ws", true)
         {
             logger = new BizDeckLogger(this);
             config_helper = ch;
+            status = stat;
             AddProtocol("json");
         }
 
@@ -93,6 +95,7 @@ namespace BizDeck
         {
             logger.Info($"OnClientConnectedAsync: WebsockID[{context.Id}]");
             await SendTargetedEvent(context, new BizDeckJsonEvent("connected")).ConfigureAwait(false);
+            await SendStatus(context);
             await SendConfig(context);
         }
 
@@ -102,6 +105,13 @@ namespace BizDeck
             BizDeckJsonEvent config_event = new BizDeckJsonEvent("config");
             config_event.Data = this.config_helper;
             await SendTargetedEvent(context, config_event).ConfigureAwait(false);
+        }
+
+        protected async Task SendStatus(IWebSocketContext context) {
+            logger.Info($"SendStatus: WebsockID[{context.Id}]");
+            BizDeckJsonEvent status_event = new BizDeckJsonEvent("status");
+            status_event.Data = this.status;
+            await SendTargetedEvent(context, status_event).ConfigureAwait(false);
         }
 
         public async Task SendNotification(IWebSocketContext context, string title, string body, 

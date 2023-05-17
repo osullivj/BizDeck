@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using EmbedIO.WebSockets;
 using Newtonsoft.Json;
@@ -10,6 +11,8 @@ namespace BizDeck
     {
         ConfigHelper config_helper;
         BizDeckLogger logger;
+        List<string> add_button_request_keys = new() { "name", "json", "background" };
+
         public BizDeckWebSockModule(ConfigHelper ch) :
             base("/ws", true)
         {
@@ -58,18 +61,20 @@ namespace BizDeck
         {
             string script_name = null;
             string script = null;
+            string background = null;
             if (evt_Data is JObject) {
                 JObject data = (JObject)evt_Data;
-                if (data.ContainsKey("name") && data.ContainsKey("json")) {
+                if (add_button_request_keys.TrueForAll(s => data.ContainsKey(s))) {
                     script_name = (string)data["name"];
                     script = (string)data["json"];
+                    background = (string)data["background"];
                 }
             }
             if (script_name == null || script == null) {
                 logger.Error($"HandleAddButtonDialogResult: cannot marshal script data from {evt_Data}");
             }
             // resume on any thread so we free this thread for more websock event handling
-            (bool ok, string msg) = await config_helper.AddButton(script_name, script);
+            (bool ok, string msg) = await config_helper.AddButton(script_name, script, background);
             if (!ok)
             {
                 logger.Error($"HandleAddButtonDialogResult: add_button failed for name[{script_name}]");

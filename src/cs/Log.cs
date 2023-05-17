@@ -12,6 +12,10 @@ namespace BizDeck
             bizDeckObject = bdo;
         }
 
+        public void Debug(string msg) {
+            Logger.Debug($"{System.Environment.CurrentManagedThreadId} {msg}", bizDeckObject.GetType().Name);
+        }
+
         public void Info(string msg) {
             Logger.Info($"{System.Environment.CurrentManagedThreadId} {msg}", bizDeckObject.GetType().Name);
         }

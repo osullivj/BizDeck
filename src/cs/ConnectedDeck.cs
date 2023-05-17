@@ -101,7 +101,7 @@ namespace BizDeck {
         }
 
         public void ClearKey(int index) {
-            logger.Info($"ClearKey: index[{index}]");
+            logger.Debug($"ClearKey: index[{index}]");
             this.SetKey(index, DeviceConstants.XLDefaultBlackButton);
         }
 
@@ -141,7 +141,7 @@ namespace BizDeck {
             // On our first visit here the ButtonActionMap hasn't been created yet.
             // See the init order in the Server ctor.
             if (ButtonActionMap != null) {
-                logger.Info($"SetupDeviceButtons: ButtonActionMap.Count[{ButtonActionMap.Count}]");
+                logger.Debug($"SetupDeviceButtons: ButtonActionMap.Count[{ButtonActionMap.Count}]");
                 int keys_to_clear = ButtonActionMap.Count - ButtonDefnList.Count;
                 // If we're invoked by the ButtonDefnList property, it will be because a button
                 // has been added or deleted. If deleted, then we'll need to blank the deleted keys.

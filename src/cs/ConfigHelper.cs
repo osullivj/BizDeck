@@ -146,18 +146,18 @@ namespace BizDeck {
             return await SaveConfig();
         }
 
-        public async Task<(bool,string)> AddButton(string script_name, string script)
+        public async Task<(bool,string)> AddButton(string script_name, string script, string background)
         {
             // name will have an extenstion like .json, so remove it...
             string button_name = Path.GetFileNameWithoutExtension(script_name);
-            logger.Info($"AddButton: script_name[{script_name}] button_name[{button_name}]");
+            logger.Info($"AddButton: script_name[{script_name}] button_name[{button_name}] bg[{background}]");
             // Does the button already exist?
             int index = BizDeckConfig.ButtonList.FindIndex(button => button.Name == button_name);
             if ( index != -1)
             {
                 return (false, $"{ConfigDir}\\{script_name} already exists");
             }
-            IconCache.CreateLabelledIconPNG("icons\\bg1.png", button_name);
+            IconCache.CreateLabelledIconPNG(background, button_name);
             // Create the new button mapping now so we can populate as we
             // apply checks to the script type.
             ButtonDefinition bm = new();

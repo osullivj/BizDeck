@@ -58,5 +58,8 @@ namespace BizDeck
 
         [JsonPropertyName("background_icons")]
         public List<string> BackgroundIcons { get; set; }
+
+        [JsonPropertyName("background_default")]
+        public string BackgroundDefault { get; set; }
     }
 }

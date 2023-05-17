@@ -60,11 +60,11 @@ namespace BizDeck {
 			return null;
 		}
 
-		public bool CreateLabelledIconPNG(string bg_img_path, string label) {
+		public bool CreateLabelledIconPNG(string background, string label) {
 			try {
 				// Split on underscore so we can wrap text, and
 				// calculate word sizes
-				SizeF all_words_size = new(0,0);
+				SizeF all_words_size = new(0, 0);
 				List<SizeF> word_sizes = new();
 				var words = label.Split('_').ToList();
 				words.ForEach(s => word_sizes.Add(CalculateStringSize(s)));
@@ -72,15 +72,23 @@ namespace BizDeck {
 				foreach (SizeF sf in word_sizes) {
 					if (sf.Width > all_words_size.Width) {
 						all_words_size.Width = sf.Width;
-                    }
+					}
 					all_words_size.Height += sf.Height;
 					word_height = (int)sf.Height;
-                }
+				}
 				// Calculate the top left relative positions for the strings
 				int xindent = (256 - (int)all_words_size.Width) / 2;
 				int yindent = (256 - (word_height * words.Count)) / 2;
 
 				// Load the background png into the drawing object
+				string bg_img_path = config_helper.BizDeckConfig.BackgroundDefault;
+				if (!String.IsNullOrWhiteSpace(background)) {
+					foreach (string bg in config_helper.BizDeckConfig.BackgroundIcons) {
+						if (bg.Contains(background)) {
+							bg_img_path = bg;
+						}
+					}
+				}
 				byte[] png_buffer = LoadIconAsPNG(bg_img_path);
 				(Image bg_image, MemoryStream bg_stream) = ImageHelpers.GetImage(png_buffer);
 				Graphics drawing = Graphics.FromImage(bg_image);

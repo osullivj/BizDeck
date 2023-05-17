@@ -40,6 +40,13 @@ namespace BizDeck {
         }
 
         protected bool ConnectStreamDeck() {
+            // TODO: make this reentrant, so a bounce is not necessary to handle
+            // the "deck not plugged in scenario". Will likely need some cleaning
+            // up on points of coupling with ConfigHelper and BizDeckWebSockModule.
+            // We'll probably have to turn the Run method into a loop so the 
+            // Task.WaitAll(<tasks>) can be rebuilt. Will need a cancel token
+            // that can be triggered by a GUI event to make the web task complete
+            // and allow the loop to rebuild tasks.
             deck_manager = new DeckManager(config_helper);
             stream_deck = deck_manager.SetupDeck();
             if (stream_deck == null) {

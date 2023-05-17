@@ -83,7 +83,8 @@ class MainView extends VBox {
 					type: "add_button",
 					data: {
 						name:dialog.script_name_text_field.text,
-						json:dialog.script_text_area.text
+						json:dialog.script_text_area.text,
+						background:dialog.background_text_field.text
 					}
 				};
 				var add_msg_json = haxe.Json.stringify(add_msg);

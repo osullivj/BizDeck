@@ -56,6 +56,7 @@ class BizDeckAddButtonDialog extends Dialog {
 	public var choose_btn:Button;
 	public var script_name_text_field:TextField;
 	public var script_text_area:TextArea;
+	public var background_text_field:TextField;
 	public var select_script_dialog_options:OpenFileDialogOptions;
 	public var button_file_names:Array<String>;
 	public var script_name_ok:Bool;
@@ -67,6 +68,8 @@ class BizDeckAddButtonDialog extends Dialog {
 		// hook up the fields in the dialog
 		script_name_text_field = this.findComponent("bd_script_name_text_field");
 		script_text_area = this.findComponent("bd_script_text_area");
+		background_text_field = this.findComponent("bd_background_text_field");
+		background_text_field.text = "bg6";
 		// Cancel and OK modal buttons
         buttons = DialogButton.CANCEL | DialogButton.OK;
 		select_script_dialog_options = {
@@ -76,7 +79,7 @@ class BizDeckAddButtonDialog extends Dialog {
 			multiple: false,
             extensions: BizDeckFileDialogTypes.JSON
 		};
-		// Add click handles for the choose buttons
+		// Add click handlers for the choose buttons
 		choose_btn = this.findComponent("bd_choose_script_btn");
 		choose_btn.onClick = function(e) {
 			file_chooser_dialog(select_script_dialog_options, this.on_script_chosen);
@@ -93,15 +96,6 @@ class BizDeckAddButtonDialog extends Dialog {
 			});
 			script_name_ok = false;
 		}
-	}
-
-	public function text_file_chooser_dialog(options, callback) {
-		openTextFile("Open JSON File", BizDeckFileDialogTypes.JSON, function(selected_file) {
-            if (selected_file != null) {
-				trace("openTextFile: file["+selected_file+"]");
-				callback(selected_file);
-            }
-        });
 	}
 
 	public function file_chooser_dialog(options, callback) {

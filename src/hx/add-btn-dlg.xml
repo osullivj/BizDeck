@@ -2,15 +2,16 @@
 <dialog width="350" height="300" title="Add button">
     <vbox width="100%" height="100%">
         <vbox text="App" id="bd_btns_box" width="100%" height="100%">
-          <spacer height="5%" />
-          <grid columns="3" width="100%" height="30%">
+          <grid columns="3" width="100%" height="50%">
             <label text="Script:" verticalAlign="center" />
             <textfield id="bd_script_name_text_field" placeholder=""/>
             <button id="bd_choose_script_btn" text="JSON" />
+            <label text="Background:" verticalAlign="center" />
+            <textfield id="bd_background_text_field"/>
           </grid>
           <horizontalrule width="100%"/>
           <textarea id="bd_script_text_area" width="100%" height="50%"/>
-          <spacer width="100%"/>
+          <spacer width="100%" height="5%"/>
         </vbox>
 	  </vbox>
 </dialog>

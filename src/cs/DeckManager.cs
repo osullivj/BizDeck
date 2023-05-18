@@ -25,9 +25,7 @@ namespace BizDeck {
                     switch ((DeviceModel)device.ProductID) {
                         case DeviceModel.MK_2:
                         case DeviceModel.XL:
-                            connected_decks.Add(new ConnectedDeck(device.VendorID, 
-                                    device.ProductID, device.DevicePath, device.GetFriendlyName(), 
-                                                        (DeviceModel)device.ProductID, config_helper));
+                            connected_decks.Add(new ConnectedDeck(device, config_helper));
                             break;
                         case DeviceModel.MINI:
                         case DeviceModel.ORIGINAL:
@@ -45,11 +43,8 @@ namespace BizDeck {
             try {
                 var devices = GetDeckList();
                 if (devices != null && devices.Any()) {
-                    // assume just one StreamDeck connected and take first
-                    // entry on device list
-                    var connected_deck = devices.ElementAt(0);
-                    connected_deck.ButtonDefnList = config_helper.BizDeckConfig.ButtonList;
-                    return connected_deck;
+                    // assume just one StreamDeck connected and take first entry on device list
+                    return devices.ElementAt(0);
                 }
                 else {
                     return null;

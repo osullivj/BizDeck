@@ -1,5 +1,6 @@
 {
   "usb_hid_device_index": 0,
+  "http_host_name": "localhost",
   "http_server_port": 9271,
   "browser_recorder_port": 9222,
   "browser_json_list_timeout": 5,
@@ -12,6 +13,7 @@
   "headless": false,
   "icon_font_family": "Arial",
   "icon_font_size": 64,
+  "deck_brightness_percentage": 60,
   "button_list": [
     {
       "name": "page",

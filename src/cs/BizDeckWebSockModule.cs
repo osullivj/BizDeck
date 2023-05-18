@@ -76,7 +76,7 @@ namespace BizDeck
                 logger.Error($"HandleAddButtonDialogResult: cannot marshal script data from {evt_Data}");
             }
             // resume on any thread so we free this thread for more websock event handling
-            (bool ok, string msg) = await config_helper.AddButton(script_name, script, background);
+            (bool ok, string msg) = await config_helper.AddButton(status.IconCache, script_name, script, background);
             if (!ok)
             {
                 logger.Error($"HandleAddButtonDialogResult: add_button failed for name[{script_name}]");
@@ -86,7 +86,6 @@ namespace BizDeck
             {
                 // Update the Buttons tab on the GUI and the StreamDeck. 
                 await SendConfig(ctx);
-                StreamDeck.ButtonDefnList = config_helper.BizDeckConfig.ButtonList;
                 MainServerObject.RebuildButtonMaps();
             }
         }

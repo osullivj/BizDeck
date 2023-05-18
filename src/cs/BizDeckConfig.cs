@@ -17,6 +17,9 @@ namespace BizDeck
         [JsonPropertyName("usb_hid_device_index")]
         public int USBHIDDeviceIndex { get; set; }
 
+        [JsonPropertyName("http_host_name")]
+        public string HTTPHostName { get; set; }
+
         [JsonPropertyName("http_server_port")]
         public int HTTPServerPort { get; set; }
 
@@ -52,6 +55,9 @@ namespace BizDeck
 
         [JsonPropertyName("icon_font_size")]
         public int IconFontSize{ get; set; }
+
+        [JsonPropertyName("deck_brightness_percentage")]
+        public int DeckBrightnessPercentage { get; set; }
 
         [JsonPropertyName("button_list")]
         public List<ButtonDefinition> ButtonList { get; set; }

@@ -16,12 +16,15 @@ namespace BizDeck {
 		private Dictionary<string, byte[]> icon_buffer_map = new();
 		private readonly object icon_buffer_map_lock = new object();
 		private BizDeckLogger logger;
+		private BizDeckStatus status;
 
-		public IconCache(ConfigHelper ch) {
+		public IconCache(ConfigHelper ch, BizDeckStatus stat) {
 			logger = new(this);
 			config_helper = ch;
-			font_family = new FontFamily(ch.BizDeckConfig.IconFontFamily);
-			font = new Font(font_family, ch.BizDeckConfig.IconFontSize, FontStyle.Regular, GraphicsUnit.Pixel);
+			status = stat;
+			font_family = new FontFamily(config_helper.BizDeckConfig.IconFontFamily);
+			font = new Font(font_family, config_helper.BizDeckConfig.IconFontSize,
+												FontStyle.Regular, GraphicsUnit.Pixel);
 		}
 
 		public byte[] GetIconBufferJPEG(string rel_path) {
@@ -44,7 +47,7 @@ namespace BizDeck {
 			string full_path = config_helper.GetFullIconPath(relative_path);
 			if (File.Exists(full_path)) {
 				byte[] buffer = File.ReadAllBytes(full_path);
-				Image icon_image = ImageHelpers.ResizeImage(buffer, config_helper.ButtonSize, config_helper.ButtonSize);
+				Image icon_image = ImageHelpers.ResizeImage(buffer, status.ButtonSize, status.ButtonSize);
 				byte[] jpeg_buffer = ImageHelpers.GetJpegFromImage(icon_image);
 				return jpeg_buffer;
 			}

@@ -8,8 +8,6 @@ namespace BizDeck {
         private CmdLineOptions cmd_line_options;
         private BizDeckLogger logger;
         private JsonSerializerOptions json_serializer_options = new();
-        private IconCache icon_cache;
-        private DeviceModel device_model = DeviceModel.NULL;
 
         public ConfigHelper(CmdLineOptions opts) {
             cmd_line_options = opts;
@@ -64,14 +62,7 @@ namespace BizDeck {
 
         public string TraceConfig { get; private set; }
 
-        public DeviceModel DeviceModel {
-            get => device_model;
-            set => device_model = value;
-        }
-        public int ButtonCount { get => DeviceConstants.constants[DeviceModel].ButtonCount; }
-        public int ButtonSize { get => DeviceConstants.constants[DeviceModel].ButtonSize; }
 
-        public IconCache IconCache { get => icon_cache; }
 
         public string GetFullIconPath(string button_image_path)
         {
@@ -92,9 +83,6 @@ namespace BizDeck {
                 foreach (ButtonDefinition bm in BizDeckConfig.ButtonList) {
                     bm.ButtonIndex = index++;
                 }
-                // Now config.json is loaded, we will have an font settings loaded,
-                // so we can create the IconCache
-                icon_cache = new IconCache(this);
                 return BizDeckConfig;
             }
             catch (JsonException ex) {
@@ -146,7 +134,7 @@ namespace BizDeck {
             return await SaveConfig();
         }
 
-        public async Task<(bool,string)> AddButton(string script_name, string script, string background)
+        public async Task<(bool,string)> AddButton(IconCache icon_cache, string script_name, string script, string background)
         {
             // name will have an extenstion like .json, so remove it...
             string button_name = Path.GetFileNameWithoutExtension(script_name);
@@ -157,7 +145,7 @@ namespace BizDeck {
             {
                 return (false, $"{ConfigDir}\\{script_name} already exists");
             }
-            IconCache.CreateLabelledIconPNG(background, button_name);
+            icon_cache.CreateLabelledIconPNG(background, button_name);
             // Create the new button mapping now so we can populate as we
             // apply checks to the script type.
             ButtonDefinition bm = new();

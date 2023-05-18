@@ -12,69 +12,76 @@ using HidSharp;
 
 namespace BizDeck {
     public class ConnectedDeck {
+        // delegate
+        // public delegate void ReceivedButtonPressHandler(object source, ButtonPressEventArgs e);
+        // static constants
         private const int ButtonPressHeaderOffset = 4;
         private static readonly int ImageReportLength = 1024;
         private static readonly int ImageReportHeaderLength = 8;
         private static readonly int ImageReportPayloadLength = ImageReportLength - ImageReportHeaderLength;
-        private byte[] keyPressBuffer = new byte[1024];
+
+        // Buffer for stream coming from deck
+        private byte[] key_press_buffer = new byte[1024];
         private ConfigHelper config_helper;
         private BizDeckLogger logger;
+        private HidDevice usb_device;
+        private IconCache icon_cache;
 
-        public ConnectedDeck(int vid, int pid, string path, string name, DeviceModel model, ConfigHelper ch) {
-            this.VId = vid;
-            this.PId = pid;
-            this.Path = path;
-            this.Name = name;
-            this.Model = model;
-            this.UnderlyingDevice = DeviceList.Local.GetHidDeviceOrNull(this.VId, this.PId);
-            this.ButtonCount = DeviceConstants.constants[model].ButtonCount;
-            this.ButtonSize = DeviceConstants.constants[model].ButtonSize;
-            this.config_helper = ch;
+        public ConnectedDeck(HidDevice device, ConfigHelper ch) {
+            // Just connecting obj refs in ctor
+            usb_device = device;
+            config_helper = ch;
             logger = new(this);
-            ch.DeviceModel = model;
         }
 
-        public delegate void ReceivedButtonPressHandler(object source, ButtonPressEventArgs e);
+        public void InitDeck(IconCache cache) {
+            icon_cache = cache;
+            // get key config.json settings from BizDeckConfig via ConfigHelper
+            button_list = config_helper.BizDeckConfig.ButtonList;
+            Brightness = config_helper.BizDeckConfig.DeckBrightnessPercentage;
+            // Update ConfigHelper with device settings so that eg IconCache
+            // can access them...
+            SetBrightness((byte)Brightness);
+            SetupDeviceButtons();
+        }
 
-        public int VId { get; private set; }
-        public int PId { get; private set; }
-        public string Path { get; private set; }
-        public string Name { get; private set; }
-        public DeviceModel Model { get; private set; }
-        public int ButtonCount { get; }
-        public int ButtonSize { get; }
+        // Property accessors that just read from underlying HidDevice
+        public int VendorId { get => usb_device.VendorID; }
+        public int ProductId { get => usb_device.ProductID;  }
+        public string Path { get => usb_device.DevicePath; }
+        public string Name { get => usb_device.GetFriendlyName(); }
+        public DeviceModel Model { get => (DeviceModel)usb_device.ProductID; }
+        private HidDevice UnderlyingDevice { get => usb_device; }
+        public int ButtonCount { get => DeviceConstants.constants[Model].ButtonCount; }
+        public int ButtonSize { get => DeviceConstants.constants[Model].ButtonSize;  }
+
+        // Device working state accessors
         public int LastButton { get; set; }
-        private HidDevice UnderlyingDevice { get; }
+        public int Brightness { get; set; }
         private HidStream UnderlyingInputStream { get; set; }
+        public Dictionary<string, ButtonAction> ButtonActionMap { get; set; }
+
+        // private working state
         private List<ButtonDefinition> button_list;
         private int current_page = 0;
         private int current_desktop = 0;
 
-        public List<ButtonDefinition> ButtonDefnList {
-            get => button_list;
-            set {
-                button_list = value;
-                SetupDeviceButtons();
-            }
-        }
-        public Dictionary<string, ButtonAction> ButtonActionMap { get; set; }
-
         public async Task ReadAsync() {
             UnderlyingInputStream = UnderlyingDevice.Open();
             UnderlyingInputStream.ReadTimeout = Timeout.Infinite;
-            Array.Clear(keyPressBuffer, 0, keyPressBuffer.Length);
+            Array.Clear(key_press_buffer, 0, key_press_buffer.Length);
             int bytes_read = 0;
             logger.Info("ReadAsync awaiting stream...");
-            bytes_read = await UnderlyingInputStream.ReadAsync(this.keyPressBuffer, 0, this.keyPressBuffer.Length).ConfigureAwait(false);
+            bytes_read = await UnderlyingInputStream.ReadAsync(this.key_press_buffer, 0, this.key_press_buffer.Length).ConfigureAwait(false);
             while (bytes_read > 0) {
-                var button_data = new ArraySegment<byte>(this.keyPressBuffer, ButtonPressHeaderOffset, ButtonCount).ToArray();
+                var button_data = new ArraySegment<byte>(this.key_press_buffer, ButtonPressHeaderOffset, ButtonCount).ToArray();
                 var pressed_button = Array.IndexOf(button_data, (byte)1);
                 var button_kind = ButtonEventKind.DOWN;
                 logger.Info($"ReadAsync: pressed[{pressed_button}], kind[{button_kind}]");
                 if (pressed_button == -1) {
                     button_kind = ButtonEventKind.UP;
                     pressed_button = LastButton;
-                    var button_entry = ButtonDefnList.FirstOrDefault(x => x.ButtonIndex == pressed_button);
+                    var button_entry = button_list.FirstOrDefault(x => x.ButtonIndex == pressed_button);
                     if (button_entry != null) {
                         logger.Info($"ReadAsync: entry[{button_entry.Name}]");
                         // ConfigureAwait(false) to signal that we can resume on any thread
@@ -84,7 +91,7 @@ namespace BizDeck {
                 else {
                     LastButton = pressed_button;
                 }
-                bytes_read = await UnderlyingInputStream.ReadAsync(this.keyPressBuffer, 0, this.keyPressBuffer.Length).ConfigureAwait(false);
+                bytes_read = await UnderlyingInputStream.ReadAsync(this.key_press_buffer, 0, this.key_press_buffer.Length).ConfigureAwait(false);
             }
         }
 
@@ -120,11 +127,11 @@ namespace BizDeck {
         }
 
         public void SetupDeviceButtons( ) {
-            logger.Info($"SetupDeviceButtons: ButtonDefnList.Count[{ButtonDefnList.Count}]");
+            logger.Info($"SetupDeviceButtons: button_list.Count[{button_list.Count}]");
             int last_index = 0;
             foreach (var button in button_list) {
                 if (button.ButtonIndex <= this.ButtonCount - 1) {
-                    byte[] buffer = config_helper.IconCache.GetIconBufferJPEG(button.ButtonImagePath);
+                    byte[] buffer = icon_cache.GetIconBufferJPEG(button.ButtonImagePath);
                     this.SetKey(button.ButtonIndex, buffer);
                     last_index = button.ButtonIndex;
                 }
@@ -142,11 +149,11 @@ namespace BizDeck {
             // See the init order in the Server ctor.
             if (ButtonActionMap != null) {
                 logger.Debug($"SetupDeviceButtons: ButtonActionMap.Count[{ButtonActionMap.Count}]");
-                int keys_to_clear = ButtonActionMap.Count - ButtonDefnList.Count;
+                int keys_to_clear = ButtonActionMap.Count - button_list.Count;
                 // If we're invoked by the ButtonDefnList property, it will be because a button
                 // has been added or deleted. If deleted, then we'll need to blank the deleted keys.
                 while (keys_to_clear > 0) {
-                    ClearKey(ButtonDefnList.Count + keys_to_clear - 1);
+                    ClearKey(button_list.Count + keys_to_clear - 1);
                     --keys_to_clear;
                 }
             }

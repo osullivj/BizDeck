@@ -20,7 +20,6 @@ namespace BizDeck {
         private IWebServer http_server;
         private DeckManager deck_manager;
         private BizDeckStatus status = new();
-        private string my_url;
 
         public Server(ConfigHelper ch) {
             logger = new(this);
@@ -28,14 +27,20 @@ namespace BizDeck {
             // One shot copy so that hx gui can get default background from
             // local cache avoiding hx hardwiring and using a single source of truth 
             status.BackgroundDefault = config_helper.BizDeckConfig.BackgroundDefault;
-            // TODO: config the "localhost" part of URL.
-            my_url = string.Format("http://localhost:{0}/", ch.BizDeckConfig.HTTPServerPort);
+            status.MyURL = $"http://{ch.BizDeckConfig.HTTPHostName}:{ch.BizDeckConfig.HTTPServerPort}";
             // Create websock here so that ConnectStreamDeck and CreateWebServer can get from
             // the member var, and we can pass it to button actions enabling them to send
             // notifications to the GUI on fails
             websock = new BizDeckWebSockModule(config_helper, status);
             // First, let's connect to the StreamDeck
             ConnectStreamDeck();
+            // Now the deck is connected we know the ButtonSize, so we
+            // can construct the IconCache
+            status.IconCache = new IconCache(config_helper, status);
+            // Now we have an IconCache we can invoke InitDeck, which
+            // will pull StreamDeck compatible JPEGS from the cache
+            // which have been sized correctly for the deck buttons.
+            stream_deck.InitDeck(status.IconCache);
             // Now we have my_url, stream_deck, websock members set we can
             // build the button action map
             RebuildButtonActionMap();
@@ -59,7 +64,13 @@ namespace BizDeck {
                 status.DeckConnection = false;
                 return false;
             }
+            // Now we're connected to the deck update status with ButtonSize and Count
+            // We must do that before we invoke ConnectedDeck.InitDeck, which calls
+            // ConnectedDeck.SetupDeviceButtons, which uses the IconCache. And the
+            // IconCache depends on ButtonSize.
             status.DeckConnection = true;
+            status.ButtonCount = stream_deck.ButtonCount;
+            status.ButtonSize = stream_deck.ButtonSize;
             status.StartTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             // Let the websock module know about the stream deck
             // so it can resend buttons as necessary
@@ -84,6 +95,7 @@ namespace BizDeck {
                 stream_deck_task = Task.CompletedTask;
             }
             else {
+
                 stream_deck_task = stream_deck.ReadAsync();
                 stream_deck_task.ConfigureAwait(false);
             }
@@ -93,7 +105,7 @@ namespace BizDeck {
 
         private WebServer CreateWebServer() {
             var server = new WebServer(o => o
-                    .WithUrlPrefix(my_url)
+                    .WithUrlPrefix(status.MyURL)
                     .WithMode(HttpListenerMode.EmbedIO))
                 // First, we will configure our web server by adding Modules.
                 .WithLocalSessionManager()
@@ -114,14 +126,14 @@ namespace BizDeck {
             // before rebuilding the action map because ConnectedDeck.SetupDeviceButtons()
             // relies on the length difference between the ButtonDefnList and
             // ButtonActionMap to figure out which buttons need clearing.
-            stream_deck.ButtonDefnList = config_helper.BizDeckConfig.ButtonList;
+            stream_deck.SetupDeviceButtons();
             RebuildButtonActionMap();
         }
 
         private void RebuildButtonActionMap( )  {
             button_action_map.Clear();
             button_action_map["page"] = new Pager(stream_deck);
-            button_action_map["gui"] = new ShowBizDeckGUI(my_url);
+            button_action_map["gui"] = new ShowBizDeckGUI(status.MyURL);
             // Buttons for the dev tools recorder, which we're not using currently.
             // button_action_map["start_recording"] = new StartRecording(recorder);
             // button_action_map["stop_recording"] = new StopRecording(recorder);

@@ -17,7 +17,14 @@ namespace BizDeck
         // data cache to enable GUI defaults to be set
         // from the backend, not from hardcoding in
         // .hx or .xml Haxe impl
-        [JsonPropertyName("background_default")]
         public string BackgroundDefault { get; set; }
+
+        public string DeviceName { get; set; }
+        public int ButtonCount { get; set; }
+        public int ButtonSize { get; set; }
+
+        public string MyURL { get; set; }
+
+        public IconCache IconCache { get; set;}
     }
 }

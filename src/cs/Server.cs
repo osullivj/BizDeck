@@ -26,6 +26,7 @@ namespace BizDeck {
             config_helper = ch;
             // One shot copy so that hx gui can get default background from
             // local cache avoiding hx hardwiring and using a single source of truth 
+            status.StartTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             status.BackgroundDefault = config_helper.BizDeckConfig.BackgroundDefault;
             status.MyURL = $"http://{ch.BizDeckConfig.HTTPHostName}:{ch.BizDeckConfig.HTTPServerPort}";
             // Create websock here so that ConnectStreamDeck and CreateWebServer can get from
@@ -71,7 +72,7 @@ namespace BizDeck {
             status.DeckConnection = true;
             status.ButtonCount = stream_deck.ButtonCount;
             status.ButtonSize = stream_deck.ButtonSize;
-            status.StartTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            status.DeviceName = stream_deck.Name;
             // Let the websock module know about the stream deck
             // so it can resend buttons as necessary
             websock.StreamDeck = stream_deck;

@@ -10,6 +10,7 @@ import haxe.ui.containers.TabView;
 import haxe.ui.containers.dialogs.Dialog.DialogEvent;
 import haxe.ui.components.Image;
 import haxe.ui.components.Switch;
+import haxe.ui.components.Slider;
 import haxe.ui.components.TextField;
 import haxe.ui.components.Label;
 import haxe.ui.data.ArrayDataSource;
@@ -123,6 +124,10 @@ class MainView extends VBox {
 		this.status = stat;
 		var connected_checkbox:Switch = this.findComponent("bd_deck_connected_checkbox");
 		var start_time_label:Label = this.findComponent("bd_start_time_label");
+		var button_count_label:Label = this.findComponent("bd_button_count_label");
+		var button_size_label:Label = this.findComponent("bd_button_size_label");
+		var device_name_label:Label = this.findComponent("bd_device_name_label");
+		var my_url_label:Label = this.findComponent("bd_my_url_label");
 		for (key in status.keys()) {
 			var val:Any = status.get(key);
 			switch (key) {
@@ -130,6 +135,14 @@ class MainView extends VBox {
 					connected_checkbox.selected = val;
 				case "StartTime":
 					start_time_label.htmlText = 'Started: ${val}';
+				case "DeviceName":
+					device_name_label.htmlText = 'Device: ${val}';
+				case "ButtonCount":
+					button_count_label.htmlText = 'Button count: ${val}';
+				case "ButtonSize":
+					button_size_label.htmlText = 'Button size: ${val}';
+				case "MyURL":
+					my_url_label.htmlText = 'My URL:${val}';
 			}
 		}
 	}

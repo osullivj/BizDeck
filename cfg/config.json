@@ -22,7 +22,7 @@
     {
       "name": "gui",
       "ButtonIndex": 1,
-      "image": "icons\\gui.png",
+      "image": "icons\\bd512.png",
       "action": "native"
     },
     {

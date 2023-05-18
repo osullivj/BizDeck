@@ -60,6 +60,7 @@ namespace BizDeck {
                 return false;
             }
             status.DeckConnection = true;
+            status.StartTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             // Let the websock module know about the stream deck
             // so it can resend buttons as necessary
             websock.StreamDeck = stream_deck;

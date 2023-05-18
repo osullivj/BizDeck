@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Text.Json.Serialization;
 
 namespace BizDeck
@@ -8,6 +8,9 @@ namespace BizDeck
     {
         [JsonPropertyName("deck_connection")]
         public bool DeckConnection { get; set; }
+
+        [JsonPropertyName("start_time")]
+        public string StartTime { get; set; }
 
         // Yes, this is a copy of a BizDeckConfig setting
         // We have it here too for ease of adding to GUI

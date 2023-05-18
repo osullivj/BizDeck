@@ -10,6 +10,8 @@ import haxe.ui.containers.TabView;
 import haxe.ui.containers.dialogs.Dialog.DialogEvent;
 import haxe.ui.components.Image;
 import haxe.ui.components.Switch;
+import haxe.ui.components.TextField;
+import haxe.ui.components.Label;
 import haxe.ui.data.ArrayDataSource;
 import haxe.ui.events.MouseEvent;
 import haxe.ui.events.UIEvent;
@@ -120,10 +122,14 @@ class MainView extends VBox {
 	public function on_status(stat:Dynamic) {
 		this.status = stat;
 		var connected_checkbox:Switch = this.findComponent("bd_deck_connected_checkbox");
+		var start_time_label:Label = this.findComponent("bd_start_time_label");
 		for (key in status.keys()) {
 			var val:Any = status.get(key);
-			if (key == "DeckConnection") {
-				connected_checkbox.selected = val;
+			switch (key) {
+				case "DeckConnection":
+					connected_checkbox.selected = val;
+				case "StartTime":
+					start_time_label.htmlText = 'Started: ${val}';
 			}
 		}
 	}

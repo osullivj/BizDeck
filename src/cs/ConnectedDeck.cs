@@ -126,34 +126,26 @@ namespace BizDeck {
 
         public void SetupDeviceButtons( ) {
             logger.Info($"SetupDeviceButtons: button_list.Count[{button_list.Count}]");
-            int last_index = 0;
+            byte[] buffer = null;
+            // Button 0 is the pager button, so we always send that whatever page is current
+            var pager_button = button_list[0];
+            buffer = icon_cache.GetIconBufferJPEG(pager_button.ButtonImagePath);
+            SetKey(pager_button.ButtonIndex, buffer);
+            // Now for buttons 1...ButtonCount
+            int start_index = (current_page * ButtonCount) + 1;
+            int end_index = start_index + ButtonCount - 1;
+            int buttons_sent = 1;
             foreach (var button in button_list) {
-                if (button.ButtonIndex <= this.ButtonCount - 1) {
-                    byte[] buffer = icon_cache.GetIconBufferJPEG(button.ButtonImagePath);
-                    this.SetKey(button.ButtonIndex, buffer);
-                    last_index = button.ButtonIndex;
+                if (button.ButtonIndex >= start_index && button.ButtonIndex <= end_index) {
+                    buffer = icon_cache.GetIconBufferJPEG(button.ButtonImagePath);
+                    this.SetKey(buttons_sent++, buffer);
                 }
             }
             // Clear keys not set by our config. NB is we stop BizDeck and restart with
             // less configged buttons, those old buttons still show on the deck if we
             // don't clear them.
-            int clear_button_index = last_index + 1;
-            while (clear_button_index < this.ButtonCount) {
-                this.ClearKey(clear_button_index);
-                clear_button_index++;
-            }
-
-            // On our first visit here the ButtonActionMap hasn't been created yet.
-            // See the init order in the Server ctor.
-            if (ButtonActionMap != null) {
-                logger.Debug($"SetupDeviceButtons: ButtonActionMap.Count[{ButtonActionMap.Count}]");
-                int keys_to_clear = ButtonActionMap.Count - button_list.Count;
-                // If we're invoked by the ButtonDefnList property, it will be because a button
-                // has been added or deleted. If deleted, then we'll need to blank the deleted keys.
-                while (keys_to_clear > 0) {
-                    ClearKey(button_list.Count + keys_to_clear - 1);
-                    --keys_to_clear;
-                }
+            while (buttons_sent < this.ButtonCount) {
+                this.ClearKey(buttons_sent++);
             }
         }
 

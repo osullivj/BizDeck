@@ -1,5 +1,6 @@
 @echo off
 if -%BDROOT%-==-- echo BDROOT env var must be set & exit /b
+mkdir %BDROOT%\html
 copy %BDROOT%\src\hx\index.html %BDROOT%\html
 copy %BDROOT%\icons\favicon.ico %BDROOT%\html
 cd %BDROOT%

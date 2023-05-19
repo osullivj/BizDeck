@@ -38,10 +38,7 @@ namespace BizDeck {
             icon_cache = cache;
             // get key config.json settings from BizDeckConfig via ConfigHelper
             button_list = config_helper.BizDeckConfig.ButtonList;
-            Brightness = config_helper.BizDeckConfig.DeckBrightnessPercentage;
-            // Update ConfigHelper with device settings so that eg IconCache
-            // can access them...
-            SetBrightness((byte)Brightness);
+            SetBrightness((byte)config_helper.BizDeckConfig.DeckBrightnessPercentage);
             SetupDeviceButtons();
         }
 
@@ -112,7 +109,8 @@ namespace BizDeck {
             this.SetKey(index, DeviceConstants.XLDefaultBlackButton);
         }
 
-        public void SetBrightness(byte percentage) {
+        public void SetBrightness(int brightness) { 
+            byte percentage = (byte)brightness;
             if (percentage > 100) {
                 percentage = 100;
             }

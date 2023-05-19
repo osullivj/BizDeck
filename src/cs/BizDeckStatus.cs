@@ -22,6 +22,7 @@ namespace BizDeck
         public string DeviceName { get; set; }
         public int ButtonCount { get; set; }
         public int ButtonSize { get; set; }
+        public int Brightness { get; set; }
 
         public string MyURL { get; set; }
 

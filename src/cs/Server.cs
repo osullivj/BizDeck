@@ -27,7 +27,14 @@ namespace BizDeck {
             // One shot copy so that hx gui can get default background from
             // local cache avoiding hx hardwiring and using a single source of truth 
             status.StartTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            // We put the background default in status to make it easy
+            // for the AddButton dialog to display the default value. The alternative
+            // would be special case handling in on_config(), which would make
+            // that code far less generic.
             status.BackgroundDefault = config_helper.BizDeckConfig.BackgroundDefault;
+            // Slider changes status.Brightness dynamically, but it only gets
+            // written back to config when the user hits the apply button
+            status.Brightness = config_helper.BizDeckConfig.DeckBrightnessPercentage;
             status.MyURL = $"http://{ch.BizDeckConfig.HTTPHostName}:{ch.BizDeckConfig.HTTPServerPort}";
             // Create websock here so that ConnectStreamDeck and CreateWebServer can get from
             // the member var, and we can pass it to button actions enabling them to send
@@ -118,6 +125,14 @@ namespace BizDeck {
             // Listen for state changes.
             server.StateChanged += (s, e) => logger.Info($"StateChanged: NewState[{e.NewState}]");
             return server;
+        }
+
+        public void SetDeckBrightness(int brightness) {
+            if (stream_deck == null) {
+                logger.Error($"SetDeckBrightness: {brightness}% - deck not connected");
+                return;
+            }
+            stream_deck.SetBrightness(brightness);
         }
 
         public void RebuildButtonMaps() {

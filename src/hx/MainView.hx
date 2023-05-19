@@ -8,6 +8,7 @@ import haxe.ui.containers.Box;
 import haxe.ui.containers.TableView;
 import haxe.ui.containers.TabView;
 import haxe.ui.containers.dialogs.Dialog.DialogEvent;
+import haxe.ui.components.Button;
 import haxe.ui.components.Image;
 import haxe.ui.components.Switch;
 import haxe.ui.components.Slider;
@@ -57,6 +58,18 @@ class BizDeckWebSocket {
 	public function send_notification(notification:Dynamic) {
 		trace("send_notification: " + notification);
 	}
+
+	public function send_message(mtype:String, mdata:Dynamic) {
+		var msg = {type: mtype, data:mdata};
+		var msg_json = haxe.Json.stringify(msg);
+		if (connected) {
+			trace("send_message: " + msg_json);
+			websock.send(msg_json);
+		}
+		else {
+			trace("send_message: disconnected, cannot send: " + msg_json);
+		}
+	}
 }
 
 @:build(haxe.ui.ComponentBuilder.build("main-view.xml"))
@@ -69,34 +82,48 @@ class MainView extends VBox {
 	private var button_file_names:Array<String>;
 	private var config:haxe.DynamicAccess<Dynamic>;
 	private var status:haxe.DynamicAccess<Dynamic>;
+	private var brightness_slider:Slider;
+	private var brightness_save_button:Button;
 	
     public function new() {
         super();
 		// API has rendered in the browser, so open a client
 		// websock back to the embedio server
-		var port = js.Browser.document.location.port;
-		this.websock_url = "ws://localhost:" + port + "/ws";
+		this.websock_url = "ws://" + js.Browser.document.location.host + "/ws";
+		trace("MainView: websock_url: " + this.websock_url);
 		this.websock = new BizDeckWebSocket(this);
 		this.config = null;
+		brightness_slider = this.findComponent("bd_brightness_slider");
+		brightness_slider.onChange = this.on_brightness_slider_change;
+		brightness_save_button = this.findComponent("bd_brightness_save_button");
+		brightness_save_button.onClick = this.on_brightness_save_button_click;
+	}
+
+	private function on_brightness_save_button_click(e:UIEvent) {
+		trace("on_brightness_save_button_click: e.type:" + e.type);
+		this.websock.send_message("save_brightness", brightness_slider.pos);
+	}
+
+	private function on_brightness_slider_change(e:UIEvent) {
+		trace("on_brightness_slider_change: e.type:" + e.type + ", slider.pos:" + brightness_slider.pos);
+		// reject 0 brightness
+		if (brightness_slider.pos == 0)
+			return;
+		this.websock.send_message("set_brightness", brightness_slider.pos);
 	}
 	
 	public function on_button_add_button(e) {
-		trace("Add clicked!");
+		trace("on_button_add_button: e.type: " + e.type);
 	    var dialog = new BizDeckAddButtonDialog(button_file_names, status);
         dialog.onDialogClosed = function(e:DialogEvent) {
 		    trace("on_button_add_button: button:" + e.button);
 			if (e.button == "{{ok}}") {
-				var add_msg = {
-					type: "add_button",
-					data: {
-						name:dialog.script_name_text_field.text,
-						json:dialog.script_text_area.text,
-						background:dialog.background_text_field.text
-					}
+				var data = {
+					name:dialog.script_name_text_field.text,
+					json:dialog.script_text_area.text,
+					background:dialog.background_text_field.text
 				};
-				var add_msg_json = haxe.Json.stringify(add_msg);
-				trace("on_button_add_button: send:" + add_msg_json);
-				this.websock.websock.send(add_msg_json);
+				this.websock.send_message("add_button", data);
 			}
         };
         dialog.showDialog();
@@ -108,13 +135,7 @@ class MainView extends VBox {
         dialog.onDialogClosed = function(e:DialogEvent) {
 		    trace("on_button_del_button: button:" + e.button);
 			if (e.button == "{{apply}}") {
-				var del_msg = {
-					type: "del_button",
-					data: dialog.list_view.selectedItem.bd_del_btn_name
-				};
-				var del_msg_json = haxe.Json.stringify(del_msg);
-				trace("on_button_del_button: send:" + del_msg_json);
-				this.websock.websock.send(del_msg_json);
+				this.websock.send_message("del_button", dialog.list_view.selectedItem.bd_del_btn_name);
 			}
         };
         dialog.showDialog();
@@ -142,7 +163,10 @@ class MainView extends VBox {
 				case "ButtonSize":
 					button_size_label.htmlText = 'Button size: ${val}';
 				case "MyURL":
-					my_url_label.htmlText = 'My URL:${val}';
+					my_url_label.htmlText = 'My URL: ${val}';
+
+				case "Brightness":
+					brightness_slider.pos = val;
 			}
 		}
 	}

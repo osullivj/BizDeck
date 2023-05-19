@@ -13,7 +13,7 @@
   "headless": false,
   "icon_font_family": "Arial",
   "icon_font_size": 64,
-  "deck_brightness_percentage": 60,
+  "deck_brightness_percentage": 75,
   "button_list": [
     {
       "name": "page",

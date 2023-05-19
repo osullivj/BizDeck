@@ -39,6 +39,19 @@ namespace BizDeck
                 case "add_button":
                     await HandleAddButtonDialogResult(context, evt.Data);
                     break;
+                case "set_brightness":
+                    // When we put an int directly into data like so...
+                    // {Type:"set_brightness",Data:10} NewtonsoftJson
+                    // marshalls into System.Int64 as Data is defined as
+                    // being an object, so base types cannot be marshalling
+                    // targets, hence the use of Convert as applying
+                    // an (int) case to System.Int64 throws an exception
+                    MainServerObject.SetDeckBrightness((int)Convert.ToInt32(evt.Data));
+                    break;
+                case "save_brightness":
+                    config_helper.BizDeckConfig.DeckBrightnessPercentage = (int)Convert.ToInt32(evt.Data);
+                    await config_helper.SaveConfig();
+                    break;
             }
         }
 
@@ -89,6 +102,7 @@ namespace BizDeck
                 MainServerObject.RebuildButtonMaps();
             }
         }
+
 
         protected override async Task OnClientConnectedAsync(IWebSocketContext context)
         {

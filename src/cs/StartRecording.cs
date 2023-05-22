@@ -22,11 +22,12 @@ namespace BizDeck
             }
         }
 
-        public async override Task RunAsync()
+        public async override Task<(bool, string)> RunAsync()
         {
             Run();
             logger.Info("Start recording...");
             await recorder.StartRecording().ConfigureAwait(false);
+            return (true, null);
         }
     }
 }

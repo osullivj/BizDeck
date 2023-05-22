@@ -45,6 +45,10 @@ namespace BizDeck {
             get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg"});
         }
 
+        public string DataDir {
+            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "dat" });
+        }
+
         public string LogDir {
             get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "logs"});
         }
@@ -158,10 +162,15 @@ namespace BizDeck {
                 bm.Action = "app";
             }
             else {
-                if (!script.Contains("steps")) {
-                    return (false, "Script is not an app launch or recorder steps");
+                if (script.Contains("steps")) {
+                    bm.Action = "steps";
                 }
-                bm.Action = "steps";
+                else if (script.Contains("actions")) {
+                    bm.Action = "actions";
+                }
+                else { 
+                    return (false, "Script is not an app launch, or chrome recorder steps, or ETL actions");
+                }
             }
             // Save the script contents into the cfg dir
             string script_path = Path.Combine(new string[] { ConfigDir, script_name });
@@ -183,11 +192,11 @@ namespace BizDeck {
             return ValidateAppLaunch(launch_json);
         }
 
-        public string LoadSteps(string name)
+        public string LoadStepsOrActions(string name)
         {
-            var steps_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", $"{name}.json" });
-            var steps = File.ReadAllText(steps_path);
-            return steps;
+            var script_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", $"{name}.json" });
+            var script = File.ReadAllText(script_path);
+            return script;
         }
 
         protected (bool, AppLaunch, string) ValidateAppLaunch(string launch_json)

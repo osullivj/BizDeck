@@ -50,6 +50,9 @@ namespace BizDeck
         [JsonPropertyName("headless")]
         public bool Headless { get; set; }
 
+        [JsonPropertyName("http_get_timeout")]
+        public int HttpGetTimeout { get; set; }
+
         [JsonPropertyName("icon_font_family")]
         public string IconFontFamily { get; set; }
 

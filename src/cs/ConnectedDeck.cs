@@ -26,11 +26,13 @@ namespace BizDeck {
         private BizDeckLogger logger;
         private HidDevice usb_device;
         private IconCache icon_cache;
+        private Server main_server_object;
 
-        public ConnectedDeck(HidDevice device, ConfigHelper ch) {
+        public ConnectedDeck(HidDevice device, ConfigHelper ch, Server mso) {
             // Just connecting obj refs in ctor
             usb_device = device;
             config_helper = ch;
+            main_server_object = mso;
             logger = new(this);
         }
 
@@ -64,6 +66,8 @@ namespace BizDeck {
         private int current_desktop = 0;
 
         public async Task ReadAsync() {
+            bool ok = false;
+            string error = null;
             UnderlyingInputStream = UnderlyingDevice.Open();
             UnderlyingInputStream.ReadTimeout = Timeout.Infinite;
             Array.Clear(key_press_buffer, 0, key_press_buffer.Length);
@@ -82,7 +86,10 @@ namespace BizDeck {
                     if (button_entry != null) {
                         logger.Info($"ReadAsync: entry[{button_entry.Name}]");
                         // ConfigureAwait(false) to signal that we can resume on any thread
-                        await ButtonActionMap[button_entry.Name].RunAsync().ConfigureAwait(false);
+                        (ok, error) = await ButtonActionMap[button_entry.Name].RunAsync().ConfigureAwait(false);
+                        if (!ok) {
+                            main_server_object.SendNotification("Button action failed", error);
+                        }
                     }
                 }
                 else {

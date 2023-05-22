@@ -57,23 +57,28 @@ namespace BizDeck
 
         protected async Task HandleDeleteButtonDialogResult(IWebSocketContext ctx, string button_name)
         {
+            bool ok;
+            string msg;
             // resume on any thread so we free this thread for more websock event handling
-            (bool ok, string msg) = await config_helper.DeleteButton(button_name);
-            if (!ok)
-            { 
+            (ok, msg) = await config_helper.DeleteButton(button_name);
+            if (!ok) { 
                 logger.Error($"HandleDeleteButtonDialogResult: del_button failed for name[{button_name}]");
                 await SendNotification(ctx, "Delete button failed", msg);
             }
-            else
-            {
+            else {
                 // Update the Buttons tab on the GUI and the StreamDeck
                 await SendConfig(ctx);
-                MainServerObject.RebuildButtonMaps();
+                (ok, msg) = MainServerObject.RebuildButtonMaps();
+                if (!ok) {
+                    await SendNotification(ctx, "Delete button failed on RebuildButtonMaps", msg);
+                }
             }
         }
 
         protected async Task HandleAddButtonDialogResult(IWebSocketContext ctx, object evt_Data)
         {
+            bool ok;
+            string msg;
             string script_name = null;
             string script = null;
             string background = null;
@@ -89,17 +94,18 @@ namespace BizDeck
                 logger.Error($"HandleAddButtonDialogResult: cannot marshal script data from {evt_Data}");
             }
             // resume on any thread so we free this thread for more websock event handling
-            (bool ok, string msg) = await config_helper.AddButton(status.IconCache, script_name, script, background);
-            if (!ok)
-            {
+            (ok, msg) = await config_helper.AddButton(status.IconCache, script_name, script, background);
+            if (!ok) {
                 logger.Error($"HandleAddButtonDialogResult: add_button failed for name[{script_name}]");
                 await SendNotification(ctx, "Add button failed", msg);
             }
-            else
-            {
+            else {
                 // Update the Buttons tab on the GUI and the StreamDeck. 
                 await SendConfig(ctx);
-                MainServerObject.RebuildButtonMaps();
+                (ok, msg) = MainServerObject.RebuildButtonMaps();
+                if (!ok) {
+                    await SendNotification(ctx, "Add button failed on RebuildButtonMaps", msg);
+                }
             }
         }
 
@@ -130,19 +136,21 @@ namespace BizDeck
         public async Task SendNotification(IWebSocketContext context, string title, string body, 
                                                                             bool fade=false)
         {
-            logger.Info($"SendNotification: WebsockID[{context.Id}] title[{title}] body[{body}]");
+            string context_id = "broadcast";
+            if (context != null) {
+                context_id = context.Id;
+            }
+            logger.Info($"SendNotification: WebsockID[{context_id}] title[{title}] body[{body}]");
             BizDeckJsonEvent notification_event = new BizDeckJsonEvent("notification");
             JObject data = new();
             data.Add("title", title);
             data.Add("body", body);
             if (!fade) data.Add("expiryMs", -1);
             notification_event.Data = data;
-            if (context != null)
-            {
+            if (context != null) {
                 await SendTargetedEvent(context, notification_event).ConfigureAwait(false);
             }
-            else
-            {
+            else {
                 await BroadcastEvent(notification_event).ConfigureAwait(false);
             }
         }

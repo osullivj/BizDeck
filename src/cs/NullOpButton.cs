@@ -13,10 +13,11 @@ namespace BizDeck
             logger.Info("Run");
         }
 
-        public async override Task RunAsync()
+        public async override Task<(bool,string)> RunAsync()
         {
             Run();
             await Task.Delay(0).ConfigureAwait(false);
+            return (true, null);
         }
     }
 }

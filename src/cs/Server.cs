@@ -48,7 +48,9 @@ namespace BizDeck {
             // Now we have an IconCache we can invoke InitDeck, which
             // will pull StreamDeck compatible JPEGS from the cache
             // which have been sized correctly for the deck buttons.
-            stream_deck.InitDeck(status.IconCache);
+            if (stream_deck != null) {
+                stream_deck.InitDeck(status.IconCache);
+            }
             // Now we have my_url, stream_deck, websock members set we can
             // build the button action map
             RebuildButtonActionMap();
@@ -65,7 +67,7 @@ namespace BizDeck {
             // that can be triggered by a GUI event to make the web task complete
             // and allow the loop to rebuild tasks.
             deck_manager = new DeckManager(config_helper);
-            stream_deck = deck_manager.SetupDeck();
+            stream_deck = deck_manager.SetupDeck(this);
             if (stream_deck == null) {
                 config_helper.ThrowErrorToBrowser("StreamDeck init", "Is your StreamDeck plugged in?");
                 logger.Error("StreamDeck init failed - is it plugged in?");
@@ -135,18 +137,25 @@ namespace BizDeck {
             stream_deck.SetBrightness(brightness);
         }
 
-        public void RebuildButtonMaps() {
+        public (bool, string) RebuildButtonMaps() {
             // This will trigger ConnectedDeck.SetupDeviceButtons(), which sets
             // the button images defined in BizDeckConfig.ButtonList, and also
             // does ClearKey when a button has been deleted. We need to do that
             // before rebuilding the action map because ConnectedDeck.SetupDeviceButtons()
             // relies on the length difference between the ButtonDefnList and
             // ButtonActionMap to figure out which buttons need clearing.
-            stream_deck.SetupDeviceButtons();
-            RebuildButtonActionMap();
+            if (stream_deck != null) {
+                stream_deck.SetupDeviceButtons();
+            }
+            else {
+                return (false, "StreamDeck not connected");
+            }
+            return RebuildButtonActionMap();
         }
 
-        private void RebuildButtonActionMap( )  {
+        private (bool ok, string error) RebuildButtonActionMap( )  {
+            bool rebuild_ok = true;
+            string error = null;
             button_action_map.Clear();
             button_action_map["page"] = new Pager(stream_deck);
             button_action_map["gui"] = new ShowBizDeckGUI(status.MyURL);
@@ -157,6 +166,9 @@ namespace BizDeck {
             {
                 if (!button_action_map.ContainsKey(bd.Name)) {
                     switch (bd.Action) {
+                        case "actions":
+                            button_action_map[bd.Name] = new ActionsButton(config_helper, bd.Name);
+                            break;
                         case "steps":
                             button_action_map[bd.Name] = new StepsButton(config_helper, bd.Name);
                             break;
@@ -164,7 +176,9 @@ namespace BizDeck {
                             button_action_map[bd.Name] = new AppButton(config_helper, bd.Name, websock);
                             break;
                         default:
-                            logger.Info($"RebuildButtonActionMap: unknown action[{bd.Action}] for button[{bd.Name}]");
+                            error = "unknown action[{bd.Action}] for button[{bd.Name}]";
+                            logger.Error($"RebuildButtonActionMap: {error}");
+                            rebuild_ok = false;
                             break;
                     }
                 }
@@ -177,6 +191,14 @@ namespace BizDeck {
             else {
                 logger.Error($"RebuildButtonActionMap: no StreamDeck connection");
             }
+            return (rebuild_ok, error);
+        }
+
+        // Convenience method to allow code that's not handling a websock event, so
+        // doesn't have a context, to send messages to the GUI. For example, the
+        // ConnectedDeck code that invokes RunAync on ButtonActionMap entries.
+        public async Task SendNotification(string title, string body, bool fade=false) {
+            await websock.SendNotification(null, title, body, fade);
         }
     }
 }

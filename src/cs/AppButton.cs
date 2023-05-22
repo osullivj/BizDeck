@@ -32,20 +32,19 @@ namespace BizDeck
             logger.Info($"Run: running {name}:{app_launch.ExeDocUrl}");
         }
 
-        public async override Task RunAsync()
+        public async override Task<(bool,string)> RunAsync()
         {
-            if (app_launch == null)
-            {
+            if (app_launch == null) {
                 (bool ok, AppLaunch launch, string error) = await config_helper.LoadAppLaunch(name);
-                if (!ok)
-                {
+                if (!ok) {
                     logger.Error($"RunAsync: {error}");
                     await websock.SendNotification(null, $"{name} app launch failed", error);
-                    return;
+                    return (ok, error);
                 }
                 app_launch = launch;
             }
             if (app_launch != null) Run();
+            return (true, null);
         }
     }
 }

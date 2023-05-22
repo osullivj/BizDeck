@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 
 namespace BizDeck
 {
-	public delegate Task<bool> Dispatch(JObject step);
+	public delegate Task<(bool, string)> Dispatch(JObject step);
 
 	public class PuppeteerDriver
 	{
@@ -39,7 +39,7 @@ namespace BizDeck
 			launch_options.Args = new string[1] { $"--remote-debugging-port={config_helper.BizDeckConfig.BrowserRecorderPort}" };
 		}
 
-		public async Task<bool> PlaySteps(string name, dynamic chrome_recording)
+		public async Task<(bool, string)> PlaySteps(string name, dynamic chrome_recording)
         {
 			logger.Info($"PlaySteps: playing {name} on browser[{launch_options.ExecutablePath}]");
 			logger.Info($"PlaySteps: UserDataDir[{launch_options.UserDataDir}], Headless[{launch_options.Headless}], Devtools[{launch_options.Devtools}]");
@@ -51,38 +51,35 @@ namespace BizDeck
 			logger.Info($"PlaySteps: playing[{chrome_recording.title}]");
 			JArray steps = chrome_recording.steps;
 			bool step_ok = false;
+			string error = null;
 			int step_index = 0;
-			foreach (JObject step in steps)
-            {
+			foreach (JObject step in steps) {
 				string step_type = (string)step.GetValue("type");
 				if (dispatchers.ContainsKey(step_type)) {
-					step_ok = await dispatchers[step_type](step);
-					if (!step_ok)
-                    {
-						logger.Error($"PlaySteps: step failed index[{step_index}], type[{step_type}]");
-						return false;
+					(step_ok, error) = await dispatchers[step_type](step);
+					if (!step_ok) {
+						error = $"step failed index[{step_index}], type[{step_type}], err[{error}]";
+						logger.Error($"PlaySteps: {error}");
+						return (false, error);
                     }
-					else
-                    {
+					else {
 						logger.Info($"PlaySteps: step ok index[{step_index}], type[{step_type}]");
                     }
 				}
-				else
-                {
+				else {
 					logger.Error($"PlaySteps: skipping unknown step_type[{step_type}]");
                 }
 				step_index++;
             }
-			return true;
+			return (true, null);
 		}
 
-		public async Task<bool> SetViewport(JObject step)
+		public async Task<(bool, string)> SetViewport(JObject step)
         {
 			if (current_page == null) {
 				pending_viewport_step = step;
 			}
-			else
-            {
+			else {
 				ViewPortOptions vpo = new();
 				vpo.Height = (int)step["height"];
 				vpo.Width = (int)step["width"];
@@ -92,43 +89,42 @@ namespace BizDeck
 				vpo.IsLandscape = (bool)step["isLandscape"];
 				await current_page.SetViewportAsync(vpo);
             }
-			return true;
+			return (true, null);
         }
 
-		public async Task<bool> Navigate(JObject step)
+		public async Task<(bool, string)> Navigate(JObject step)
         {
+			bool ok = false;
+			string error = null;
 			string url = (string)step["url"];
-			if (url == "chrome://new-tab-page/")
-			{
+			if (url == "chrome://new-tab-page/") {
 				current_page = await browser.NewPageAsync();
-				if (pending_viewport_step != null)
-                {
-					bool ok = await SetViewport(pending_viewport_step);
+				if (pending_viewport_step != null) {
+					(ok, error) = await SetViewport(pending_viewport_step);
 					pending_viewport_step = null;
-					return ok;
+					return (ok, error);
                 }
 			}
-			else
-            {
+			else {
 				IResponse http_response = await current_page.GoToAsync(url);
-				if (http_response.Status != System.Net.HttpStatusCode.OK)
-                {
-					logger.Error($"Navigate: bad status[{http_response.StatusText}] for url[{url}]");
-					return false;
+				if (http_response.Status != System.Net.HttpStatusCode.OK) {
+					error = $"bad status[{http_response.StatusText}] for url[{url}]";
+					logger.Error($"Navigate: {error}");
+					return (false, error);
                 }
             }
-			return true;
+			return (true, null);
         }
 
-		public async Task<bool> Click(JObject step)
+		public async Task<(bool, string)> Click(JObject step)
         {
 			JArray selectors = (JArray)step["selectors"];
 			string selector = (string)(selectors[selector_index][0]);
 			await current_page.ClickAsync(selector);
-			return true;
+			return (true, null);
         }
 
-		public async Task<bool> Change(JObject step)
+		public async Task<(bool, string)> Change(JObject step)
 		{
 			JArray selectors = (JArray)step["selectors"];
 			string selector = (string)(selectors[selector_index][0]);
@@ -138,7 +134,7 @@ namespace BizDeck
 				extra_value = (string)step["extra_value"];
 			var element_handle = await current_page.QuerySelectorAsync(selector);
 			await element_handle.TypeAsync(new_value+extra_value);
-			return true;
+			return (true, null);
 		}
 	}
 }

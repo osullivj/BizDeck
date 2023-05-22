@@ -16,7 +16,7 @@ namespace BizDeck {
         }
 
         /// Return a list of connected Stream Deck devices supported by DeckSurf.
-        public IEnumerable<ConnectedDeck> GetDeckList() {
+        public IEnumerable<ConnectedDeck> GetDeckList(Server main_server_object) {
             var connected_decks = new List<ConnectedDeck>();
             var device_list = DeviceList.Local.GetHidDevices();
 
@@ -25,7 +25,7 @@ namespace BizDeck {
                     switch ((DeviceModel)device.ProductID) {
                         case DeviceModel.MK_2:
                         case DeviceModel.XL:
-                            connected_decks.Add(new ConnectedDeck(device, config_helper));
+                            connected_decks.Add(new ConnectedDeck(device, config_helper, main_server_object));
                             break;
                         case DeviceModel.MINI:
                         case DeviceModel.ORIGINAL:
@@ -39,9 +39,9 @@ namespace BizDeck {
             return connected_decks;
         }
 
-        public ConnectedDeck SetupDeck() {
+        public ConnectedDeck SetupDeck(Server mso) {
             try {
-                var devices = GetDeckList();
+                var devices = GetDeckList(mso);
                 if (devices != null && devices.Any()) {
                     // assume just one StreamDeck connected and take first entry on device list
                     return devices.ElementAt(0);

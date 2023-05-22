@@ -18,7 +18,7 @@ namespace BizDeck
         public StepsButton(ConfigHelper ch, string name) {
             logger = new(this);
             this.name = name;
-            steps = JObject.Parse(ch.LoadSteps(name));
+            steps = JObject.Parse(ch.LoadStepsOrActions(name));
             driver = new PuppeteerDriver(ch);
         }
 
@@ -26,11 +26,11 @@ namespace BizDeck
             logger.Info($"Run: {name}:{steps}");
         }
 
-        public async override Task RunAsync()
-        {
+        public async override Task<(bool, string)> RunAsync() {
             Run();
             bool ok = await driver.PlaySteps(name, steps).ConfigureAwait(false);
             logger.Info($"RunAsync: name[{name}], ok[{ok}]");
+            return (true, null);
         }
     }
 }

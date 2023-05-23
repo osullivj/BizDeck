@@ -9,27 +9,42 @@ using Newtonsoft.Json.Linq;
 namespace BizDeck
 {
     public class ActionsButton:ButtonAction {
-        JObject action_script;
         string name;
         BizDeckLogger logger;
         ActionsDriver driver;
+        ConfigHelper config_helper;
 
-        public ActionsButton(ConfigHelper ch, string name) {
+        public ActionsButton(ConfigHelper ch, string name, BizDeckPython py) {
             logger = new(this);
+            config_helper = ch;
             this.name = name;
-            action_script = JObject.Parse(ch.LoadStepsOrActions(name));
-            driver = new ActionsDriver(ch);
+            driver = new ActionsDriver(ch, py);
         }
 
         public override void Run() {
-            logger.Info($"Run: {name}:{action_script}");
+            logger.Info($"Run: {name}");
         }
 
         public async override Task<(bool, string)> RunAsync() {
+            bool ok = true;
+            string result = null;
+            JObject action_script = null;
             Run();
-            (bool ok, string error) = await driver.PlayActions(name, action_script).ConfigureAwait(false);
-            logger.Info($"RunAsync: name[{name}], ok[{ok}], err[{error}]");
-            return (ok, error);
+            (ok, result) = config_helper.LoadStepsOrActions(name);
+            if (!ok) {
+                return (ok, result);
+            }
+            try {
+                action_script = JObject.Parse(result);
+            }
+            catch (JsonReaderException ex) {
+                result = $"JSON error reading {name}, {ex}";
+                logger.Error($"RunAsync: {result}");
+                return (false, result);
+            }
+            (ok, result) = await driver.PlayActions(name, action_script).ConfigureAwait(false);
+            logger.Info($"RunAsync: name[{name}], ok[{ok}], err[{result}]");
+            return (ok, result);
         }
     }
 }

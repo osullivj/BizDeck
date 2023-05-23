@@ -16,17 +16,20 @@ namespace BizDeck {
 		ConfigHelper config_helper;
 		BizDeckLogger logger;
 		HttpClient http_client = new();
+		BizDeckPython python;
 		Dictionary<string, Dispatch> dispatchers = new();
 		int selector_index;
 		List<string> http_get_request_keys = new() { "name", "url", "target" };
+		List<string> python_script_keys = new() { "name", "path", "args", "env" };
 
-		public ActionsDriver(ConfigHelper ch)
+		public ActionsDriver(ConfigHelper ch, BizDeckPython py)
 		{
 			logger = new(this);
 			config_helper = ch;
+			python = py;
 			selector_index = ch.BizDeckConfig.SelectorIndex;
-
 			dispatchers["http_get"] = this.HTTPGet;
+			dispatchers["python"] = this.RunPythonScript;
 		}
 
 		// actions should be a JObject corresponding to the contents of
@@ -58,8 +61,27 @@ namespace BizDeck {
 			return (true, null);
 		}
 
-		public async Task<(bool, string)> HTTPGet(JObject action)
-        {
+		public async Task<(bool, string)> RunPythonScript(JObject action) {
+			string python_script_path = null;
+			string action_name = null;
+			JObject env = null;
+			JArray args = null;
+			string error = null;
+			if (python_script_keys.TrueForAll(s => action.ContainsKey(s))) {
+				action_name = (string)action["name"];
+				python_script_path = (string)action["path"];
+				args = action["args"] as JArray;
+				env = action["env"] as JObject;
+			}
+			else {
+				error = $"one of {python_script_keys} missing from {action}";
+				logger.Error($"RunPythonScript: {error}");
+				return (false, error);
+            }
+			return await python.RunScript(python_script_path);
+        }
+
+		public async Task<(bool, string)> HTTPGet(JObject action) {
 			string url = null;
 			string target_file_name = null;
 			string action_name = null;
@@ -73,7 +95,7 @@ namespace BizDeck {
 				error = $"one of {http_get_request_keys} missing from {action}";
 				logger.Error($"HTTPGet: {error}");
 				return (false, error);
-            }
+			}
 			var http_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.HttpGetTimeout));
 			string target_path = Path.Combine(new string[] { config_helper.DataDir, target_file_name });
 			try {
@@ -88,7 +110,6 @@ namespace BizDeck {
 				logger.Error($"HTTPGet: {error}");
 				return (false, error);
 			}
-        }
-
+		}
 	}
 }

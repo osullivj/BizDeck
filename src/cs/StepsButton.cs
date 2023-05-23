@@ -10,27 +10,34 @@ namespace BizDeck
 {
     public class StepsButton:ButtonAction
     {
-        dynamic steps;
         string name;
         BizDeckLogger logger;
         PuppeteerDriver driver;
+        ConfigHelper config_helper;
 
         public StepsButton(ConfigHelper ch, string name) {
             logger = new(this);
+            config_helper = ch;
             this.name = name;
-            steps = JObject.Parse(ch.LoadStepsOrActions(name));
             driver = new PuppeteerDriver(ch);
         }
 
         public override void Run() {
-            logger.Info($"Run: {name}:{steps}");
+            logger.Info($"Run: {name}");
         }
 
         public async override Task<(bool, string)> RunAsync() {
+            bool ok = true;
+            string result = null;
             Run();
-            bool ok = await driver.PlaySteps(name, steps).ConfigureAwait(false);
+            (ok, result) = config_helper.LoadStepsOrActions(name);
+            if (!ok) {
+                return (ok, result);
+            }
+            JObject steps = JObject.Parse(result);
+            (ok, result) = await driver.PlaySteps(name, steps).ConfigureAwait(false);
             logger.Info($"RunAsync: name[{name}], ok[{ok}]");
-            return (true, null);
+            return (ok, result);
         }
     }
 }

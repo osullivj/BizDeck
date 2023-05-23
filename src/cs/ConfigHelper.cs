@@ -1,6 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace BizDeck {
 
@@ -65,8 +66,6 @@ namespace BizDeck {
         public BizDeckConfig BizDeckConfig { set; get; }
 
         public string TraceConfig { get; private set; }
-
-
 
         public string GetFullIconPath(string button_image_path)
         {
@@ -192,11 +191,19 @@ namespace BizDeck {
             return ValidateAppLaunch(launch_json);
         }
 
-        public string LoadStepsOrActions(string name)
+        public (bool, string) LoadStepsOrActions(string name)
         {
+            bool ok = true;
+            string result = null;
             var script_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", $"{name}.json" });
-            var script = File.ReadAllText(script_path);
-            return script;
+            try {
+                result = File.ReadAllText(script_path);
+            }
+            catch (Exception ex) {
+                result = $"{name}: failed to read {script_path}, {ex}";
+                logger.Error($"LoadStepsOrActions: {result}");
+            }
+            return (ok, result);
         }
 
         protected (bool, AppLaunch, string) ValidateAppLaunch(string launch_json)

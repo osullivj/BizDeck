@@ -88,7 +88,7 @@ namespace BizDeck {
                         // ConfigureAwait(false) to signal that we can resume on any thread
                         (ok, error) = await ButtonActionMap[button_entry.Name].RunAsync().ConfigureAwait(false);
                         if (!ok) {
-                            main_server_object.SendNotification("Button action failed", error);
+                            await main_server_object.SendNotification("Button action failed", error);
                         }
                     }
                 }

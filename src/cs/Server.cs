@@ -16,6 +16,7 @@ namespace BizDeck {
         private ConnectedDeck stream_deck = null;
         private ConfigHelper config_helper = null;
         private BizDeckWebSockModule websock = null;
+        private BizDeckPython python = null;
         private BizDeckLogger logger;
         private IWebServer http_server;
         private DeckManager deck_manager;
@@ -36,6 +37,8 @@ namespace BizDeck {
             // written back to config when the user hits the apply button
             status.Brightness = config_helper.BizDeckConfig.DeckBrightnessPercentage;
             status.MyURL = $"http://{ch.BizDeckConfig.HTTPHostName}:{ch.BizDeckConfig.HTTPServerPort}";
+            // Create our IronPython executor
+            python = new BizDeckPython(config_helper);
             // Create websock here so that ConnectStreamDeck and CreateWebServer can get from
             // the member var, and we can pass it to button actions enabling them to send
             // notifications to the GUI on fails
@@ -167,7 +170,7 @@ namespace BizDeck {
                 if (!button_action_map.ContainsKey(bd.Name)) {
                     switch (bd.Action) {
                         case "actions":
-                            button_action_map[bd.Name] = new ActionsButton(config_helper, bd.Name);
+                            button_action_map[bd.Name] = new ActionsButton(config_helper, bd.Name, python);
                             break;
                         case "steps":
                             button_action_map[bd.Name] = new StepsButton(config_helper, bd.Name);

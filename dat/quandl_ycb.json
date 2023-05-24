@@ -1,0 +1,19 @@
+{
+	"actions": [
+		{
+			"type": "python",
+			"name": "generate_quandl_ycb_download_script",
+			"path": "c:\\osullivj\\src\\BizDeck\\src\\py\\generate_quandl_ycb_download_script.py",
+			"args": ["c:\\osullivj\\src\\BizDeck\\dat\\quandl_ycb_download.json"],
+			"env": {}
+		},
+		{
+			"type": "actions",
+			"name": "c:\\osullivj\\src\\BizDeck\\dat\\quandl_ycb_download.json"
+		},
+		{
+			"type": "app",
+			"name": "excel"
+		}
+	]
+}

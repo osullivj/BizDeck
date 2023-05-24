@@ -1,0 +1,11 @@
+{
+	"actions": [
+		{
+			"type": "python",
+			"name": "pytest1",
+			"path": "c:\\osullivj\\src\\BizDeck\\src\\py\\pytest1.py",
+			"args": [],
+			"env": {}
+		}
+	]
+}

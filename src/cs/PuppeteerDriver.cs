@@ -9,8 +9,7 @@ namespace BizDeck
 {
 	public delegate Task<(bool, string)> Dispatch(JObject step);
 
-	public class PuppeteerDriver
-	{
+	public class PuppeteerDriver {
 		LaunchOptions launch_options = new();
 		ConfigHelper config_helper;
 		BizDeckLogger logger;
@@ -18,6 +17,8 @@ namespace BizDeck
 		IBrowser browser;
 		IPage current_page;
 		JObject pending_viewport_step;
+		// selector_index: which element selector do we use in a chrome recording?
+		// Four are given: aria, jquery, xpat, pierce
 		int selector_index;
 
 		public PuppeteerDriver(ConfigHelper ch)

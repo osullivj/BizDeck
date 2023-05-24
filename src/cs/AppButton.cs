@@ -4,47 +4,24 @@ namespace BizDeck
 {
     public class AppButton:ButtonAction
     {
-        AppLaunch app_launch = null;
         ConfigHelper config_helper;
         string name = null;
         BizDeckLogger logger;
-        BizDeckWebSockModule websock;
+        AppDriver app_driver;
 
         public AppButton(ConfigHelper ch, string name, BizDeckWebSockModule ws) {
             logger = new(this);
+            app_driver = new(ch, ws);
             this.name = name;
             config_helper = ch;
-            websock = ws;
         }
 
-        public override void Run() {
-            logger.Info($"Run: {name}:{app_launch.ExeDocUrl}");
-            // start default browser - or new tab - and point it at 
-            // our web server
-            var process = new System.Diagnostics.Process() {
-                StartInfo = new System.Diagnostics.ProcessStartInfo(app_launch.ExeDocUrl) {
-                    UseShellExecute = false, ErrorDialog = true, Arguments = app_launch.Args
-                }
-            };
-            // If this blocks with no visible error, check the path in your
-            // steps json very carefully!
-            process.Start();
-            logger.Info($"Run: running {name}:{app_launch.ExeDocUrl}");
+        public override void Run() { }
+
+        public async override Task<(bool, string)> RunAsync() {
+            return await app_driver.PlayApp(name);
         }
 
-        public async override Task<(bool,string)> RunAsync()
-        {
-            if (app_launch == null) {
-                (bool ok, AppLaunch launch, string error) = await config_helper.LoadAppLaunch(name);
-                if (!ok) {
-                    logger.Error($"RunAsync: {error}");
-                    await websock.SendNotification(null, $"{name} app launch failed", error);
-                    return (ok, error);
-                }
-                app_launch = launch;
-            }
-            if (app_launch != null) Run();
-            return (true, null);
-        }
+ 
     }
 }

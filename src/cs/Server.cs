@@ -170,7 +170,7 @@ namespace BizDeck {
                 if (!button_action_map.ContainsKey(bd.Name)) {
                     switch (bd.Action) {
                         case "actions":
-                            button_action_map[bd.Name] = new ActionsButton(config_helper, bd.Name, python);
+                            button_action_map[bd.Name] = new ActionsButton(config_helper, bd.Name, websock, python);
                             break;
                         case "steps":
                             button_action_map[bd.Name] = new StepsButton(config_helper, bd.Name);

@@ -184,23 +184,29 @@ namespace BizDeck {
             return (true, $"{LogDir}/{script_name} created for button index:{bm.ButtonIndex}, name:{bm.Name}");
         }
 
-        public async Task<(bool, AppLaunch, string)> LoadAppLaunch(string name)
+        public async Task<(bool, AppLaunch, string)> LoadAppLaunch(string name_or_path)
         {
-            var app_launch_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", $"{name}.json" });
+            string app_launch_path = name_or_path;
+            if (!File.Exists(name_or_path)) {
+                app_launch_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", $"{name_or_path}.json" });
+            }
             var launch_json = await File.ReadAllTextAsync(app_launch_path);
             return ValidateAppLaunch(launch_json);
         }
 
-        public (bool, string) LoadStepsOrActions(string name)
+        public (bool, string) LoadStepsOrActions(string name_or_path)
         {
             bool ok = true;
             string result = null;
-            var script_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", $"{name}.json" });
+            string script_path = name_or_path;
+            if (!File.Exists(name_or_path)) {
+                script_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", $"{name_or_path}.json" });
+            }
             try {
                 result = File.ReadAllText(script_path);
             }
             catch (Exception ex) {
-                result = $"{name}: failed to read {script_path}, {ex}";
+                result = $"{name_or_path}: failed to read {script_path}, {ex}";
                 logger.Error($"LoadStepsOrActions: {result}");
             }
             return (ok, result);

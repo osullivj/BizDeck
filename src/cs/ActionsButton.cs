@@ -14,11 +14,11 @@ namespace BizDeck
         ActionsDriver driver;
         ConfigHelper config_helper;
 
-        public ActionsButton(ConfigHelper ch, string name, BizDeckPython py) {
+        public ActionsButton(ConfigHelper ch, string name, BizDeckWebSockModule ws, BizDeckPython py) {
             logger = new(this);
             config_helper = ch;
             this.name = name;
-            driver = new ActionsDriver(ch, py);
+            driver = new ActionsDriver(ch, ws, py);
         }
 
         public override void Run() {
@@ -26,10 +26,11 @@ namespace BizDeck
         }
 
         public async override Task<(bool, string)> RunAsync() {
+            Run();
             bool ok = true;
             string result = null;
-            JObject action_script = null;
-            Run();
+            JObject action_script = driver.LoadAndParseActionScript(name);
+
             (ok, result) = config_helper.LoadStepsOrActions(name);
             if (!ok) {
                 return (ok, result);

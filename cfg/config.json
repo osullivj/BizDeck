@@ -11,6 +11,7 @@
   "console": true,
   "devtools": false,
   "headless": false,
+  "http_get_timeout": 5,
   "icon_font_family": "Arial",
   "icon_font_size": 64,
   "deck_brightness_percentage": 75,
@@ -44,6 +45,24 @@
       "ButtonIndex": 4,
       "image": "icons\\chrome.png",
       "action": "steps"
+    },
+    {
+      "name": "pytest1",
+      "ButtonIndex": 5,
+      "image": "icons\\pytest1.png",
+      "action": "actions"
+    },
+    {
+      "name": "quandl_rates",
+      "ButtonIndex": 6,
+      "image": "icons\\quandl_rates.png",
+      "action": "actions"
+    },
+    {
+      "name": "quandl_ycb",
+      "ButtonIndex": 7,
+      "image": "icons\\quandl_ycb.png",
+      "action": "actions"
     }
   ],
   "background_icons": [

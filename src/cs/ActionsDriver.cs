@@ -22,8 +22,10 @@ namespace BizDeck {
 		Dictionary<string, Dispatch> dispatchers = new();
 		List<string> http_get_request_keys = new() { "name", "url", "target" };
 		List<string> python_script_keys = new() { "name", "path", "args", "env" };
+		List<string> python_action_non_param_keys = new() { "type", "function"};
 		List<string> app_script_keys = new() { "name"};
 		List<string> action_script_keys = new() { "name" };
+
 
 		public ActionsDriver(ConfigHelper ch, BizDeckWebSockModule ws, BizDeckPython py) {
 			logger = new(this);
@@ -32,7 +34,8 @@ namespace BizDeck {
 			python = py;
 			websock = ws;
 			dispatchers["http_get"] = this.HTTPGet;
-			dispatchers["python"] = this.RunPythonScript;
+			dispatchers["python_batch"] = this.RunPythonBatchScript;
+			dispatchers["python_action"] = this.RunPythonAction;
 			dispatchers["app"] = this.RunApp;
 			dispatchers["actions"] = this.RunActions;
 		}
@@ -62,11 +65,11 @@ namespace BizDeck {
 						}
                     }
 					else {
-						logger.Info($"PlayActions: action ok index[{action_index}], type[{action_type}]");
+						logger.Info($"PlayActions: name[{name}] action ok index[{action_index}], type[{action_type}]");
                     }
 				}
 				else {
-					logger.Error($"PlayActions: skipping unknown action_type[{action_type}]");
+					logger.Error($"PlayActions: name[{name}] skipping unknown index[{action_index}] action_type[{action_type}]");
                 }
 				action_index++;
             }
@@ -108,7 +111,7 @@ namespace BizDeck {
 			return await PlayActions(action_script_name, action_script);
 		}
 
-		public async Task<(bool, string)> RunPythonScript(JObject action) {
+		public async Task<(bool, string)> RunPythonBatchScript(JObject action) {
 			string python_script_path = null;
 			string action_name = null;
 			JObject env = null;
@@ -134,11 +137,32 @@ namespace BizDeck {
 			}
 			else {
 				error = $"one of {python_script_keys} missing from {action}";
-				logger.Error($"RunPythonScript: {error}");
+				logger.Error($"RunPythonBatchScript: {error}");
 				return (false, error);
             }
-			return await python.RunScript(python_script_path, options);
+			return await python.RunBatchScript(python_script_path, options);
         }
+
+		public async Task<(bool, string)> RunPythonAction(JObject action) {
+			string python_action_function = (string)action["function"];
+			// we check the members of action with TrueForAll in other
+			// methods. But we don't know here what parameters are expected
+			// by the action function, so we compose a list for marshalling
+			// in BizDeckPython, excluding type and function, which together
+			// select the function to call. The others are params. We use
+			// dynamic so we can have lists and dicts as params as well as
+			// atomic types.
+			List<dynamic> args = new() { DataCache.Instance };
+			foreach (KeyValuePair<string, JToken> param in action) {
+				if (!python_action_non_param_keys.Contains(param.Key)) {
+					// param.Value is a JToken. We don't want type leakage
+					// over to the Python side, so use ToString to force
+					// the param to be a .Net built in type.
+					args.Add(param.Value.ToString());
+				}
+            }
+			return await python.RunActionFunction(python_action_function, args);
+		}
 
 		public async Task<(bool, string)> HTTPGet(JObject action) {
 			string url = null;

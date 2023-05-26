@@ -63,6 +63,10 @@ namespace BizDeck {
             get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "icons" });
         }
 
+        public string PythonSourcePath {
+            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "src", "py" });
+        }
+
         public BizDeckConfig BizDeckConfig { set; get; }
 
         public string TraceConfig { get; private set; }

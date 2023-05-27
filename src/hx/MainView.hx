@@ -6,6 +6,8 @@ import haxe.Serializer;
 import haxe.ui.containers.VBox;
 import haxe.ui.containers.Box;
 import haxe.ui.containers.TableView;
+import haxe.ui.containers.TreeView;
+import haxe.ui.containers.TreeViewNode;
 import haxe.ui.containers.TabView;
 import haxe.ui.containers.dialogs.Dialog.DialogEvent;
 import haxe.ui.components.Button;
@@ -20,6 +22,7 @@ import haxe.ui.events.UIEvent;
 import js.html.WebSocket;
 import js.Browser;
 import DialogView;
+import Utilities.add_map_to_treeview;
 
 
 class BizDeckWebSocket {
@@ -44,6 +47,8 @@ class BizDeckWebSocket {
 					this.mainview.on_config(obj.Data);
 				case "status":
 					this.mainview.on_status(obj.Data);
+				case "cache":
+					this.mainview.on_cache(obj.Data);
 				case "notification":
 					NotificationManager.instance.addNotification(obj.Data);
 			}
@@ -82,6 +87,7 @@ class MainView extends VBox {
 	private var button_file_names:Array<String>;
 	private var config:haxe.DynamicAccess<Dynamic>;
 	private var status:haxe.DynamicAccess<Dynamic>;
+	private var cache:haxe.DynamicAccess<Dynamic>;
 	private var brightness_slider:Slider;
 	private var brightness_save_button:Button;
 	
@@ -236,5 +242,13 @@ class MainView extends VBox {
 		}
 		cfg_tv.dataSource = config_data_source;
 		btn_tv.dataSource = buttons_data_source;
+	}
+
+	public function on_cache(cch:Dynamic) {
+		this.cache = cch;
+		// Get a handle on the TreeView
+		var cache_treeview:TreeView = this.findComponent("bd_cache_treeview");
+		cache_treeview.clearNodes();
+		add_map_to_treeview(cache_treeview, this.cache, 3);
 	}
 }

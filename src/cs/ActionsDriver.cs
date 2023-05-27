@@ -66,6 +66,12 @@ namespace BizDeck {
                     }
 					else {
 						logger.Info($"PlayActions: name[{name}] action ok index[{action_index}], type[{action_type}]");
+						// The action succeeded. It may have updated the DataCache, so check if it's
+						// changed, and if so, send to the GUI.
+						if (DataCache.Instance.HasChanged) {
+							string cache_state_json = DataCache.Instance.SerializeAndResetChanged();
+							await websock.BroadcastJson(cache_state_json);
+                        }
                     }
 				}
 				else {

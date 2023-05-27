@@ -133,6 +133,7 @@ namespace BizDeck
             await SendTargetedEvent(context, status_event).ConfigureAwait(false);
         }
 
+
         public async Task SendNotification(IWebSocketContext context, string title, string body, 
                                                                             bool fade=false)
         {
@@ -170,6 +171,10 @@ namespace BizDeck
         public async Task BroadcastEvent(BizDeckJsonEvent jsEvent)
         {
             var json = JsonConvert.SerializeObject(jsEvent);
+            await BroadcastAsync(json).ConfigureAwait(false);
+        }
+
+        public async Task BroadcastJson(string json) {
             await BroadcastAsync(json).ConfigureAwait(false);
         }
     }

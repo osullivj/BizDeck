@@ -18,6 +18,7 @@ function add_map_to_node(parent_node:TreeViewNode, jmap:DynamicAccess<Dynamic>, 
 	if (recursions > max_recursions) {
 		return;
 	}
+	var index:Int = 0;
 	for (key in jmap.keys()) {
 		var val:Dynamic = jmap.get(key);
 		trace('add_map_to_node: key[${key}]');
@@ -32,6 +33,9 @@ function add_map_to_node(parent_node:TreeViewNode, jmap:DynamicAccess<Dynamic>, 
 		else {
 			var map_node:TreeViewNode = parent_node.addNode({text:key});
 			add_map_to_node(map_node, val, max_recursions, ++recursions);
+		}
+		if (++index > 3) {
+			break;
 		}
 	}
 }

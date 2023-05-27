@@ -16,7 +16,7 @@ namespace BizDeck {
             new Lazy<DataCache>(() => new DataCache());
         public static DataCache Instance { get { return lazy.Value; } }
 
-        private Dictionary<string, Dictionary<string,List<Dictionary<string, string>>>> cache = new();
+        private Dictionary<string, object> cache = new();
         private readonly object cache_lock = new();
         private bool changed = false;
 
@@ -26,6 +26,13 @@ namespace BizDeck {
 
         public void Insert(string key, Dictionary<string,List<Dictionary<string,string>>> val) {
             lock(cache_lock) {
+                cache[key] = val;
+                changed = true;
+            }
+        }
+
+        public void Insert(string key, Dictionary<string, Dictionary<string, string>> val) {
+            lock (cache_lock) {
                 cache[key] = val;
                 changed = true;
             }

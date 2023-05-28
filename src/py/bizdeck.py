@@ -29,7 +29,7 @@ def add_csv_to_cache_as_dict(args):
         error = "add_csv_to_cache_as_dict: BDRoot or Logger not set"
         Logger.Error(error)
         return error
-    if args.Count < 4:
+    if args.Count < 3:
         error = "add_csv_to_cache_as_dict: not enough params %s" % args
         Logger.Error(error)
         return error
@@ -37,23 +37,22 @@ def add_csv_to_cache_as_dict(args):
     Logger.Info("add_csv_to_cache_as_dict: args(%s)" % args)
     data_cache = args[0]
     cache_location = args[1]
-    csv_file = args[2]
-    key = args[3]
-    unique_key = True;
+    csv_file_name = args[2]
+    key = None
+    if args.Count > 3:
+        key = args[3]
     headers = None
     if args.Count > 4:
-        unique_key = bool(args[4])
-    if args.Count > 5:
-           headers = args[5]
-    csv_path = os.path.join(BDRoot, 'BizDeck', 'dat', csv_file)
+        headers = args[4]
+    csv_path = os.path.join(BDRoot, 'BizDeck', 'dat', csv_file_name)
     cs_cache_entry = None  
     with open(csv_path, "rt") as csv_file:
         reader = csv.DictReader(csv_file, headers)
-        if unique_key:
+        if key:
             cs_cache_entry = read_unqiue_key_rows(reader, key)
         else:
-            cs_cache_entry = read_non_unqiue_key_rows(reader, key)
-    data_cache.Insert(cache_location, cs_cache_entry)
+            cs_cache_entry = read_non_unqiue_key_rows(reader)
+    data_cache.Insert(cache_location, csv_file_name, cs_cache_entry)
     return ""
 
 
@@ -68,18 +67,9 @@ def read_unqiue_key_rows(reader, key):
     return cs_cache_entry
 
 
-def read_non_unique_key_rows(reader, key):
-    cs_cache_entry = Dictionary[str,List[Dictionary[str,str]]]()
+def read_non_unique_key_rows(reader):
+    cs_cache_entry = List[Dictionary[str,str]]()
     for py_row_dict in reader:
-        key_value = py_row_dict[key]
-        cs_row_list = None
-        # do we already have a list of rows for this
-        # key, or do we need to create one?
-        if cs_cache_entry.ContainsKey(key_value):
-            cs_row_list = cs_cache_entry[key_value]
-        else:
-            cs_row_list = List[Dictionary[str,str]]()
-            cs_cache_entry.Add(key_value, cs_row_list)
         # Create the C# dict that will hold the row contents
         cs_row_dict = Dictionary[str,str]()
         for k,v in py_row_dict.items():

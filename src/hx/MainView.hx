@@ -22,7 +22,7 @@ import haxe.ui.events.UIEvent;
 import js.html.WebSocket;
 import js.Browser;
 import DialogView;
-import Utilities.add_map_to_treeview;
+import Utilities.update_treeview;
 
 
 class BizDeckWebSocket {
@@ -170,7 +170,6 @@ class MainView extends VBox {
 					button_size_label.htmlText = 'Button size: ${val}';
 				case "MyURL":
 					my_url_label.htmlText = 'My URL: ${val}';
-
 				case "Brightness":
 					brightness_slider.pos = val;
 			}
@@ -249,6 +248,6 @@ class MainView extends VBox {
 		// Get a handle on the TreeView
 		var cache_treeview:TreeView = this.findComponent("bd_cache_treeview");
 		cache_treeview.clearNodes();
-		add_map_to_treeview(cache_treeview, this.cache, 3);
+		update_treeview(cache_treeview, this.cache);
 	}
 }

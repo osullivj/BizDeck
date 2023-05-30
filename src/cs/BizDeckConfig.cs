@@ -38,9 +38,6 @@ namespace BizDeck
         [JsonPropertyName("browser_path")]
         public string BrowserPath { get; set; }
 
-        [JsonPropertyName("selector_index")]
-        public int SelectorIndex { get; set; }
-
         [JsonPropertyName("console")]
         public bool Console { get; set; }
 

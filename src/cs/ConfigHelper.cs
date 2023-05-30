@@ -152,7 +152,10 @@ namespace BizDeck {
             {
                 return (false, $"{ConfigDir}\\{script_name} already exists");
             }
-            icon_cache.CreateLabelledIconPNG(background, button_name);
+            bool created = icon_cache.CreateLabelledIconPNG(background, button_name);
+            if (!created) {
+                return (false, $"cannot create {button_name} PNG from background[{background}]");
+            }
             // Create the new button mapping now so we can populate as we
             // apply checks to the script type.
             ButtonDefinition bm = new();
@@ -213,6 +216,7 @@ namespace BizDeck {
                 result = $"{name_or_path}: failed to read {script_path}, {ex}";
                 logger.Error($"LoadStepsOrActions: {result}");
             }
+            logger.Info($"LoadStepsOrActions: loaded {script_path}");
             return (ok, result);
         }
 

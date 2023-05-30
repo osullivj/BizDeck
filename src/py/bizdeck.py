@@ -62,7 +62,7 @@ def read_unqiue_key_rows(reader, key):
         key_value = py_row_dict[key]
         cs_row_dict = Dictionary[str,str]()
         for k,v in py_row_dict.items():
-            cs_row_dict.Add(k, v)
+            cs_row_dict.Add(k.replace(' ',''), v)
         cs_cache_entry.Add(key_value, cs_row_dict)
     return cs_cache_entry
 
@@ -73,6 +73,7 @@ def read_non_unique_key_rows(reader):
         # Create the C# dict that will hold the row contents
         cs_row_dict = Dictionary[str,str]()
         for k,v in py_row_dict.items():
-            cs_row_dict.Add(k, v)
+            # rmove whitespace from keys before caching
+            cs_row_dict.Add(k.replace(' ',''), v)
         cs_row_list.Add(key_value, cs_row_dict)
     return cs_cache_entry

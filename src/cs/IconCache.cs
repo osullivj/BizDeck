@@ -60,6 +60,10 @@ namespace BizDeck {
 				byte[] buffer = File.ReadAllBytes(full_path);
 				return buffer;
 			}
+			else {
+				string error = $"LoadIconAsPNG: cannot load path[{full_path}]";
+				logger.Error(error);
+			}
 			return null;
 		}
 
@@ -89,10 +93,14 @@ namespace BizDeck {
 					foreach (string bg in config_helper.BizDeckConfig.BackgroundIcons) {
 						if (bg.Contains(background)) {
 							bg_img_path = bg;
+							break;
 						}
 					}
 				}
 				byte[] png_buffer = LoadIconAsPNG(bg_img_path);
+				if (png_buffer == null) {
+					return false;
+                }
 				(Image bg_image, MemoryStream bg_stream) = ImageHelpers.GetImage(png_buffer);
 				Graphics drawing = Graphics.FromImage(bg_image);
 

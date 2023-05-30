@@ -7,7 +7,6 @@
   "browser_websock_timeout": 1,
   "browser_user_data_dir": "logs",
   "browser_path": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-  "selector_index": 1,
   "console": true,
   "devtools": false,
   "headless": false,
@@ -41,15 +40,15 @@
       "action": "app"
     },
     {
-      "name": "google",
+      "name": "tiingo_gui_login",
       "ButtonIndex": 4,
-      "image": "icons\\chrome.png",
+      "image": "icons\\tiingo.png",
       "action": "steps"
     },
     {
-      "name": "pytest1",
+      "name": "quandl_ycb",
       "ButtonIndex": 5,
-      "image": "icons\\pytest1.png",
+      "image": "icons\\quandl_ycb.png",
       "action": "actions"
     },
     {
@@ -59,13 +58,16 @@
       "action": "actions"
     },
     {
-      "name": "quandl_ycb",
+      "name": "google",
       "ButtonIndex": 7,
-      "image": "icons\\quandl_ycb.png",
-      "action": "actions"
+      "image": "icons\\google.png",
+      "action": "steps"
     }
   ],
   "background_icons": [
+    "icons\\quandl.png",
+    "icons\\python.png",
+    "icons\\tiingo.png",
     "icons\\bg1.png",
     "icons\\bg2.png",
     "icons\\bg3.png",

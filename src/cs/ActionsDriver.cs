@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Linq;
 using System.IO;
 using System.Net.WebSockets;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -20,6 +22,7 @@ namespace BizDeck {
 		BizDeckWebSockModule websock;
 		AppDriver app_driver;
 		Dictionary<string, Dispatch> dispatchers = new();
+		Dictionary<string, HttpMethod> http_method_map = new();
 		List<string> http_get_request_keys = new() { "name", "url", "target" };
 		List<string> python_script_keys = new() { "name", "path", "args", "env" };
 		List<string> python_action_non_param_keys = new() { "type", "function"};
@@ -38,6 +41,9 @@ namespace BizDeck {
 			dispatchers["python_action"] = this.RunPythonAction;
 			dispatchers["app"] = this.RunApp;
 			dispatchers["actions"] = this.RunActions;
+
+			http_method_map["http_get"] = HttpMethod.Get;
+			http_method_map["http_post"] = HttpMethod.Post;
 		}
 
 		// actions should be a JObject corresponding to the contents of
@@ -184,13 +190,25 @@ namespace BizDeck {
 				error = $"one of {http_get_request_keys} missing from {action}";
 				logger.Error($"HTTPGet: {error}");
 				return (false, error);
-			}
-			var http_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.HttpGetTimeout));
+			}		
 			string target_path = Path.Combine(new string[] { config_helper.DataDir, target_file_name });
 			try {
-				var payload = await http_client.GetStringAsync(url, http_cancel_token_source.Token).ConfigureAwait(false);
+				(bool ok, object request_or_err) = BuildHttpRequest(url, "http_get", action);
+				if (!ok) {
+					return (ok, (string)request_or_err);
+                }
+				HttpRequestMessage hrm = (HttpRequestMessage)request_or_err;
+				logger.Info($"HTTPGet: hrm.url[{hrm.RequestUri}]");
+				var http_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.HttpGetTimeout));
+				var payload = await http_client.SendAsync(hrm, http_cancel_token_source.Token);
+				if (payload.StatusCode != System.Net.HttpStatusCode.OK) {
+					error = $"status[{payload.StatusCode}] for url[{hrm.RequestUri}]";
+					logger.Error($"HTTPGet: status[{payload.StatusCode}] for url[{hrm.RequestUri}]");
+					return (false, error);
+                }
 				// Save the script contents into the dat dir
-				await File.WriteAllTextAsync(target_path, payload);
+				Stream file_write_stream = File.OpenWrite(target_path);
+				await payload.Content.CopyToAsync(file_write_stream);
 				logger.Info($"HTTPGet: {action_name} saved to {target_path}");
 				return (true, null);
 			}
@@ -217,5 +235,86 @@ namespace BizDeck {
 			}
 			return null;
 		}
+
+		private (bool, string) ExpandHttpFormat(HttpFormat hf, JObject action) {
+			List<string> resolved_values = new();
+			bool ok = false;
+			string resolved_value = null;
+			using (var scope = NameStack.Instance.LocalScope(action)) {
+				foreach (string val_ref in hf.Values) {
+					(ok, resolved_value) = scope.Resolve(val_ref);
+					if (!ok) {
+						return (false, $"Resolve({val_ref}) failed in action[{action.ToString()}]");
+                    }
+					resolved_values.Add(resolved_value);
+				}
+			}
+			try {
+				return (true, String.Format(hf.Format, resolved_values.ToArray()));
+			}
+			catch (Exception ex) {
+				// catch formatting exceptions
+				logger.Error($"ExpandHttpFormat: failed in action[{ action.ToString()}]");
+				logger.Error($"ExpandHttpFormat: refs{hf.Values.ToString()}");
+				logger.Error($"ExpandHttpFormat: vals{resolved_values.ToString()}");
+				return (false, ex.Message);
+            }
+        }
+
+		private (bool, object) BuildHttpRequest(string url, string method, JObject action) {
+			HttpRequestMessage request = null;
+			string expanded_url = url;
+			bool ok = false;
+			HttpFormat bd_http_format = null;
+			Dictionary<string, HttpFormat> http_spec_map = null;
+			// Does the HttpFormatMap have a key that occurs in our unexpanded URL?
+			foreach (string url_sub_string in config_helper.HttpFormatMap.Keys) {
+				if (url.Contains(url_sub_string)) {
+					// We have formats for this target URL. For example, to
+					// add "?auth_token=<token>" to quandl HTTP requests
+					http_spec_map = config_helper.HttpFormatMap[url_sub_string];
+					// Does the Dictionary<string,HttpFormat> have a url expansion definition?
+					if (http_spec_map.ContainsKey("url")) {
+						// We have a url expansion, which we must do before we
+						// fire the HttpRequestMessage ctor
+						bd_http_format = http_spec_map["url"];
+						(ok, expanded_url) = ExpandHttpFormat(bd_http_format, action);
+						if (!ok) {
+							// expanded_url is an err msg
+							return (false, expanded_url);
+						}
+					}
+				}
+            }
+			// We need a url and method to construct HttpRequestMessage,
+			// and we should have both in hand now...
+			HttpMethod http_method = HttpMethod.Get;
+			if (http_method_map.ContainsKey(method)) {
+				http_method = http_method_map[method];
+            }
+			request = new HttpRequestMessage(http_method, expanded_url);
+			string expanded_header = null;
+			// We have a request in hand. If we found a BizDeck.HttpFormat
+			// specify any headers?
+			if (http_spec_map != null) {
+				foreach (string key in http_spec_map.Keys) {
+					if (key != "url") {
+						// If it's not a url, then we assume a header
+						// TODO: when we implement POST, we likely can't
+						// assume other spec fields are headers.
+						bd_http_format = http_spec_map[key];
+						(ok, expanded_header) = ExpandHttpFormat(bd_http_format, action);
+						if (ok) {
+							request.Headers.Add(key, expanded_header);
+                        }
+						else {
+							// expanded_header will be an err msg
+							return (ok, expanded_header);
+                        }
+					}
+                }
+            }
+			return (true, request);
+        }
 	}
 }

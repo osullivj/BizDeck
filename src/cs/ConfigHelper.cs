@@ -1,9 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 
 namespace BizDeck {
+
+    // HttpFormat: used for loading http_formats.json
+    public class HttpFormat {
+        [JsonPropertyName("format")]
+        public string Format { get; set; }
+
+        [JsonPropertyName("values")]
+        public List<string> Values { get; set; }
+    }
 
     public class ConfigHelper {
         private CmdLineOptions cmd_line_options;
@@ -18,8 +29,7 @@ namespace BizDeck {
             json_serializer_options.WriteIndented = true;
         }
 
-        public void CreateLogger()
-        {
+        public void CreateLogger() {
             // Most classes create their logger in the ctor. Can't do that here
             // as ConfigHelper is instanced before the config is loaded, so we
             // don't know what the log dir is at construction time. This method
@@ -33,17 +43,23 @@ namespace BizDeck {
         }
 
         public string ConfigPath {
-            get => Path.Combine(new string[] { ConfigDir, "config.json"});
+            get => Path.Combine(new string[] { ConfigDir, "config.json" });
         }
 
-        public string TraceConfigPath
-        {
+        public string TraceConfigPath {
             get => Path.Combine(new string[] { ConfigDir, "trace_config.json" });
         }
 
-        public string ConfigDir
-        {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg"});
+        public string SecretsPath {
+            get => Path.Combine(new string[] { ConfigDir, "secrets.json" });
+        }
+
+        public string HttpFormatsPath {
+            get => Path.Combine(new string[] { ConfigDir, "http_formats.json" });
+        }
+
+        public string ConfigDir {
+            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg" });
         }
 
         public string DataDir {
@@ -51,11 +67,10 @@ namespace BizDeck {
         }
 
         public string LogDir {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "logs"});
+            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "logs" });
         }
 
-        public string HtmlDir
-        {
+        public string HtmlDir {
             get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "html" });
         }
 
@@ -71,6 +86,10 @@ namespace BizDeck {
 
         public string TraceConfig { get; private set; }
 
+        public Dictionary<string, string> Secrets { get; private set; }
+
+        public Dictionary<string, Dictionary<string, HttpFormat>> HttpFormatMap {get; private set;}
+
         public string GetFullIconPath(string button_image_path)
         {
             return Path.Combine(new string[] { LocalAppDataPath, "BizDeck", button_image_path });
@@ -83,6 +102,13 @@ namespace BizDeck {
 
         public BizDeckConfig LoadConfig() {
             try {
+                string secrets = File.ReadAllText(SecretsPath);
+                Secrets = JsonSerializer.Deserialize<Dictionary<string, string>>(secrets, json_serializer_options);
+                foreach (var pair in Secrets) {
+                    NameStack.Instance.AddNameValue($"secrets.{pair.Key}", pair.Value);
+                }
+                string http_formats = File.ReadAllText(HttpFormatsPath);
+                HttpFormatMap = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, HttpFormat>>>(http_formats, json_serializer_options);
                 TraceConfig = File.ReadAllText(TraceConfigPath);
                 string config_json = File.ReadAllText(ConfigPath);
                 BizDeckConfig = JsonSerializer.Deserialize<BizDeckConfig>(config_json, json_serializer_options);
@@ -92,12 +118,12 @@ namespace BizDeck {
                 }
                 return BizDeckConfig;
             }
-            catch (JsonException ex) {
+            catch (Exception ex) {
                 // Since we cannot load the config file, we cannot start the web server and
                 // we don't know where the location of log dir. So we present the exception
                 // in the default browser. But we do have bdroot from the cmd line, so
                 // we can save the error there...
-                ThrowErrorToBrowser("config.json", ex.ToString());
+                ThrowErrorToBrowser("LoadConfig", ex.ToString());
             }
             return null;
         }

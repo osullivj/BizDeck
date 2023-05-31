@@ -1,0 +1,8 @@
+{
+    "quandl": {
+        "url": {
+            "format":"{0}?auth_token={1}",
+            "values":["url", "secrets.quandl.auth_token"]
+        }
+    }
+}

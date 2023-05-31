@@ -149,7 +149,7 @@ namespace BizDeck {
 			// NB the HTML should be fully rendered when GoToAsync returns
 			// But it may be possible that JS will causes elements to
 			// render aftrwards...
-			logger.Error($"Navigate: GoToAsync({url})");
+			logger.Info($"Navigate: GoToAsync({url})");
 			try {
 				http_response = await current_page.GoToAsync(url);
 			}

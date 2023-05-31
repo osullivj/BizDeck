@@ -5,9 +5,17 @@ using PuppeteerSharp;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace BizDeck
-{
+// Note the ref to PuppeteerSharp, which implements the DevTools wire 
+// protocol, and throws exceptions. Since we're doing multithreaded
+// async here, we cannot have unhandled exceptions as they cause
+// deadlocks. Consequently, every invocation of a P# method here
+// is wrapped in try/catch blocks.
+
+namespace BizDeck {
+
 	public delegate Task<(bool, string)> Dispatch(JObject step);
+		// define this driver's own callback dispatch signature
+		// for handling Chrome DevTools Recorder steps
 
 	public class PuppeteerDriver {
 		LaunchOptions launch_options = new();
@@ -28,6 +36,8 @@ namespace BizDeck
 			dispatchers["navigate"] = this.Navigate;
 			dispatchers["click"] = this.Click;
 			dispatchers["change"] = this.Change;
+			dispatchers["keyDown"] = this.KeyDown;
+			dispatchers["keyUp"] = this.KeyUp;
 
 			// setup browser process launch options
 			launch_options.Headless = config_helper.BizDeckConfig.Headless;
@@ -52,7 +62,13 @@ namespace BizDeck
 			// Create browser instance. NB we're not doing ConfigureAwait(false)
 			// to enable resumption on another thread, but that is what happens
 			// in the logs. So there must be a ConfigureAwait() in PuppeteerSharp.
-			browser = await Puppeteer.LaunchAsync(launch_options);
+			try {
+				browser = await Puppeteer.LaunchAsync(launch_options);
+			}
+			catch (Exception ex) {
+				logger.Error($"PlaySteps: browser launch failed: {ex}");
+				return (false, ex.Message);
+            }
 			JArray steps = chrome_recording.steps;
 			logger.Info($"PlaySteps: playing[{chrome_recording.title}], {steps.Count} steps");
 			bool step_ok = false;
@@ -93,9 +109,14 @@ namespace BizDeck
 				vpo.IsMobile = (bool)step["isMobile"];
 				vpo.HasTouch = (bool)step["hasTouch"];
 				vpo.IsLandscape = (bool)step["isLandscape"];
-				logger.Info($"SetViewport: ViewPortOptions[{JsonConvert.SerializeObject(vpo)}] starting...");
-				await current_page.SetViewportAsync(vpo);
-				logger.Info($"SetViewport: ViewPortOptions[{JsonConvert.SerializeObject(vpo)}] done");
+				logger.Info($"SetViewport: ViewPortOptions[{JsonConvert.SerializeObject(vpo)}]");
+				try {
+					await current_page.SetViewportAsync(vpo);
+				}
+				catch (Exception ex) {
+					logger.Error($"SetViewport: failed {ex}");
+					return (false, ex.Message);
+				}
 			}
 			return (true, null);
         }
@@ -104,13 +125,19 @@ namespace BizDeck
         {
 			bool ok = false;
 			string error = null;
+			IResponse http_response = null;
 			string url = (string)step["url"];
 			if (current_page == null) {
-				logger.Info($"Navigate: NewPageAsync for url[{url}] starting...");
+				logger.Info($"Navigate: NewPageAsync for url[{url}]");
 				// This will resume on another thread, despite no
 				// ConfigureAwait(): P# must fo it internally.
-				current_page = await browser.NewPageAsync();
-				logger.Info($"Navigate: NewPageAsync for url[{url}] done");
+				try {
+					current_page = await browser.NewPageAsync();
+				}
+				catch (Exception ex) {
+					logger.Error($"Navigate: NewPageAsync failed {ex}");
+					return (false, ex.Message);
+				}
 				if (pending_viewport_step != null) {
 					(ok, error) = await SetViewport(pending_viewport_step);
 					pending_viewport_step = null;
@@ -122,7 +149,14 @@ namespace BizDeck
 			// NB the HTML should be fully rendered when GoToAsync returns
 			// But it may be possible that JS will causes elements to
 			// render aftrwards...
-			IResponse http_response = await current_page.GoToAsync(url);
+			logger.Error($"Navigate: GoToAsync({url})");
+			try {
+				http_response = await current_page.GoToAsync(url);
+			}
+			catch (Exception ex) {
+				logger.Error($"Navigate: NewPageAsync url[{url}] {ex}");
+				return (false, ex.Message);
+			}
 			if (http_response.Status != System.Net.HttpStatusCode.OK) {
 				error = $"bad status[{http_response.StatusText}] for url[{url}]";
 				logger.Error($"Navigate: {error}");
@@ -169,6 +203,32 @@ namespace BizDeck
 				logger.Error($"Change: {ex}");
 				return (false, ex.Message);
             }
+			return (true, null);
+		}
+
+		public async Task<(bool, string)> KeyDown(JObject step) {
+			string key = null;
+			try {
+				key = (string)step["key"];
+				await current_page.Keyboard.DownAsync(key);
+			}
+			catch (Exception ex) {
+				logger.Error($"KeyDown: key[{key}] {ex}");
+				return (false, ex.Message);
+			}
+			return (true, null);
+		}
+
+		public async Task<(bool, string)> KeyUp(JObject step) {
+			string key = null;
+			try {
+				key = (string)step["key"];
+				await current_page.Keyboard.UpAsync(key);
+			}
+			catch (Exception ex) {
+				logger.Error($"KeyUp: key[{key}] {ex}");
+				return (false, ex.Message);
+			}
 			return (true, null);
 		}
 

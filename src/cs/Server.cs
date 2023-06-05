@@ -123,6 +123,7 @@ namespace BizDeck {
                 // First, we will configure our web server by adding Modules.
                 .WithLocalSessionManager()
                 .WithModule(websock)
+                .WithWebApi("/api", m => m.WithController( ApiControllerFactory))
                 .WithStaticFolder("/icons", config_helper.IconsDir, false, m => m.WithoutContentCaching())
                 .WithStaticFolder("/", config_helper.HtmlDir, true, m => m.WithContentCaching())
                 .WithModule(new ActionModule("/", HttpVerbs.Any, ctx => ctx.SendDataAsync(new { Message = "Error" })));
@@ -202,6 +203,10 @@ namespace BizDeck {
         // ConnectedDeck code that invokes RunAync on ButtonActionMap entries.
         public async Task SendNotification(string title, string body, bool fade=false) {
             await websock.SendNotification(null, title, body, fade);
+        }
+
+        public BizDeckApiController ApiControllerFactory() {
+            return new BizDeckApiController(config_helper, status);
         }
     }
 }

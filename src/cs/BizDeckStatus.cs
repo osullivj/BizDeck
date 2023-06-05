@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Text.Json.Serialization;
 
-namespace BizDeck
-{
+namespace BizDeck {
 
-    public class BizDeckStatus
-    {
+    public class BizDeckStatus {
         [JsonPropertyName("deck_connection")]
         public bool DeckConnection { get; set; }
 

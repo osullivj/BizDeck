@@ -46,8 +46,8 @@ namespace BizDeck {
 
         private DataCache() { }
 
-        public void Insert(string group, string key, List<Dictionary<string,string>> val) {
-            lock(cache_lock) {
+        public void Insert(string group, string key, List<Dictionary<string, string>> val) {
+            lock (cache_lock) {
                 Dictionary<string, CacheEntry> cache_group = null;
                 if (cache.ContainsKey(group)) {
                     cache_group = cache[group];
@@ -79,12 +79,24 @@ namespace BizDeck {
         public string SerializeAndResetChanged() {
             string json = "{}";
             BizDeckJsonEvent cache_update = new("cache");
-            lock(cache_lock) {
+            lock (cache_lock) {
                 cache_update.Data = cache;
                 json = JsonConvert.SerializeObject(cache_update);
                 changed = false;
             }
             return json;
+        }
+
+        public CacheEntry GetCacheEntry(string group, string key) {
+            lock (cache_lock) {
+                if (cache.ContainsKey(group)) {
+                    Dictionary<string, CacheEntry> cache_group = cache[group];
+                    if (cache_group.ContainsKey(key)) {
+                        return cache_group[key];
+                    }
+                }
+            }
+            return null;
         }
     }
 }

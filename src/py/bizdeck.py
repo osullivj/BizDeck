@@ -52,7 +52,7 @@ def add_csv_to_cache_as_dict(args):
             cs_cache_entry = read_unqiue_key_rows(reader, key)
         else:
             cs_cache_entry = read_non_unqiue_key_rows(reader)
-    data_cache.Insert(cache_location, csv_file_name, cs_cache_entry)
+    data_cache.Insert(cache_location, csv_file_name, cs_cache_entry, key)
     return ""
 
 

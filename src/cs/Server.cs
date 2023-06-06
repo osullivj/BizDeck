@@ -123,6 +123,7 @@ namespace BizDeck {
                 // First, we will configure our web server by adding Modules.
                 .WithLocalSessionManager()
                 .WithModule(websock)
+                .WithModule(new ActionModule("/excel", HttpVerbs.Get, ExcelCallback))
                 .WithWebApi("/api", m => m.WithController( ApiControllerFactory))
                 .WithStaticFolder("/icons", config_helper.IconsDir, false, m => m.WithoutContentCaching())
                 .WithStaticFolder("/", config_helper.HtmlDir, true, m => m.WithContentCaching())
@@ -207,6 +208,25 @@ namespace BizDeck {
 
         public BizDeckApiController ApiControllerFactory() {
             return new BizDeckApiController(config_helper, status);
+        }
+
+        public async Task ExcelCallback(IHttpContext ctx) {
+            // Segments will be eg
+            // [0]: '/'
+            // [1]: 'excel/'
+            // [2]: 'quandl/'
+            // [3]: 'yield.csv'
+            if (ctx.Request.Url.Segments.Length < 4) {
+                logger.Error($"ExcelCallback: not enough URL segments: {ctx.Request.RawUrl}");
+                return;
+            }
+            string group = ctx.Request.Url.Segments[2].Trim('/');
+            string key = ctx.Request.Url.Segments[3];
+            using (var stream = ctx.OpenResponseStream()) {
+                // can we find the requested data in the cache?
+                CacheEntry cache_entry = DataCache.Instance.GetCacheEntry(group, key);
+                await HTMLHelpers.CacheEntryToStream(logger, cache_entry, stream);
+            }
         }
     }
 }

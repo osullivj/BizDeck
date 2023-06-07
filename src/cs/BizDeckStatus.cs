@@ -4,6 +4,16 @@ using System.Text.Json.Serialization;
 namespace BizDeck {
 
     public class BizDeckStatus {
+
+        // Use of Lazy<T> gives us a thread safe singleton
+        // Instance property is the access point
+        // https://csharpindepth.com/articles/singleton
+        private static readonly Lazy<BizDeckStatus> lazy =
+            new Lazy<BizDeckStatus>(() => new BizDeckStatus());
+        public static BizDeckStatus Instance { get { return lazy.Value; } }
+
+        private BizDeckStatus() { }
+
         [JsonPropertyName("deck_connection")]
         public bool DeckConnection { get; set; }
 
@@ -23,7 +33,5 @@ namespace BizDeck {
         public int Brightness { get; set; }
 
         public string MyURL { get; set; }
-
-        public IconCache IconCache { get; set;}
     }
 }

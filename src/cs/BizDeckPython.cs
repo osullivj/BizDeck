@@ -16,8 +16,16 @@ namespace BizDeck {
         private ScriptEngine action_engine;
         private ScriptScope action_scope;
 
+        // BizDeckPython is expensive to initialise because
+        // of the startup cost of a Python runtime within
+        // the CLR, so we make it a singleton, and put the
+        // real initisalisation in Init(), which only Server
+        // invokes. 
+        private static readonly Lazy<BizDeckPython> lazy =
+            new Lazy<BizDeckPython>(() => new BizDeckPython());
+        public static BizDeckPython Instance { get { return lazy.Value; } }
 
-        public BizDeckPython(ConfigHelper ch) {
+        public void Init(ConfigHelper ch) { 
             logger = new(this);
             config_helper = ch;
             // https://stackoverflow.com/questions/14139766/run-a-particular-python-function-in-c-sharp-with-ironpython

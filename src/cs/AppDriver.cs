@@ -7,10 +7,21 @@ namespace BizDeck
         BizDeckLogger logger;
         BizDeckWebSockModule websock;
 
-        public AppDriver(ConfigHelper ch, BizDeckWebSockModule ws) {
+        // ButtonAction ctor: any connected GUIs will get notification on fail
+        // NB button actions do not have an HttpContext, so need the ws to
+        // talk back to the GUI.
+        public AppDriver(BizDeckWebSockModule ws) {
             logger = new(this);
-            config_helper = ch;
+            config_helper = ConfigHelper.Instance;
             websock = ws;
+        }
+
+        // API ctor: the caller has an HTTP context that can be used for
+        // error reporting.
+        public AppDriver() {
+            logger = new(this);
+            config_helper = ConfigHelper.Instance;
+            websock = null;
         }
 
         public async Task<(bool, string)> PlayApp(string name_or_path) {
@@ -20,7 +31,9 @@ namespace BizDeck
             (ok, launch, error) = await config_helper.LoadAppLaunch(name_or_path);
             if (!ok) {
                 logger.Error($"PlayApp: {error}");
-                await websock.SendNotification(null, $"{name_or_path} app launch failed", error);
+                if (websock != null) {
+                    await websock.SendNotification(null, $"{name_or_path} app launch failed", error);
+                }
                 return (ok, error);
             }
             logger.Info($"Run: {name_or_path}:{launch.ExeDocUrl}");

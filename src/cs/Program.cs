@@ -14,15 +14,15 @@ namespace BizDeck {
             // First parse cmd line opts...
             var parser = new Parser();
             var result = parser.ParseArguments<CmdLineOptions>(args);
-            // first load the config
-            var config_helper = new ConfigHelper(result.Value);
-            var config = config_helper.LoadConfig();
+            // Create and init config singleton
+            ConfigHelper.Instance.Init(result.Value);
+            var config = ConfigHelper.Instance.LoadConfig();
             if (config.Console) {
                 Win32.AllocConsole();
             }
-            BizDeckLogger.InitLogging(config_helper);
+            BizDeckLogger.InitLogging();
             var logger = new BizDeckLogger(typeof(Program));
-            var server = new Server(config_helper);
+            var server = new Server();
             server.Run();
             if (config.Console) {
                 Console.ReadKey(true);

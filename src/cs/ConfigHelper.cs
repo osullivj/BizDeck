@@ -17,16 +17,25 @@ namespace BizDeck {
     }
 
     public class ConfigHelper {
+        // Use of Lazy<T> gives us a thread safe singleton
+        // Instance property is the access point
+        // https://csharpindepth.com/articles/singleton
+        private static readonly Lazy<ConfigHelper> lazy =
+            new Lazy<ConfigHelper>(() => new ConfigHelper());
+        public static ConfigHelper Instance { get { return lazy.Value; } }
+
         private CmdLineOptions cmd_line_options;
         private BizDeckLogger logger;
         private JsonSerializerOptions json_serializer_options = new();
 
-        public ConfigHelper(CmdLineOptions opts) {
-            cmd_line_options = opts;
-
+        private ConfigHelper() {
             // setup the JSON serialization options used by Load/SaveConfig
             json_serializer_options.AllowTrailingCommas = true;
             json_serializer_options.WriteIndented = true;
+        }
+
+        public void Init(CmdLineOptions opts) {
+            cmd_line_options = opts;
         }
 
         public void CreateLogger() {
@@ -167,7 +176,7 @@ namespace BizDeck {
             return await SaveConfig();
         }
 
-        public async Task<(bool,string)> AddButton(IconCache icon_cache, string script_name, string script, string background)
+        public async Task<(bool,string)> AddButton(string script_name, string script, string background)
         {
             // name will have an extenstion like .json, so remove it...
             string button_name = Path.GetFileNameWithoutExtension(script_name);
@@ -178,7 +187,7 @@ namespace BizDeck {
             {
                 return (false, $"{ConfigDir}\\{script_name} already exists");
             }
-            bool created = icon_cache.CreateLabelledIconPNG(background, button_name);
+            bool created = IconCache.Instance.CreateLabelledIconPNG(background, button_name);
             if (!created) {
                 return (false, $"cannot create {button_name} PNG from background[{background}]");
             }

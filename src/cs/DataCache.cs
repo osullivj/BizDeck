@@ -209,7 +209,7 @@ namespace BizDeck {
 
         private DataCache() { }
 
-        public void Insert(string group, string key, List<Dictionary<string, string>> val) {
+        public void Insert(string group, string cache_key, List<Dictionary<string, string>> val) {
             lock (cache_lock) {
                 Dictionary<string, CacheEntry> cache_group = null;
                 if (cache.ContainsKey(group)) {
@@ -219,12 +219,12 @@ namespace BizDeck {
                     cache_group = new();
                     cache.Add(group, cache_group);
                 }
-                cache_group[key] = new CacheEntry(val, null);
+                cache_group[cache_key] = new CacheEntry(val, null);
                 changed = true;
             }
         }
 
-        public void Insert(string group, string key, Dictionary<string, Dictionary<string, string>> val, string row_key) {
+        public void Insert(string group, string cache_key, Dictionary<string, Dictionary<string, string>> val, string row_key) {
             lock (cache_lock) {
                 Dictionary<string, CacheEntry> cache_group = null;
                 if (cache.ContainsKey(group)) {
@@ -234,28 +234,38 @@ namespace BizDeck {
                     cache_group = new();
                     cache.Add(group, cache_group);
                 }
-                cache_group[key] = new CacheEntry(val, row_key);
+                cache_group[cache_key] = new CacheEntry(val, row_key);
                 changed = true;
             }
         }
 
-        public string SerializeAndResetChanged() {
+        // The ActionsDriver uses DataCache.HasChanged to figure out if we
+        // need to send an update to the GUI after an action completes. Yes,
+        // feature flag params are messy, but the alternative is to split
+        // this method in two: one to serialize and one to reset, which would
+        // both need to hold the cache lock. But then we'd need two lock/unlock
+        // cycles, unless we use recursive locking, which is best avoided as
+        // it complicates thinking about the stack state of multipled threads.
+        public string SerializeToJsonEvent(bool reset_changed_flag = false) {
             string json = "{}";
             BizDeckJsonEvent cache_update = new("cache");
             lock (cache_lock) {
                 cache_update.Data = cache;
                 json = JsonConvert.SerializeObject(cache_update);
-                changed = false;
+                if (reset_changed_flag) {
+                    changed = false;
+                }
             }
             return json;
         }
 
-        public CacheEntry GetCacheEntry(string group, string key) {
+
+        public CacheEntry GetCacheEntry(string group, string cache_key) {
             lock (cache_lock) {
                 if (cache.ContainsKey(group)) {
                     Dictionary<string, CacheEntry> cache_group = cache[group];
-                    if (cache_group.ContainsKey(key)) {
-                        return cache_group[key];
+                    if (cache_group.ContainsKey(cache_key)) {
+                        return cache_group[cache_key];
                     }
                 }
             }

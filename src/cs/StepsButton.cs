@@ -15,11 +15,11 @@ namespace BizDeck
         PuppeteerDriver driver;
         ConfigHelper config_helper;
 
-        public StepsButton(ConfigHelper ch, string name) {
+        public StepsButton(string name) {
             logger = new(this);
-            config_helper = ch;
+            config_helper = ConfigHelper.Instance;
             this.name = name;
-            driver = new PuppeteerDriver(ch);
+            driver = new PuppeteerDriver();
         }
 
         public override void Run() {

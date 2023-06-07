@@ -12,47 +12,65 @@ using CommandLine;
 
 namespace BizDeck {
     public class Server {
+        // ButtonAction subclasses include AppButton for app launches, StepsButton for
+        // playing Chrome DevTools Recorder scipts, and ActionsButton for running
+        // BizDeck action scripts. Each of those three button types includes a driver
+        // to launch the app, play the recorder step script, or execute the actions.
         private Dictionary<string, ButtonAction> button_action_map = new Dictionary<string, ButtonAction>();
-        private ConnectedDeck stream_deck = null;
-        private ConfigHelper config_helper = null;
-        private BizDeckWebSockModule websock = null;
-        private BizDeckPython python = null;
-        private BizDeckLogger logger;
-        private IWebServer http_server;
-        private DeckManager deck_manager;
-        private BizDeckStatus status = new();
 
-        public Server(ConfigHelper ch) {
+        // ConnectedDeck owns the HID connection to the StreamDeck
+        private ConnectedDeck stream_deck = null;
+
+        // ConfigHelper loads cfg/config.json, secrets.json and also provides a
+        // lot of convenience helper methods
+        private ConfigHelper config_helper = null;
+
+        // Specialisation of Embedio websock module for GUI to server comms
+        // to populate GUI tabs, including Config, Status, Cache.
+        private BizDeckWebSockModule websock = null;
+
+        // BizDeck logger adds threadIDs to Embedio's Swan logger. Very handy
+        // for debugging deadlocks caused by async code that fails to catch
+        // exceptions. For example, if you don't catch PuppeteerSharp exceptions
+        // thrown when playing a recorder step script, you'll get deadlocks.
+        private BizDeckLogger logger;
+
+        // Main Embedio server object for handling HTTP GETs from GUI
+        // as well as REST API
+        private IWebServer http_server;
+
+        // DeckManager creates the ConnectedDeck, and knows about the different
+        // Elgato hardware that may be connected.
+        private DeckManager deck_manager;
+
+        public Server() {
             logger = new(this);
-            config_helper = ch;
+            config_helper = ConfigHelper.Instance;
             // One shot copy so that hx gui can get default background from
             // local cache avoiding hx hardwiring and using a single source of truth 
-            status.StartTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            BizDeckStatus.Instance.StartTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             // We put the background default in status to make it easy
             // for the AddButton dialog to display the default value. The alternative
             // would be special case handling in on_config(), which would make
             // that code far less generic.
-            status.BackgroundDefault = config_helper.BizDeckConfig.BackgroundDefault;
+            BizDeckStatus.Instance.BackgroundDefault = config_helper.BizDeckConfig.BackgroundDefault;
             // Slider changes status.Brightness dynamically, but it only gets
             // written back to config when the user hits the apply button
-            status.Brightness = config_helper.BizDeckConfig.DeckBrightnessPercentage;
-            status.MyURL = $"http://{ch.BizDeckConfig.HTTPHostName}:{ch.BizDeckConfig.HTTPServerPort}";
+            BizDeckStatus.Instance.Brightness = config_helper.BizDeckConfig.DeckBrightnessPercentage;
+            BizDeckStatus.Instance.MyURL = $"http://{config_helper.BizDeckConfig.HTTPHostName}:{config_helper.BizDeckConfig.HTTPServerPort}";
             // Create our IronPython executor
-            python = new BizDeckPython(config_helper);
+            BizDeckPython.Instance.Init(config_helper);
             // Create websock here so that ConnectStreamDeck and CreateWebServer can get from
             // the member var, and we can pass it to button actions enabling them to send
             // notifications to the GUI on fails
-            websock = new BizDeckWebSockModule(config_helper, status);
+            websock = new BizDeckWebSockModule(config_helper);
             // First, let's connect to the StreamDeck
             ConnectStreamDeck();
-            // Now the deck is connected we know the ButtonSize, so we
-            // can construct the IconCache
-            status.IconCache = new IconCache(config_helper, status);
             // Now we have an IconCache we can invoke InitDeck, which
             // will pull StreamDeck compatible JPEGS from the cache
             // which have been sized correctly for the deck buttons.
             if (stream_deck != null) {
-                stream_deck.InitDeck(status.IconCache);
+                stream_deck.InitDeck();
             }
             // Now we have my_url, stream_deck, websock members set we can
             // build the button action map
@@ -74,17 +92,17 @@ namespace BizDeck {
             if (stream_deck == null) {
                 config_helper.ThrowErrorToBrowser("StreamDeck init", "Is your StreamDeck plugged in?");
                 logger.Error("StreamDeck init failed - is it plugged in?");
-                status.DeckConnection = false;
+                BizDeckStatus.Instance.DeckConnection = false;
                 return false;
             }
             // Now we're connected to the deck update status with ButtonSize and Count
             // We must do that before we invoke ConnectedDeck.InitDeck, which calls
             // ConnectedDeck.SetupDeviceButtons, which uses the IconCache. And the
             // IconCache depends on ButtonSize.
-            status.DeckConnection = true;
-            status.ButtonCount = stream_deck.ButtonCount;
-            status.ButtonSize = stream_deck.ButtonSize;
-            status.DeviceName = stream_deck.Name;
+            BizDeckStatus.Instance.DeckConnection = true;
+            BizDeckStatus.Instance.ButtonCount = stream_deck.ButtonCount;
+            BizDeckStatus.Instance.ButtonSize = stream_deck.ButtonSize;
+            BizDeckStatus.Instance.DeviceName = stream_deck.Name;
             // Let the websock module know about the stream deck
             // so it can resend buttons as necessary
             websock.StreamDeck = stream_deck;
@@ -118,7 +136,7 @@ namespace BizDeck {
 
         private WebServer CreateWebServer() {
             var server = new WebServer(o => o
-                    .WithUrlPrefix(status.MyURL)
+                    .WithUrlPrefix(BizDeckStatus.Instance.MyURL)
                     .WithMode(HttpListenerMode.EmbedIO))
                 // First, we will configure our web server by adding Modules.
                 .WithLocalSessionManager()
@@ -163,7 +181,7 @@ namespace BizDeck {
             string error = null;
             button_action_map.Clear();
             button_action_map["page"] = new Pager(stream_deck);
-            button_action_map["gui"] = new ShowBizDeckGUI(status.MyURL);
+            button_action_map["gui"] = new ShowBizDeckGUI(BizDeckStatus.Instance.MyURL);
             // Buttons for the dev tools recorder, which we're not using currently.
             // button_action_map["start_recording"] = new StartRecording(recorder);
             // button_action_map["stop_recording"] = new StopRecording(recorder);
@@ -172,13 +190,13 @@ namespace BizDeck {
                 if (!button_action_map.ContainsKey(bd.Name)) {
                     switch (bd.Action) {
                         case "actions":
-                            button_action_map[bd.Name] = new ActionsButton(config_helper, bd.Name, websock, python);
+                            button_action_map[bd.Name] = new ActionsButton(bd.Name, websock);
                             break;
                         case "steps":
-                            button_action_map[bd.Name] = new StepsButton(config_helper, bd.Name);
+                            button_action_map[bd.Name] = new StepsButton(bd.Name);
                             break;
                         case "app":
-                            button_action_map[bd.Name] = new AppButton(config_helper, bd.Name, websock);
+                            button_action_map[bd.Name] = new AppButton(bd.Name, websock);
                             break;
                         default:
                             error = "unknown action[{bd.Action}] for button[{bd.Name}]";
@@ -207,7 +225,7 @@ namespace BizDeck {
         }
 
         public BizDeckApiController ApiControllerFactory() {
-            return new BizDeckApiController(config_helper, status);
+            return new BizDeckApiController(config_helper);
         }
 
         public async Task ExcelCallback(IHttpContext ctx) {
@@ -216,15 +234,18 @@ namespace BizDeck {
             // [1]: 'excel/'
             // [2]: 'quandl/'
             // [3]: 'yield.csv'
+            CacheEntry cache_entry = null;
             if (ctx.Request.Url.Segments.Length < 4) {
                 logger.Error($"ExcelCallback: not enough URL segments: {ctx.Request.RawUrl}");
-                return;
             }
-            string group = ctx.Request.Url.Segments[2].Trim('/');
-            string key = ctx.Request.Url.Segments[3];
+            else {
+                string group = ctx.Request.Url.Segments[2].Trim('/');
+                string key = ctx.Request.Url.Segments[3];
+                cache_entry = DataCache.Instance.GetCacheEntry(group, key);
+            }
             using (var stream = ctx.OpenResponseStream()) {
-                // can we find the requested data in the cache?
-                CacheEntry cache_entry = DataCache.Instance.GetCacheEntry(group, key);
+                // CacheEntryToStream will send a NoData table header
+                // if we give it a null cache_entry
                 await HTMLHelpers.CacheEntryToStream(logger, cache_entry, stream);
             }
         }

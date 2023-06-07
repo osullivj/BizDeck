@@ -18,7 +18,6 @@ namespace BizDeck {
 		ConfigHelper config_helper;
 		BizDeckLogger logger;
 		HttpClient http_client = new();
-		BizDeckPython python;
 		BizDeckWebSockModule websock;
 		AppDriver app_driver;
 		Dictionary<string, Dispatch> dispatchers = new();
@@ -29,12 +28,13 @@ namespace BizDeck {
 		List<string> app_script_keys = new() { "name"};
 		List<string> action_script_keys = new() { "name" };
 
-
-		public ActionsDriver(ConfigHelper ch, BizDeckWebSockModule ws, BizDeckPython py) {
+		// We allow a null websock ctor param so that BizDeckApiController
+		// can construct for API actions invocation. In that scenario we
+		// don't update GUI cache tab during API invocation. We leave
+		public ActionsDriver(BizDeckWebSockModule ws = null) {
 			logger = new(this);
-			app_driver = new(ch, ws);
-			config_helper = ch;
-			python = py;
+			app_driver = new(ws);
+			config_helper = ConfigHelper.Instance;
 			websock = ws;
 			dispatchers["http_get"] = this.HTTPGet;
 			dispatchers["python_batch"] = this.RunPythonBatchScript;
@@ -74,8 +74,8 @@ namespace BizDeck {
 						logger.Info($"PlayActions: name[{name}] action ok index[{action_index}], type[{action_type}]");
 						// The action succeeded. It may have updated the DataCache, so check if it's
 						// changed, and if so, send to the GUI.
-						if (DataCache.Instance.HasChanged) {
-							string cache_state_json = DataCache.Instance.SerializeAndResetChanged();
+						if (DataCache.Instance.HasChanged && websock != null) {
+							string cache_state_json = DataCache.Instance.SerializeToJsonEvent(true);
 							await websock.BroadcastJson(cache_state_json);
                         }
                     }
@@ -152,7 +152,7 @@ namespace BizDeck {
 				logger.Error($"RunPythonBatchScript: {error}");
 				return (false, error);
             }
-			return await python.RunBatchScript(python_script_path, options);
+			return await BizDeckPython.Instance.RunBatchScript(python_script_path, options);
         }
 
 		public async Task<(bool, string)> RunPythonAction(JObject action) {
@@ -173,7 +173,7 @@ namespace BizDeck {
 					args.Add(param.Value.ToString());
 				}
             }
-			return await python.RunActionFunction(python_action_function, args);
+			return await BizDeckPython.Instance.RunActionFunction(python_action_function, args);
 		}
 
 		public async Task<(bool, string)> HTTPGet(JObject action) {

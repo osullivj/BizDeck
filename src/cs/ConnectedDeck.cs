@@ -36,8 +36,8 @@ namespace BizDeck {
             logger = new(this);
         }
 
-        public void InitDeck(IconCache cache) {
-            icon_cache = cache;
+        public void InitDeck() {
+            icon_cache = IconCache.Instance;
             // get key config.json settings from BizDeckConfig via ConfigHelper
             button_list = config_helper.BizDeckConfig.ButtonList;
             SetBrightness((byte)config_helper.BizDeckConfig.DeckBrightnessPercentage);

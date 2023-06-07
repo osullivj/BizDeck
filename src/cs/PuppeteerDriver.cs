@@ -27,10 +27,9 @@ namespace BizDeck {
 		JObject pending_viewport_step;
 		WaitForSelectorOptions wait_for_selector_options = new();
 
-		public PuppeteerDriver(ConfigHelper ch)
-		{
+		public PuppeteerDriver() {
 			logger = new(this);
-			config_helper = ch;
+			config_helper = ConfigHelper.Instance;
 
 			dispatchers["setViewport"] = this.SetViewport;
 			dispatchers["navigate"] = this.Navigate;

@@ -5,21 +5,26 @@ using EmbedIO.WebSockets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace BizDeck
-{
-    public class BizDeckWebSockModule : WebSocketModule
-    {
+namespace BizDeck {
+
+    // delegates for methods that update websock clients inc the browser GUI
+    // this enables eg AppDriver, PuppeteerDriver  ActionsDriver to update
+    // GUIs with
+    public delegate Task NotifyGUI(IWebSocketContext context, string title, string body, bool fade = false);
+    public delegate Task BroadcastJson(string json);
+
+    public class BizDeckWebSockModule : WebSocketModule {
         ConfigHelper config_helper;
         BizDeckStatus status;
         BizDeckLogger logger;
         List<string> add_button_request_keys = new() { "name", "json", "background" };
 
-        public BizDeckWebSockModule(ConfigHelper ch, BizDeckStatus stat) :
-            base("/ws", true)
+        public BizDeckWebSockModule(ConfigHelper ch)
+            :base("/ws", true)
         {
             logger = new BizDeckLogger(this);
             config_helper = ch;
-            status = stat;
+            status = BizDeckStatus.Instance;
             AddProtocol("json");
         }
 
@@ -94,7 +99,7 @@ namespace BizDeck
                 logger.Error($"HandleAddButtonDialogResult: cannot marshal script data from {evt_Data}");
             }
             // resume on any thread so we free this thread for more websock event handling
-            (ok, msg) = await config_helper.AddButton(status.IconCache, script_name, script, background);
+            (ok, msg) = await config_helper.AddButton(script_name, script, background);
             if (!ok) {
                 logger.Error($"HandleAddButtonDialogResult: add_button failed for name[{script_name}]");
                 await SendNotification(ctx, "Add button failed", msg);
@@ -113,9 +118,14 @@ namespace BizDeck
         protected override async Task OnClientConnectedAsync(IWebSocketContext context)
         {
             logger.Info($"OnClientConnectedAsync: WebsockID[{context.Id}]");
+            // Let the client know we've accepted the connection. Not strictly necessary,
+            // but very useful to see the incoming connected msg when debugging on the GUI side.
             await SendTargetedEvent(context, new BizDeckJsonEvent("connected")).ConfigureAwait(false);
+            // Populate GUI tabs: config won't change during process lifetime, but status and
+            // cache state will change, and a newly connected GUI needs to latest state for both.
             await SendStatus(context);
             await SendConfig(context);
+            await SendCache(context);
         }
 
         protected async Task SendConfig(IWebSocketContext context)
@@ -133,6 +143,13 @@ namespace BizDeck
             await SendTargetedEvent(context, status_event).ConfigureAwait(false);
         }
 
+        protected async Task SendCache(IWebSocketContext context) {
+            logger.Info($"SendCache: WebsockID[{context.Id}]");
+            // SerializeJsonEvent(false) so we don't reset HasChanged and
+            // trigger an unnecessary GUI update.
+            string cache_event_json = DataCache.Instance.SerializeToJsonEvent(false);
+            await SendTargetedEvent(context, cache_event_json).ConfigureAwait(false);
+        }
 
         public async Task SendNotification(IWebSocketContext context, string title, string body, 
                                                                             bool fade=false)
@@ -161,7 +178,10 @@ namespace BizDeck
             return SendAsync(context, JsonConvert.SerializeObject(jsEvent));
         }
 
-        /// <inheritdoc />
+        private Task SendTargetedEvent(IWebSocketContext context, string json) {
+            return SendAsync(context, JsonConvert.SerializeObject(json));
+        }
+
         protected override Task OnClientDisconnectedAsync(IWebSocketContext context)
         {
             logger.Info($"OnClientDisconnectedAsync: WebsockID[{context.Id}], Local[{context.IsLocal}], Remote[{context.RemoteEndPoint.Address}]");

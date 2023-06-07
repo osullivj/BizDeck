@@ -4,16 +4,14 @@ namespace BizDeck
 {
     public class AppButton:ButtonAction
     {
-        ConfigHelper config_helper;
         string name = null;
         BizDeckLogger logger;
         AppDriver app_driver;
 
-        public AppButton(ConfigHelper ch, string name, BizDeckWebSockModule ws) {
+        public AppButton(string name, BizDeckWebSockModule ws) {
             logger = new(this);
-            app_driver = new(ch, ws);
+            app_driver = new(ws);
             this.name = name;
-            config_helper = ch;
         }
 
         public override void Run() { }

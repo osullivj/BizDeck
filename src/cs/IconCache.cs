@@ -10,6 +10,14 @@ using System.Collections.Generic;
 namespace BizDeck {
 
 	public class IconCache {
+
+		// Use of Lazy<T> gives us a thread safe singleton
+		// Instance property is the access point
+		// https://csharpindepth.com/articles/singleton
+		private static readonly Lazy<IconCache> lazy =
+			new Lazy<IconCache>(() => new IconCache());
+		public static IconCache Instance { get { return lazy.Value; } }
+
 		private ConfigHelper config_helper;
 		private FontFamily font_family;
 		private Font font;
@@ -18,10 +26,10 @@ namespace BizDeck {
 		private BizDeckLogger logger;
 		private BizDeckStatus status;
 
-		public IconCache(ConfigHelper ch, BizDeckStatus stat) {
+		public IconCache() {
 			logger = new(this);
-			config_helper = ch;
-			status = stat;
+			config_helper = ConfigHelper.Instance;
+			status = BizDeckStatus.Instance;
 			font_family = new FontFamily(config_helper.BizDeckConfig.IconFontFamily);
 			font = new Font(font_family, config_helper.BizDeckConfig.IconFontSize,
 												FontStyle.Regular, GraphicsUnit.Pixel);

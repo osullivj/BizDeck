@@ -25,16 +25,16 @@ namespace BizDeck
             Logger.Error($"{System.Environment.CurrentManagedThreadId} {msg}", bizDeckObject.GetType().Name);
         }
 
-        public static void InitLogging(ConfigHelper config_helper)
+        public static void InitLogging()
         {
             // Swan's FileLogger takes care of inserting a date
             // suffix in the log path as 2nd paran true means "daily"
-            var log_path = Path.Combine(new string[] { config_helper.LogDir, "biz_deck.log" });
+            var log_path = Path.Combine(new string[] { ConfigHelper.Instance.LogDir, "biz_deck.log" });
             var logger = new FileLogger(log_path, true);
             Logger.RegisterLogger(logger);
             // Now logging has been initialised, we can tell config_helper to create
             // it's own logger instance.
-            config_helper.CreateLogger();
+            ConfigHelper.Instance.CreateLogger();
         }
     }
 }

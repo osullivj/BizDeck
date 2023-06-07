@@ -25,6 +25,9 @@ namespace BizDeck {
         public static byte[] IndexColumnName = Encoding.ASCII.GetBytes("Index");
         public static byte[] KeyColumnName = Encoding.ASCII.GetBytes("Key");
         public static byte[] EmptyString = Encoding.ASCII.GetBytes("");
+        // When a cache entry is empty, or doesn't exist, then send a NoData
+        // table header to Excel or browser. 
+        public static byte[] NoDataTableHeader = Encoding.ASCII.GetBytes("<thead><tr><th>No cached data</th></tr></thead>");
 
         public static async Task FieldToStream(BizDeckLogger logger, byte[] field, Stream s, bool header = false) {
             byte[] start = FieldStart;
@@ -50,8 +53,8 @@ namespace BizDeck {
 
         public static async Task CacheEntryToStream(BizDeckLogger logger, CacheEntry ce, Stream s) {
             await s.WriteAsync(TableStart);
-            if (ce != null || ce.Count == 0) {
-                // More than one row, so we will have ce.Headers for column names
+            if (ce != null && ce.Count > 0) {
+                // More than one row, so  we will have ce.Headers for column names
                 await s.WriteAsync(HeaderStart);
                 // First column is index or row key
                 await FieldToStream(logger, ce.GetKeyOrIndexColumnHeader(), s, true);
@@ -84,6 +87,9 @@ namespace BizDeck {
                     }
                 }
                 await s.WriteAsync(BodyEnd);
+            }
+            else {  // CacheEntry empty or not found
+                await s.WriteAsync(NoDataTableHeader);
             }
             await s.WriteAsync(TableEnd);
         }

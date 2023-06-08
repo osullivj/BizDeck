@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EmbedIO;
 using EmbedIO.WebApi;
 using EmbedIO.Files;
 using EmbedIO.Actions;
-using CommandLine;
+using EmbedIO.Cors;
 
 namespace BizDeck {
     public class Server {
@@ -135,17 +133,27 @@ namespace BizDeck {
         }
 
         private WebServer CreateWebServer() {
-            var server = new WebServer(o => o
-                    .WithUrlPrefix(BizDeckStatus.Instance.MyURL)
-                    .WithMode(HttpListenerMode.EmbedIO))
-                // First, we will configure our web server by adding Modules.
+            // NB the static_module is added last below so it's the last candidate match,
+            // otherwise it would match all GETs
+            var excel_module = new ActionModule("/excel", HttpVerbs.Get, ExcelCallback);
+            var static_module = new ActionModule("/", HttpVerbs.Any, 
+                                    ctx => ctx.SendDataAsync(new { Message = "Error" }));
+            // Excel web queries do an HTTP OPTIONS request before doing the first
+            // HTTP GET to a new endpoint. The CORS module handles that request and
+            // says OK back to Excel.
+            var cors_module = new CorsModule("/");
+
+            var server = new WebServer(o => o.WithUrlPrefix(BizDeckStatus.Instance.MyURL)
+                .WithMode(HttpListenerMode.EmbedIO))
+                // configure our web server by adding modules.
+                .WithModule(cors_module)
                 .WithLocalSessionManager()
                 .WithModule(websock)
-                .WithModule(new ActionModule("/excel", HttpVerbs.Get, ExcelCallback))
+                .WithModule(excel_module)
                 .WithWebApi("/api", m => m.WithController( ApiControllerFactory))
                 .WithStaticFolder("/icons", config_helper.IconsDir, false, m => m.WithoutContentCaching())
                 .WithStaticFolder("/", config_helper.HtmlDir, true, m => m.WithContentCaching())
-                .WithModule(new ActionModule("/", HttpVerbs.Any, ctx => ctx.SendDataAsync(new { Message = "Error" })));
+                .WithModule(static_module);
 
             // Listen for state changes.
             server.StateChanged += (s, e) => logger.Info($"StateChanged: NewState[{e.NewState}]");
@@ -236,7 +244,12 @@ namespace BizDeck {
             // [3]: 'yield.csv'
             CacheEntry cache_entry = null;
             if (ctx.Request.Url.Segments.Length < 4) {
+                // When Excel is given a we query for eg http://localhost:9271/excel/quandl/yield.csv
+                // via .iqy file, then for some reason it will hit http://localhost:9271/excel/quandl/
+                // first, so we have to respond quick with a 404.
                 logger.Error($"ExcelCallback: not enough URL segments: {ctx.Request.RawUrl}");
+                // Now fall through to the using clause below with a null CacheEntry,
+                // which will create a NoData page
             }
             else {
                 string group = ctx.Request.Url.Segments[2].Trim('/');
@@ -245,8 +258,18 @@ namespace BizDeck {
             }
             using (var stream = ctx.OpenResponseStream()) {
                 // CacheEntryToStream will send a NoData table header
-                // if we give it a null cache_entry
-                await HTMLHelpers.CacheEntryToStream(logger, cache_entry, stream);
+                // if we give it a null cache_entry. Allow resumption on
+                // another thread as this is really simple streaming HTML
+                // output, and we want to free the embedio request handler
+                // thread for another incoming request.
+                await HTMLHelpers.CacheEntryToStream(logger, cache_entry, stream).ConfigureAwait(false);
+                // Set the status and flush output buffers so Excel knows
+                // the reponse is complete. Necessary as we're async streaming.
+                // BizDeckApiController doesn't need to do that as it's returning
+                // complete result strings, so embedio can complete the request
+                // without any further help from app code here.
+                stream.Flush();
+                stream.Close();
             }
         }
     }

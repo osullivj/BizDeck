@@ -10,24 +10,24 @@ namespace BizDeck {
     // Pre encode strings as byte[] to minimise work done streaming
     // HTML tables back to Excel.
     public class HTMLHelpers {
-        public static byte[] TableStart = Encoding.ASCII.GetBytes("<table border=\"1\">");
-        public static byte[] TableEnd = Encoding.ASCII.GetBytes("</table>");
-        public static byte[] HeaderFieldStart = Encoding.ASCII.GetBytes("<th>");
-        public static byte[] HeaderFieldEnd = Encoding.ASCII.GetBytes("</th>");
-        public static byte[] HeaderStart = Encoding.ASCII.GetBytes("<thead><tr>");
-        public static byte[] HeaderEnd = Encoding.ASCII.GetBytes("</tr></thead>");
-        public static byte[] BodyStart = Encoding.ASCII.GetBytes("<tbody>");
-        public static byte[] BodyEnd = Encoding.ASCII.GetBytes("</tbody>");
-        public static byte[] RowStart = Encoding.ASCII.GetBytes("<tr>");
-        public static byte[] RowEnd = Encoding.ASCII.GetBytes("</tr>");
-        public static byte[] FieldStart = Encoding.ASCII.GetBytes("<td>");
-        public static byte[] FieldEnd = Encoding.ASCII.GetBytes("</td>");
-        public static byte[] IndexColumnName = Encoding.ASCII.GetBytes("Index");
-        public static byte[] KeyColumnName = Encoding.ASCII.GetBytes("Key");
-        public static byte[] EmptyString = Encoding.ASCII.GetBytes("");
+        public static byte[] TableStart = Encoding.UTF8.GetBytes("<!DOCTYPE html><html><body><table border=\"1\">");
+        public static byte[] TableEnd = Encoding.UTF8.GetBytes("</table></body></html>");
+        public static byte[] HeaderFieldStart = Encoding.UTF8.GetBytes("<th>");
+        public static byte[] HeaderFieldEnd = Encoding.UTF8.GetBytes("</th>");
+        public static byte[] HeaderStart = Encoding.UTF8.GetBytes("<thead><tr>");
+        public static byte[] HeaderEnd = Encoding.UTF8.GetBytes("</tr></thead>");
+        public static byte[] BodyStart = Encoding.UTF8.GetBytes("<tbody>");
+        public static byte[] BodyEnd = Encoding.UTF8.GetBytes("</tbody>");
+        public static byte[] RowStart = Encoding.UTF8.GetBytes("<tr>");
+        public static byte[] RowEnd = Encoding.UTF8.GetBytes("</tr>");
+        public static byte[] FieldStart = Encoding.UTF8.GetBytes("<td>");
+        public static byte[] FieldEnd = Encoding.UTF8.GetBytes("</td>");
+        public static byte[] IndexColumnName = Encoding.UTF8.GetBytes("Index");
+        public static byte[] KeyColumnName = Encoding.UTF8.GetBytes("Key");
+        public static byte[] EmptyString = Encoding.UTF8.GetBytes("");
         // When a cache entry is empty, or doesn't exist, then send a NoData
         // table header to Excel or browser. 
-        public static byte[] NoDataTableHeader = Encoding.ASCII.GetBytes("<thead><tr><th>No cached data</th></tr></thead>");
+        public static byte[] NoDataTableHeader = Encoding.UTF8.GetBytes("<thead><tr><th>No cached data</th></tr></thead>");
 
         public static async Task FieldToStream(BizDeckLogger logger, byte[] field, Stream s, bool header = false) {
             byte[] start = FieldStart;
@@ -47,7 +47,7 @@ namespace BizDeck {
         }
 
         public static async Task FieldToStream(BizDeckLogger logger, string field, Stream s, bool header = false) {
-            byte[] bfield = Encoding.ASCII.GetBytes(field);
+            byte[] bfield = Encoding.UTF8.GetBytes(field);
             await FieldToStream(logger, bfield, s, header);
         }
 

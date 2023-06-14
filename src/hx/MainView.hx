@@ -38,8 +38,8 @@ class BizDeckWebSocket {
 			trace("ws.conn");
 		};	
 		this.websock.onmessage = function(e) {
-			trace("ws.recv: " + e.data);
 			var obj = haxe.Json.parse(e.data);
+   			trace("ws.recv: " + obj.Type);
 			switch obj.Type {
 				case "connected":
 					this.connected = true;
@@ -51,6 +51,8 @@ class BizDeckWebSocket {
 					this.mainview.on_cache(obj.Data);
 				case "notification":
 					NotificationManager.instance.addNotification(obj.Data);
+                default:
+                    trace("ws.recv: UNKNOWN type in: " + e.data);                    
 			}
 		};
 		this.websock.onclose = function() {

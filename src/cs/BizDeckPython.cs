@@ -39,7 +39,7 @@ namespace BizDeck {
             action_scope.SetVariable("Logger", logger);
         }
 
-        public async Task<(bool, string)> RunActionFunction(string function, List<dynamic> args) {
+        public async Task<(bool, string)> RunActionFunction(string function, Dictionary<string,dynamic> args) {
             bool ok = false;
             string error = null;
             try {

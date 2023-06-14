@@ -85,7 +85,8 @@ namespace BizDeck {
                     var button_entry = button_list.FirstOrDefault(x => x.ButtonIndex == pressed_button);
                     if (button_entry != null) {
                         logger.Info($"ReadAsync: entry[{button_entry.Name}]");
-                        // ConfigureAwait(false) to signal that we can resume on any thread
+                        // ConfigureAwait(false) to signal that we can resume on any thread, leaving this
+                        // thread free to handle the next HID USB event from the StreamDeck
                         (ok, error) = await ButtonActionMap[button_entry.Name].RunAsync().ConfigureAwait(false);
                         if (!ok) {
                             await main_server_object.SendNotification("Button action failed", error);

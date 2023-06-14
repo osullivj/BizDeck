@@ -164,13 +164,14 @@ namespace BizDeck {
 			// select the function to call. The others are params. We use
 			// dynamic so we can have lists and dicts as params as well as
 			// atomic types.
-			List<dynamic> args = new() { DataCache.Instance };
+			Dictionary<string, dynamic> args = new();
+			args["cache"] = DataCache.Instance;
 			foreach (KeyValuePair<string, JToken> param in action) {
 				if (!python_action_non_param_keys.Contains(param.Key)) {
 					// param.Value is a JToken. We don't want type leakage
 					// over to the Python side, so use ToString to force
 					// the param to be a .Net built in type.
-					args.Add(param.Value.ToString());
+					args.Add(param.Key, param.Value.ToString());
 				}
             }
 			return await BizDeckPython.Instance.RunActionFunction(python_action_function, args);

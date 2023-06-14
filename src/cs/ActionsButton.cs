@@ -29,18 +29,18 @@ namespace BizDeck
             Run();
             bool ok = true;
             string result = null;
-            JObject action_script = driver.LoadAndParseActionScript(name);
+            JObject action_script = null;
 
             try {
-                action_script = JObject.Parse(result);
+                action_script = driver.LoadAndParseActionScript(name);
+                (ok, result) = await driver.PlayActions(name, action_script).ConfigureAwait(false);
+                logger.Info($"RunAsync: name[{name}], ok[{ok}], err[{result}]");
             }
-            catch (JsonReaderException ex) {
-                result = $"JSON error reading {name}, {ex}";
-                logger.Error($"RunAsync: {result}");
+            catch (Exception ex) {
+                result = ex.Message;
+                logger.Error($"RunAsync: name[{name}], result[{result}], {ex}");
                 return (false, result);
             }
-            (ok, result) = await driver.PlayActions(name, action_script).ConfigureAwait(false);
-            logger.Info($"RunAsync: name[{name}], ok[{ok}], err[{result}]");
             return (ok, result);
         }
     }

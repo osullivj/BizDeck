@@ -173,13 +173,13 @@ namespace BizDeck {
             }
         }
 
-        private Task SendTargetedEvent(IWebSocketContext context, BizDeckJsonEvent jsEvent)
+        private Task SendTargetedEvent(IWebSocketContext context, BizDeckJsonEvent json_event)
         {
-            return SendAsync(context, JsonConvert.SerializeObject(jsEvent));
+            return SendAsync(context, JsonConvert.SerializeObject(json_event));
         }
 
         private Task SendTargetedEvent(IWebSocketContext context, string json) {
-            return SendAsync(context, JsonConvert.SerializeObject(json));
+            return SendAsync(context, json);
         }
 
         protected override Task OnClientDisconnectedAsync(IWebSocketContext context)

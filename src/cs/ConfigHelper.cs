@@ -38,6 +38,7 @@ namespace BizDeck {
             cmd_line_options = opts;
         }
 
+        #region LocalFSMethods
         public void CreateLogger() {
             // Most classes create their logger in the ctor. Can't do that here
             // as ConfigHelper is instanced before the config is loaded, so we
@@ -149,6 +150,7 @@ namespace BizDeck {
             process.Start();
         }
 
+
         public async Task<(bool,string)> SaveConfig()
         {
             try
@@ -219,15 +221,17 @@ namespace BizDeck {
             // Add the newly created button to config button map
             BizDeckConfig.ButtonList.Add(bm);
             (bool saveOK, string errmsg) = await SaveConfig();
-            if (!saveOK)
-            {
+            if (!saveOK) {
                 return (false, $"{ConfigPath} save failed for new button {script_name}");
             }
             return (true, $"{LogDir}/{script_name} created for button index:{bm.ButtonIndex}, name:{bm.Name}");
         }
 
+
         public async Task<(bool, AppLaunch, string)> LoadAppLaunch(string name_or_path)
         {
+            // TODO: refactor to use BDAR return type. NB ValidateAppLaunch will have
+            // to change as well.
             string app_launch_path = name_or_path;
             if (!File.Exists(name_or_path)) {
                 app_launch_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", $"{name_or_path}.json" });
@@ -255,6 +259,25 @@ namespace BizDeck {
             return (ok, result);
         }
 
+        // SaveExcelQuery is invoked synchronously by DataCache Insert methods which
+        // are in turn invoked bizdeck.py when it adds a cache entry
+        public (bool, string) SaveExcelQuery(string group, string cache_key) {
+            try {
+                string query_path = Path.Combine(DataDir, $"{group}_{cache_key}.iqy");
+                string query_url = $"{BizDeckStatus.Instance.MyURL}/excel/{group}/{cache_key}";
+                ExcelQueryHelper query_helper = new(query_url);
+                File.WriteAllLines(query_path, query_helper.Lines);
+                logger.Info($"SaveExcelQuery: path[{query_path}], url[{query_url}]");
+            }
+            catch (Exception ex) {
+                logger.Error($"SaveExcelQuery: group[{group}], cache_key[{cache_key}]");
+                return (false, ex.Message);
+            }
+            return (true, null);
+        }
+        #endregion LocalFSMethods
+
+        #region InternalMethods
         protected (bool, AppLaunch, string) ValidateAppLaunch(string launch_json)
         {
             var launch = JsonSerializer.Deserialize<AppLaunch>(launch_json);
@@ -264,5 +287,7 @@ namespace BizDeck {
                 return (false, null, "exe_doc_url field not supplied");
             return (true, launch, "");
         }
+        #endregion InternalMethods
+
     }
 }

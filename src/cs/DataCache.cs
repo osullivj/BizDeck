@@ -10,7 +10,7 @@ using Newtonsoft.Json.Converters;
 
 namespace BizDeck {
 
-    // TODO: think about theading. It's a remote possibility, but an action could upload
+    // TODO: think about threading. It's a remote possibility, but an action could upload
     // to the cache while we're rendering a CacheEntry as HTML
 
     // One cache row, for the purposes of iterating over any type
@@ -36,10 +36,14 @@ namespace BizDeck {
         RegularCSV,
     }
 
+    // [JsonObject] to signal to Newtonsoft.Json to ignore IEnumerable base,
+    // which causes CacheEntry serialization as an array, and serialize as an object
+    [JsonObject]
     public class CacheEntry : IEnumerable<CacheEntryRow> {
         [JsonConverter(typeof(StringEnumConverter))]
         public CacheEntryType Type { get; private set; }
 
+        [JsonProperty]
         public object CacheValue { get; private set; }
 
         // CacheValue is an object, so we don't have access to the underlying
@@ -49,54 +53,61 @@ namespace BizDeck {
         // we will have a CacheEntry ctor for each possible underlying type,
         // which means we have type knowledge at ctor time, so we extract a
         // value for count then.
-        private int count = 0;
+        [JsonProperty]
         public int Count {
             get => count;
         }
+        private int count = 0;
 
         // headers gets initialised when a CacheValue is set
         // we provide an empty list as default just in case
         // CacheValue has 0 entries
         private List<string> headers = empty_header_list;
         private static List<string> empty_header_list = new();
+        [JsonProperty]
         public List<string> Headers {
             get => headers;
         }
 
         // Keys accessor. NB row_keys and row_key are only set for PrimaryKeyCSV
-        private List<string> row_keys = null;
+        [JsonIgnore]
         public List<string> RowKeys { get => row_keys; }
+        private List<string> row_keys = null;
         private string row_key = null;
+        [JsonProperty]
         public string RowKey { get => row_key; }
 
-        // Upfront casts to simplify the Enumerator impl
-        private List<Dictionary<string, string>> as_list = null;
+        // Upfront casts to simplify the Enumerator impl. Don not
+        // serialize these public props to json as it will just
+        // duplicate the CacheValue data
+        [JsonIgnore]
         public List<Dictionary<string, string>> AsList { get => as_list; }
-        private Dictionary<string, Dictionary<string, string>> as_dict = null;
+        private List<Dictionary<string, string>> as_list = null;
+        [JsonIgnore]
         public Dictionary<string, Dictionary<string, string>> AsDict { get => as_dict; }
+        private Dictionary<string, Dictionary<string, string>> as_dict = null;
 
         // The ctor have type knowledge of Value, so set the helper
         // accessors for Enumerator here. For the List ctor we expect
         // the row_key to be null. For Dict ctor, there should be a key value
-        public CacheEntry(List<Dictionary<string, string>> val, string row_key) {
+        public CacheEntry(List<Dictionary<string, string>> val, string row_key, List<string> column_names) {
             Type = CacheEntryType.RegularCSV;
             CacheValue = val;
             this.row_key = "";
             count = val.Count;
             as_list = val;
-            if (val.Count > 0) {
-                headers = val[0].Keys.ToList();
-            }
+            headers = column_names;
         }
 
-        public CacheEntry(Dictionary<string, Dictionary<string, string>> val, string row_key) {
+        public CacheEntry(Dictionary<string, Dictionary<string, string>> val, string row_key, List<string> column_names) {
             Type = CacheEntryType.PrimaryKeyCSV;
             CacheValue = val;
             this.row_key = row_key;
             count = val.Count;
             as_dict = val;
+            headers = column_names;
             if (val.Count > 0) {
-                headers = val.First().Value.Keys.ToList();
+                // all primary key values
                 row_keys = val.Keys.ToList<string>();
             }
         }
@@ -193,6 +204,7 @@ namespace BizDeck {
         }
     }
 
+    [JsonObject]
     public class DataCache {
         // Use of Lazy<T> gives us a thread safe singleton
         // Instance property is the access point
@@ -205,11 +217,15 @@ namespace BizDeck {
         private readonly object cache_lock = new();
         private bool changed = false;
 
+        [JsonIgnore]
         public bool HasChanged { get => changed; }
 
         private DataCache() { }
 
-        public void Insert(string group, string cache_key, List<Dictionary<string, string>> val) {
+        #region InsertMethods
+        // InsertMethods are invoked from bizdeck.py utilities that do the CSV loading
+        // They also create Excel IQY files 
+        public void Insert(string group, string cache_key, List<Dictionary<string, string>> val, List<string> column_names) {
             lock (cache_lock) {
                 Dictionary<string, CacheEntry> cache_group = null;
                 if (cache.ContainsKey(group)) {
@@ -219,12 +235,13 @@ namespace BizDeck {
                     cache_group = new();
                     cache.Add(group, cache_group);
                 }
-                cache_group[cache_key] = new CacheEntry(val, null);
+                cache_group[cache_key] = new CacheEntry(val, null, column_names);
                 changed = true;
             }
+            ConfigHelper.Instance.SaveExcelQuery(group, cache_key);
         }
 
-        public void Insert(string group, string cache_key, Dictionary<string, Dictionary<string, string>> val, string row_key) {
+        public void Insert(string group, string cache_key, Dictionary<string, Dictionary<string, string>> val, string row_key, List<string> column_names) {
             lock (cache_lock) {
                 Dictionary<string, CacheEntry> cache_group = null;
                 if (cache.ContainsKey(group)) {
@@ -234,10 +251,12 @@ namespace BizDeck {
                     cache_group = new();
                     cache.Add(group, cache_group);
                 }
-                cache_group[cache_key] = new CacheEntry(val, row_key);
+                cache_group[cache_key] = new CacheEntry(val, row_key, column_names);
                 changed = true;
             }
+            ConfigHelper.Instance.SaveExcelQuery(group, cache_key);
         }
+        #endregion InsertMethods
 
         // The ActionsDriver uses DataCache.HasChanged to figure out if we
         // need to send an update to the GUI after an action completes. Yes,

@@ -39,7 +39,7 @@ function add_list_table_to_node(parent_node:TreeViewNode, jmap:DynamicAccess<Dyn
 
 
 // jmap will look like....
-// {"quandl": {"yield.csv": {"Type": "PrimaryKeyCSV", "CacheValue": 
+// {"quandl": {"yield_csv": {"Type": "PrimaryKeyCSV", "CacheValue": 
 //   {"2023-05-25":{"10 YR":"3.83","2 YR":"4.5","5 YR":"3.9","1 MO":"5.95","3 MO":"5.38","20 YR":"4.16"...
 //
 function update_treeview(parent_node:TreeView, jmap:DynamicAccess<Dynamic>) {
@@ -52,6 +52,7 @@ function update_treeview(parent_node:TreeView, jmap:DynamicAccess<Dynamic>) {
 		group_node.expanded = true;
 		for (cache_entry_name in group.keys()) {
 			var cache_entry = group.get(cache_entry_name);
+        	trace('update_treeview: group_name[${group_name}] cache_key[${cache_entry_name}] type[${cache_entry.Type}]');            
 			var cache_entry_node:TreeViewNode = group_node.addNode({text:cache_entry_name});
 			switch ( cache_entry.Type) {
 				case "PrimaryKeyCSV":

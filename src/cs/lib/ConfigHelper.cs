@@ -73,7 +73,11 @@ namespace BizDeck {
         }
 
         public string DataDir {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "dat" });
+            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "data" });
+        }
+
+        public string ScriptsDir {
+            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "scripts" });
         }
 
         public string LogDir {
@@ -185,9 +189,8 @@ namespace BizDeck {
             logger.Info($"AddButton: script_name[{script_name}] button_name[{button_name}] bg[{background}]");
             // Does the button already exist?
             int index = BizDeckConfig.ButtonList.FindIndex(button => button.Name == button_name);
-            if ( index != -1)
-            {
-                return (false, $"{ConfigDir}\\{script_name} already exists");
+            if ( index != -1) {
+                return (false, $"{script_name} already exists");
             }
             bool created = IconCache.Instance.CreateLabelledIconPNG(background, button_name);
             if (!created) {
@@ -202,7 +205,7 @@ namespace BizDeck {
             // Is is an app launch or steps?
             (bool launch_ok, AppLaunch launch, string launch_error) = ValidateAppLaunch(script);
             if (launch_ok) {
-                bm.Action = "app";
+                bm.Action = "apps";
             }
             else {
                 if (script.Contains("steps")) {
@@ -216,15 +219,15 @@ namespace BizDeck {
                 }
             }
             // Save the script contents into the cfg dir
-            string script_path = Path.Combine(new string[] { ConfigDir, script_name });
+            string script_path = Path.Combine(new string[] { ScriptsDir, bm.Action, script_name });
             await File.WriteAllTextAsync(script_path, script);
             // Add the newly created button to config button map
             BizDeckConfig.ButtonList.Add(bm);
             (bool saveOK, string errmsg) = await SaveConfig();
             if (!saveOK) {
-                return (false, $"{ConfigPath} save failed for new button {script_name}");
+                return (false, $"{script_path} save failed for new button {script_name}");
             }
-            return (true, $"{LogDir}/{script_name} created for button index:{bm.ButtonIndex}, name:{bm.Name}");
+            return (true, $"{script_path}/{script_name} created for button index:{bm.ButtonIndex}, name:{bm.Name}");
         }
 
 
@@ -234,7 +237,7 @@ namespace BizDeck {
             // to change as well.
             string app_launch_path = name_or_path;
             if (!File.Exists(name_or_path)) {
-                app_launch_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", $"{name_or_path}.json" });
+                app_launch_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "scripts", "apps", $"{name_or_path}.json" });
             }
             var launch_json = await File.ReadAllTextAsync(app_launch_path);
             return ValidateAppLaunch(launch_json);
@@ -246,7 +249,10 @@ namespace BizDeck {
             string result = null;
             string script_path = name_or_path;
             if (!File.Exists(name_or_path)) {
-                script_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg", $"{name_or_path}.json" });
+                script_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "scripts", "actions", $"{name_or_path}.json" });
+                if (!File.Exists(script_path)) {
+                    script_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "scripts", "steps", $"{name_or_path}.json" });
+                }
             }
             try {
                 result = File.ReadAllText(script_path);
@@ -264,7 +270,7 @@ namespace BizDeck {
         // are in turn invoked bizdeck.py when it adds a cache entry
         public (bool, string) SaveExcelQuery(string group, string cache_key) {
             try {
-                string query_path = Path.Combine(DataDir, $"{group}_{cache_key}.iqy");
+                string query_path = Path.Combine(ScriptsDir, "excel", $"{group}_{cache_key}.iqy");
                 string query_url = $"{BizDeckStatus.Instance.MyURL}/excel/{group}/{cache_key}";
                 ExcelQueryHelper query_helper = new(query_url);
                 File.WriteAllLines(query_path, query_helper.Lines);

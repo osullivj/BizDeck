@@ -203,7 +203,7 @@ namespace BizDeck {
                         case "steps":
                             button_action_map[bd.Name] = new StepsButton(bd.Name);
                             break;
-                        case "app":
+                        case "apps":
                             button_action_map[bd.Name] = new AppButton(bd.Name, websock);
                             break;
                         default:

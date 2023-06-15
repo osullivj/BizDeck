@@ -31,13 +31,13 @@
       "name": "word",
       "ButtonIndex": 2,
       "image": "icons\\word.png",
-      "action": "app"
+      "action": "apps"
     },
     {
       "name": "excel",
       "ButtonIndex": 3,
       "image": "icons\\excel.png",
-      "action": "app"
+      "action": "apps"
     },
     {
       "name": "tiingo_gui_login",

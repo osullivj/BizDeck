@@ -35,7 +35,7 @@ namespace BizDeck {
             return Task.FromResult<CacheEntry>(cache_entry);
         }
 
-        [Route(HttpVerbs.Get, "/run/app/{app?}")]
+        [Route(HttpVerbs.Get, "/run/apps/{app?}")]
         public async Task<string> RunApp(string app) {
             AppDriver app_driver = new();
             var result_tuple = await app_driver.PlayApp(app);

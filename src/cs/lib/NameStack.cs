@@ -22,7 +22,7 @@ namespace BizDeck {
         // No locking as contents of global will not change
         // after ConfigHelper.LoadConfig
         public void AddNameValue(string key, string val) {
-            global.Add(key, val);
+            global[key] = val;
         }
 
         public (bool, string) Resolve(string key) {

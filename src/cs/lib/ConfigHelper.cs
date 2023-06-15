@@ -49,7 +49,7 @@ namespace BizDeck {
         }
 
         public string LocalAppDataPath {
-            get => cmd_line_options.bdroot;
+            get => cmd_line_options.appdata;
         }
 
         public string ConfigPath {
@@ -88,8 +88,8 @@ namespace BizDeck {
             get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "icons" });
         }
 
-        public string PythonSourcePath {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "src", "py" });
+        public string PythonCoreSourcePath {
+            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "src", "py", "core" });
         }
 
         public BizDeckConfig BizDeckConfig { set; get; }
@@ -133,7 +133,7 @@ namespace BizDeck {
                 // we don't know where the location of log dir. So we present the exception
                 // in the default browser. But we do have bdroot from the cmd line, so
                 // we can save the error there...
-                ThrowErrorToBrowser("LoadConfig", ex.ToString());
+                ThrowErrorToBrowser($"LoadConfig from {ConfigDir}", ex.ToString());
             }
             return null;
         }
@@ -254,6 +254,7 @@ namespace BizDeck {
             catch (Exception ex) {
                 result = $"{name_or_path}: failed to read {script_path}, {ex}";
                 logger.Error($"LoadStepsOrActions: {result}");
+                ok = false;
             }
             logger.Info($"LoadStepsOrActions: loaded {script_path}");
             return (ok, result);

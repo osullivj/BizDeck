@@ -1,0 +1,12 @@
+{
+	"actions": [
+		{
+			"type": "python_action",
+            "function": "add_csv_to_cache_as_dict",
+            "group": "quandl",
+			"csv": "yield.csv",
+            "row_key": "Date",
+            "max_lines": 5
+		}
+	]
+}

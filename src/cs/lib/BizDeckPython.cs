@@ -25,18 +25,25 @@ namespace BizDeck {
             new Lazy<BizDeckPython>(() => new BizDeckPython());
         public static BizDeckPython Instance { get { return lazy.Value; } }
 
-        public void Init(ConfigHelper ch) { 
+        public (bool, string) Init(ConfigHelper ch) { 
             logger = new(this);
             config_helper = ch;
             // https://stackoverflow.com/questions/14139766/run-a-particular-python-function-in-c-sharp-with-ironpython
-            action_engine = IronPython.Hosting.Python.CreateEngine();
-            string biz_deck_py_path = Path.Combine(ch.PythonSourcePath, "bizdeck.py");
-            // NB bizdeck.py just defines funcs, it has no __main__ executable code,
-            // so to execute it is to load the functions into the scope.
-            action_scope = action_engine.ExecuteFile(biz_deck_py_path);
-            // Set global vars in bizdeck.py
-            action_scope.SetVariable("BDRoot", config_helper.LocalAppDataPath);
-            action_scope.SetVariable("Logger", logger);
+            try {
+                action_engine = IronPython.Hosting.Python.CreateEngine();
+                string biz_deck_py_path = Path.Combine(ch.PythonCoreSourcePath, "actions.py");
+                // NB bizdeck.py just defines funcs, it has no __main__ executable code,
+                // so to execute it is to load the functions into the scope.
+                action_scope = action_engine.ExecuteFile(biz_deck_py_path);
+                // Set global vars in bizdeck.py
+                action_scope.SetVariable("BDRoot", config_helper.LocalAppDataPath);
+                action_scope.SetVariable("Logger", logger);
+                return (true, null);
+            }
+            catch (Exception ex) {
+                logger.Error($"Init: IronPython init failed: {ex}");
+                return (false, ex.ToString());
+            }
         }
 
         public async Task<(bool, string)> RunActionFunction(string function, Dictionary<string,dynamic> args) {

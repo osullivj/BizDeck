@@ -12,11 +12,7 @@ namespace BizDeck {
 
         static void Main(string[] args) {
             // First parse cmd line opts...
-            var parser = new Parser();
-            var result = parser.ParseArguments<CmdLineOptions>(args);
-            // Create and init config singleton
-            ConfigHelper.Instance.Init(result.Value);
-            var config = ConfigHelper.Instance.LoadConfig();
+            var config = CmdLineOptions.InitAndLoadConfigHelper(args);
             if (config.Console) {
                 Win32.AllocConsole();
             }

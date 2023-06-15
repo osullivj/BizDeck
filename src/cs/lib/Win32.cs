@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace BizDeck
-{
-    internal class Win32
-    {
+namespace BizDeck {
+
+    public class Win32 {
+
         [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1310:Field names should not contain underscore", Justification = "Following standard Windows API name.")]
         internal const string IID_IShellItem2 = "7E9FB0D3-919F-4307-AB2E-9B1860310C93";
 
@@ -17,7 +17,7 @@ namespace BizDeck
 
         [DllImport("kernel32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool AllocConsole();
+        public static extern bool AllocConsole();
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]

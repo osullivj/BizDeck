@@ -62,6 +62,9 @@ namespace BizDeck {
             // the member var, and we can pass it to button actions enabling them to send
             // notifications to the GUI on fails
             websock = new BizDeckWebSockModule(config_helper);
+            // websock needs to know about the server object
+            // so it can dispatch 
+            websock.MainServerObject = this;
             // First, let's connect to the StreamDeck
             ConnectStreamDeck();
             // Now we have an IconCache we can invoke InitDeck, which
@@ -104,9 +107,6 @@ namespace BizDeck {
             // Let the websock module know about the stream deck
             // so it can resend buttons as necessary
             websock.StreamDeck = stream_deck;
-            // Ditto this server object so it can rebuild
-            // button action map
-            websock.MainServerObject = this;
             return true;
         }
 

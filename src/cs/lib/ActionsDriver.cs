@@ -191,9 +191,14 @@ namespace BizDeck {
 				error = $"one of {http_get_request_keys} missing from {action}";
 				logger.Error($"HTTPGet: {error}");
 				return (false, error);
-			}		
-			string target_path = Path.Combine(new string[] { config_helper.DataDir, target_file_name });
+			}
+			string data_sub_dir = Path.GetExtension(target_file_name).TrimStart('.');
+			string target_dir = Path.Combine(new string[] { config_helper.DataDir, data_sub_dir});
+			string target_path = Path.Combine(new string[] { target_dir, target_file_name});
 			try {
+				// this may be a file extension we haven't encountered, so ensure the
+				// %BDROOT%/dat/<data_sub_dir> folder exists
+				System.IO.Directory.CreateDirectory(target_dir);
 				(bool ok, object request_or_err) = BuildHttpRequest(url, "http_get", action);
 				if (!ok) {
 					return (ok, (string)request_or_err);

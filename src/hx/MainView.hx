@@ -39,18 +39,18 @@ class BizDeckWebSocket {
 		};	
 		this.websock.onmessage = function(e) {
 			var obj = haxe.Json.parse(e.data);
-   			trace("ws.recv: " + obj.Type);
-			switch obj.Type {
+   			trace("ws.recv: " + obj.type);
+			switch obj.type {
 				case "connected":
 					this.connected = true;
 				case "config":
-					this.mainview.on_config(obj.Data);
+					this.mainview.on_config(obj.data);
 				case "status":
-					this.mainview.on_status(obj.Data);
+					this.mainview.on_status(obj.data);
 				case "cache":
-					this.mainview.on_cache(obj.Data);
+					this.mainview.on_cache(obj.data);
 				case "notification":
-					NotificationManager.instance.addNotification(obj.Data);
+					NotificationManager.instance.addNotification(obj.data);
                 default:
                     trace("ws.recv: UNKNOWN type in: " + e.data);                    
 			}

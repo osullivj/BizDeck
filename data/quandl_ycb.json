@@ -1,7 +1,7 @@
 {
 	"actions": [
 		{
-			"type": "python",
+			"type": "python_batch",
 			"name": "generate_quandl_ycb_download_script",
 			"path": "c:\\osullivj\\src\\BizDeck\\src\\py\\generate_quandl_ycb_download_script.py",
 			"args": ["c:\\osullivj\\src\\BizDeck\\dat\\quandl_ycb_download.json"],
@@ -11,6 +11,13 @@
 			"type": "actions",
 			"name": "c:\\osullivj\\src\\BizDeck\\dat\\quandl_ycb_download.json"
 		},
+		{
+			"type": "python_action",
+            "function": "add_csv_to_cache_as_dict",
+            "location": "quandl",
+			"csv": "yield.csv",
+            "key": "Date"
+		},        
 		{
 			"type": "app",
 			"name": "excel"

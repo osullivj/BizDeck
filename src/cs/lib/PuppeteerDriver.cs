@@ -11,6 +11,13 @@ using Newtonsoft.Json.Linq;
 // deadlocks. Consequently, every invocation of a P# method here
 // is wrapped in try/catch blocks.
 
+// Major assumption: the nature of the Chrome Recorder steps we're playing
+// mean we will have one browser, one page in play at a time. There may be more
+// than one Puppeteer Driver instance, but they could contend over a browser
+// instance if actions are deck triggered and web api triggered simultaneously.
+// We accept this limitation protem as it will make it easier to stack urls
+// that are navigation targets, and use them as secrets look up keys so we can
+// reove user names and passwords from steps.
 namespace BizDeck {
 
 	public delegate Task<(bool, string)> Dispatch(JObject step);
@@ -26,6 +33,7 @@ namespace BizDeck {
 		IPage current_page;
 		JObject pending_viewport_step;
 		WaitForSelectorOptions wait_for_selector_options = new();
+		List<string> urls_visited = new();
 
 		public PuppeteerDriver() {
 			logger = new(this);
@@ -161,6 +169,8 @@ namespace BizDeck {
 				logger.Error($"Navigate: {error}");
 				return (false, error);
             }
+			// At the point we know the navigation to url was succesful
+			urls_visited.Add(url);
 			return (true, null);
         }
 
@@ -182,20 +192,35 @@ namespace BizDeck {
 			return (true, null);
         }
 
-		public async Task<(bool, string)> Change(JObject step)
-		{
+		public async Task<(bool, string)> Change(JObject step) {
+			// This is a change step, so we may be type a user name or password
+			// into an edit field. Fortunately the selectors know about the type
+			// of input field. In that case QuerySelectorListAsync will use
+			// the third part of the tuple to signal a secrets key
 			JArray selectors = (JArray)step["selectors"];
-			(bool sel_ok, object sel_or_err) = await QuerySelectorListAsync(selectors);
-			if (!sel_ok) {
-				return (sel_ok, (string)sel_or_err);
-            }
+			bool ok = false;
+			object val_or_err = null;
 			string new_value = (string)step["value"];
+			// could the value be a secrets cache ref?
+			// screts cache?
+			(ok, val_or_err) = NameStack.Instance.Resolve(new_value);
+			if (ok) {
+				logger.Info($"Change: {new_value} resolved in NameStack");
+				new_value = (string)val_or_err;
+			}
+			else {
+				logger.Info($"Change: {new_value} not resolved in NameStack");
+			}
+			(ok, val_or_err) = await QuerySelectorListAsync(selectors);
+			if (!ok) {
+				return (ok, (string)val_or_err);
+            }
 			string extra_value = "";
 			if (step.ContainsKey("extra_value")) {
 				extra_value = (string)step["extra_value"];
 			}
 			try {
-				IElementHandle element_handle = (IElementHandle)sel_or_err;
+				IElementHandle element_handle = (IElementHandle)val_or_err;
 				await element_handle.TypeAsync(new_value + extra_value);
 			}
 			catch (Exception ex) {
@@ -243,7 +268,7 @@ namespace BizDeck {
 			IElementHandle element = null;
 			foreach (var selector in selector_list) {
 				try {
-					// See CustomQueriesMAnager.GetQueryHandlerAndSelector() in P#
+					// See CustomQueriesManager.GetQueryHandlerAndSelector() in P#
 					// The method potentially throws an exception, if we don't 
 					// handle here it causes deadlock
 					element = await current_page.QuerySelectorAsync(selector);

@@ -24,18 +24,17 @@ namespace BizDeck
             websock = null;
         }
 
-        public async Task<(bool, string)> PlayApp(string name_or_path) {
-            bool ok = true;
-            string error = null;
+        public async Task<BizDeckResult> PlayApp(string name_or_path) {
             AppLaunch launch;
-            (ok, launch, error) = await config_helper.LoadAppLaunch(name_or_path);
-            if (!ok) {
-                logger.Error($"PlayApp: {error}");
+            BizDeckResult load_app_result = await config_helper.LoadAppLaunch(name_or_path);
+            if (!load_app_result.OK) {
+                logger.Error($"PlayApp: {load_app_result}");
                 if (websock != null) {
-                    await websock.SendNotification(null, $"{name_or_path} app launch failed", error);
+                    await websock.SendNotification(null, $"{name_or_path} app launch failed", load_app_result.Message);
                 }
-                return (ok, error);
+                return load_app_result;
             }
+            launch = (AppLaunch)load_app_result.Payload;
             logger.Info($"Run: {name_or_path}:{launch.ExeDocUrl}");
             // start default app, doc or url
             var process = new System.Diagnostics.Process() {
@@ -50,7 +49,7 @@ namespace BizDeck
             // steps json very carefully!
             process.Start();
             logger.Info($"Run: running {name_or_path}:{launch}");
-            return (true, null);
+            return BizDeckResult.Success;
         }
     }
 }

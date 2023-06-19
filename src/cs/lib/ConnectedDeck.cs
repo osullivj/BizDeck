@@ -66,8 +66,6 @@ namespace BizDeck {
         private int current_desktop = 0;
 
         public async Task ReadAsync() {
-            bool ok = false;
-            string error = null;
             UnderlyingInputStream = UnderlyingDevice.Open();
             UnderlyingInputStream.ReadTimeout = Timeout.Infinite;
             Array.Clear(key_press_buffer, 0, key_press_buffer.Length);
@@ -87,9 +85,9 @@ namespace BizDeck {
                         logger.Info($"ReadAsync: entry[{button_entry.Name}]");
                         // ConfigureAwait(false) to signal that we can resume on any thread, leaving this
                         // thread free to handle the next HID USB event from the StreamDeck
-                        (ok, error) = await ButtonActionMap[button_entry.Name].RunAsync().ConfigureAwait(false);
-                        if (!ok) {
-                            await main_server_object.SendNotification("Button action failed", error);
+                        BizDeckResult action_result = await ButtonActionMap[button_entry.Name].RunAsync().ConfigureAwait(false);
+                        if (!action_result.OK) {
+                            await main_server_object.SendNotification("Button action failed", action_result.Message);
                         }
                     }
                 }

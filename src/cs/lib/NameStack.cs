@@ -16,6 +16,7 @@ namespace BizDeck {
         public static NameStack Instance { get { return lazy.Value; } }
 
         private Dictionary<string, string> global = new();
+        private BizDeckResult fail = new BizDeckResult(false, "unresolved"); 
 
         private NameStack() { }
 
@@ -25,11 +26,11 @@ namespace BizDeck {
             global[key] = val;
         }
 
-        public (bool, string) Resolve(string key) {
+        public BizDeckResult Resolve(string key) {
             if (global.ContainsKey(key)) {
-                return (true, global[key]);
+                return new BizDeckResult(true, global[key]);
             }
-            return (false, null);
+            return fail;
         }
 
         public class Scope : IDisposable {
@@ -37,13 +38,13 @@ namespace BizDeck {
             public Scope(JObject local) { this.local = local; }
             public void Dispose() { }   // null op: no resources to release
 
-            public (bool, string) Resolve(string key) {
+            public BizDeckResult Resolve(string key) {
                 if (local.ContainsKey(key)) {
                     try {
-                        return (true, (string)local[key]);
+                        return new BizDeckResult(true, (string)local[key]);
                     }
                     catch (Exception ex) {
-                        return (false, ex.Message);
+                        return new BizDeckResult(false, ex.Message);
                     }
                 }
                 return NameStack.Instance.Resolve(key);

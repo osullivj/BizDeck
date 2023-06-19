@@ -25,7 +25,7 @@ namespace BizDeck {
             new Lazy<BizDeckPython>(() => new BizDeckPython());
         public static BizDeckPython Instance { get { return lazy.Value; } }
 
-        public (bool, string) Init(ConfigHelper ch) { 
+        public BizDeckResult Init(ConfigHelper ch) { 
             logger = new(this);
             config_helper = ch;
             // https://stackoverflow.com/questions/14139766/run-a-particular-python-function-in-c-sharp-with-ironpython
@@ -38,15 +38,15 @@ namespace BizDeck {
                 // Set global vars in bizdeck.py
                 action_scope.SetVariable("BDRoot", config_helper.LocalAppDataPath);
                 action_scope.SetVariable("Logger", logger);
-                return (true, null);
+                return BizDeckResult.Success;
             }
             catch (Exception ex) {
                 logger.Error($"Init: IronPython init failed: {ex}");
-                return (false, ex.ToString());
+                return new BizDeckResult(ex.ToString());
             }
         }
 
-        public async Task<(bool, string)> RunActionFunction(string function, Dictionary<string,dynamic> args) {
+        public async Task<BizDeckResult> RunActionFunction(string function, Dictionary<string,dynamic> args) {
             bool ok = false;
             string error = null;
             try {
@@ -55,22 +55,20 @@ namespace BizDeck {
                 dynamic func = action_scope.GetVariable(function);
                 string result = func(args);
                 ok = String.IsNullOrWhiteSpace(result);
-                return (ok, result);
+                return new BizDeckResult(ok, result);
             }
             catch (Exception ex) {
                 error = $"func[{function}] failed {ex}";
                 logger.Error($"RunActionFunction: {error}");
             }
             await Task.Delay(0);
-            return (ok, error);
+            return new BizDeckResult(error);
         }
 
         // Run batch script creates an instance of the Python runtime for the
         // script execution, just as if we'd run a script at the command line.
         // The options parameter allows us to pass in cmd line params and env vars.
-        public async Task<(bool, string)> RunBatchScript(string script_path, Dictionary<string,object> options = null) {
-            string error = null;
-            bool ok = true;
+        public async Task<BizDeckResult> RunBatchScript(string script_path, Dictionary<string,object> options = null) {
             try {
                 string python_source = await File.ReadAllTextAsync(script_path);
                 ScriptEngine one_shot_python_engine = IronPython.Hosting.Python.CreateEngine(options);
@@ -78,12 +76,12 @@ namespace BizDeck {
                 var result = python_script.Execute();
                 logger.Info($"RunScript: result[{result}] from [{script_path}]");
             }
-            catch (Exception ex) {
-                ok = false;
-                error = $"{script_path} failed {ex}";
+            catch (Exception ex) { 
+                string error = $"{script_path} failed {ex}";
                 logger.Error($"RunScript: {error}");
+                return new BizDeckResult(error);
             }
-            return (ok, error);
+            return BizDeckResult.Success;
         }
     }
 }

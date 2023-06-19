@@ -26,18 +26,17 @@ namespace BizDeck
             logger.Info($"Run: {name}");
         }
 
-        public async override Task<(bool, string)> RunAsync() {
-            bool ok = true;
+        public async override Task<BizDeckResult> RunAsync() {
             string result = null;
             Run();
-            (ok, result) = config_helper.LoadStepsOrActions(name);
-            if (!ok) {
-                return (ok, result);
+            BizDeckResult load_result = config_helper.LoadStepsOrActions(name);
+            if (!load_result.OK) {
+                return load_result;
             }
             JObject steps = JObject.Parse(result);
-            (ok, result) = await driver.PlaySteps(name, steps).ConfigureAwait(false);
-            logger.Info($"RunAsync: name[{name}], ok[{ok}]");
-            return (ok, result);
+            BizDeckResult play_result = await driver.PlaySteps(name, steps).ConfigureAwait(false);
+            logger.Info($"RunAsync: name[{name}], result[{result}]");
+            return play_result;
         }
     }
 }

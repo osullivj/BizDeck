@@ -44,24 +44,24 @@ namespace BizDeck {
 
         [Route(HttpVerbs.Get, "/run/steps/{steps_name}")]
         public async Task<string> RunSteps(string steps_name) {
-            (bool ok, string json_or_err) = config_helper.LoadStepsOrActions(steps_name);
-            if (!ok) {
-                return JsonConvert.SerializeObject(json_or_err);
+            BizDeckResult load_steps_result = config_helper.LoadStepsOrActions(steps_name);
+            if (!load_steps_result.OK) {
+                return JsonConvert.SerializeObject(load_steps_result);
             }
             PuppeteerDriver steps_driver = new();
-            JObject steps = JObject.Parse(json_or_err);
+            JObject steps = JObject.Parse(load_steps_result.Message);
             var result_tuple = await steps_driver.PlaySteps(steps_name, steps).ConfigureAwait(false);
             return JsonConvert.SerializeObject(result_tuple);
         }
 
         [Route(HttpVerbs.Get, "/run/actions/{actions_name}")]
         public async Task<string> RunActions(string actions_name) {
-            (bool ok, string json_or_err) = config_helper.LoadStepsOrActions(actions_name); 
-            if (!ok) {
-                return JsonConvert.SerializeObject(json_or_err);
+            BizDeckResult load_actions_result = config_helper.LoadStepsOrActions(actions_name); 
+            if (!load_actions_result.OK) {
+                return JsonConvert.SerializeObject(load_actions_result);
             }
             ActionsDriver actions_driver = new();
-            JObject actions = JObject.Parse(json_or_err);
+            JObject actions = JObject.Parse(load_actions_result.Message);
             var result_tuple = await actions_driver.PlayActions(actions_name, actions).ConfigureAwait(false);
             return JsonConvert.SerializeObject(result_tuple);
         }

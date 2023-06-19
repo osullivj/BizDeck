@@ -155,34 +155,31 @@ namespace BizDeck {
         }
 
 
-        public async Task<(bool,string)> SaveConfig()
-        {
-            try
-            {
+        public async Task<BizDeckResult> SaveConfig() {
+            try {
                 string config_json = JsonSerializer.Serialize<BizDeckConfig>(BizDeckConfig, 
                                                                     json_serializer_options);
                 await File.WriteAllTextAsync(ConfigPath, config_json);
                 logger.Info($"SaveConfig: config saved to path[{ConfigPath}]");
             }
-            catch (JsonException ex)
-            {
+            catch (JsonException ex) {
                 // Since we cannot load the config file, we cannot start the web server and
                 // we don't know where the location of log dir. So stdout is the best we can do...
                 string error_msg = $"SaveConfig: JSON serialization fail {ex}";
                 logger.Error(error_msg);
-                return (false, error_msg);
+                return new BizDeckResult(error_msg);
             }
-            return (true, ConfigPath);
+            return new BizDeckResult(true, ConfigPath);
         }
 
-        public async Task<(bool,string)> DeleteButton(string name)
+        public async Task<BizDeckResult> DeleteButton(string name)
         {
             BizDeckConfig.ButtonList.RemoveAll(button => button.Name == name);
             logger.Info($"DeleteButton: removed name[{name}]");
             return await SaveConfig();
         }
 
-        public async Task<(bool,string)> AddButton(string script_name, string script, string background)
+        public async Task<BizDeckResult> AddButton(string script_name, string script, string background)
         {
             // name will have an extenstion like .json, so remove it...
             string button_name = Path.GetFileNameWithoutExtension(script_name);
@@ -190,11 +187,11 @@ namespace BizDeck {
             // Does the button already exist?
             int index = BizDeckConfig.ButtonList.FindIndex(button => button.Name == button_name);
             if ( index != -1) {
-                return (false, $"{script_name} already exists");
+                return new BizDeckResult($"{script_name} already exists");
             }
             bool created = IconCache.Instance.CreateLabelledIconPNG(background, button_name);
             if (!created) {
-                return (false, $"cannot create {button_name} PNG from background[{background}]");
+                return new BizDeckResult($"cannot create {button_name} PNG from background[{background}]");
             }
             // Create the new button mapping now so we can populate as we
             // apply checks to the script type.
@@ -203,8 +200,8 @@ namespace BizDeck {
             bm.ButtonIndex = BizDeckConfig.ButtonList.Count;
             bm.ButtonImagePath = $"icons\\{button_name}.png";
             // Is is an app launch or steps?
-            (bool launch_ok, AppLaunch launch, string launch_error) = ValidateAppLaunch(script);
-            if (launch_ok) {
+            BizDeckResult validation = ValidateAppLaunch(script);
+            if (validation.OK) {
                 bm.Action = "apps";
             }
             else {
@@ -215,7 +212,7 @@ namespace BizDeck {
                     bm.Action = "actions";
                 }
                 else { 
-                    return (false, "Script is not an app launch, or chrome recorder steps, or ETL actions");
+                    return new BizDeckResult("Script is not an app launch, or chrome recorder steps, or ETL actions");
                 }
             }
             // Save the script contents into the cfg dir
@@ -223,15 +220,15 @@ namespace BizDeck {
             await File.WriteAllTextAsync(script_path, script);
             // Add the newly created button to config button map
             BizDeckConfig.ButtonList.Add(bm);
-            (bool saveOK, string errmsg) = await SaveConfig();
-            if (!saveOK) {
-                return (false, $"{script_path} save failed for new button {script_name}");
+            BizDeckResult save_result = await SaveConfig();
+            if (!save_result.OK) {
+                return new BizDeckResult($"{script_path} save failed for new button {script_name}");
             }
-            return (true, $"{script_path}/{script_name} created for button index:{bm.ButtonIndex}, name:{bm.Name}");
+            return new BizDeckResult(true, $"{script_path}/{script_name} created for button index:{bm.ButtonIndex}, name:{bm.Name}");
         }
 
 
-        public async Task<(bool, AppLaunch, string)> LoadAppLaunch(string name_or_path)
+        public async Task<BizDeckResult> LoadAppLaunch(string name_or_path)
         {
             // TODO: refactor to use BDAR return type. NB ValidateAppLaunch will have
             // to change as well.
@@ -243,7 +240,7 @@ namespace BizDeck {
             return ValidateAppLaunch(launch_json);
         }
 
-        public (bool, string) LoadStepsOrActions(string name_or_path)
+        public BizDeckResult LoadStepsOrActions(string name_or_path)
         {
             bool ok = true;
             string result = null;
@@ -263,12 +260,12 @@ namespace BizDeck {
                 ok = false;
             }
             logger.Info($"LoadStepsOrActions: loaded {script_path}");
-            return (ok, result);
+            return new BizDeckResult(ok, result);
         }
 
         // SaveExcelQuery is invoked synchronously by DataCache Insert methods which
         // are in turn invoked bizdeck.py when it adds a cache entry
-        public (bool, string) SaveExcelQuery(string group, string cache_key) {
+        public BizDeckResult SaveExcelQuery(string group, string cache_key) {
             try {
                 string query_path = Path.Combine(ScriptsDir, "excel", $"{group}_{cache_key}.iqy");
                 string query_url = $"{BizDeckStatus.Instance.MyURL}/excel/{group}/{cache_key}";
@@ -278,21 +275,21 @@ namespace BizDeck {
             }
             catch (Exception ex) {
                 logger.Error($"SaveExcelQuery: group[{group}], cache_key[{cache_key}]");
-                return (false, ex.Message);
+                return new BizDeckResult(ex.Message);
             }
-            return (true, null);
+            return BizDeckResult.Success;
         }
         #endregion LocalFSMethods
 
         #region InternalMethods
-        protected (bool, AppLaunch, string) ValidateAppLaunch(string launch_json)
+        protected BizDeckResult ValidateAppLaunch(string launch_json)
         {
             var launch = JsonSerializer.Deserialize<AppLaunch>(launch_json);
             if (launch == null)
-                return (false, null, "null app_launch");
+                return new BizDeckResult("null app_launch");
             if (launch.ExeDocUrl == null)
-                return (false, null, "exe_doc_url field not supplied");
-            return (true, launch, "");
+                return new BizDeckResult("exe_doc_url field not supplied");
+            return new BizDeckResult(true, launch);
         }
         #endregion InternalMethods
 

@@ -27,6 +27,7 @@ namespace BizDeck {
 		List<string> python_action_non_param_keys = new() { "type", "function"};
 		List<string> app_script_keys = new() { "name"};
 		List<string> action_script_keys = new() { "name" };
+		BizDeckResult success = new();
 
 		// We allow a null websock ctor param so that BizDeckApiController
 		// can construct for API actions invocation. In that scenario we
@@ -48,14 +49,13 @@ namespace BizDeck {
 
 		// actions should be a JObject corresponding to the contents of
 		// eg quandl_rates.json
-		public async Task<(bool, string)> PlayActions(string name, dynamic actions)
+		public async Task<BizDeckResult> PlayActions(string name, dynamic actions)
         {
 			logger.Info($"PlayActions: playing {name}");
 			JArray action_array = actions.actions;
-			bool action_ok = false;
-			string error = null;
 			int action_index = 0;
 			bool fail_ok = false;
+			BizDeckResult result = null;
 			foreach (JObject action in action_array) {
 				string action_type = (string)action.GetValue("type");
 				fail_ok = false;
@@ -63,11 +63,11 @@ namespace BizDeck {
 					fail_ok = (bool)action.GetValue("fail_ok");
                 }
 				if (dispatchers.ContainsKey(action_type)) {
-					(action_ok, error) = await dispatchers[action_type](action);
-					if (!action_ok) {
-						logger.Error($"PlayActions: action failed index[{action_index}], type[{action_type}], err[{error}]");
+					result = await dispatchers[action_type](action);
+					if (!result.OK) {
+						logger.Error($"PlayActions: action failed index[{action_index}], type[{action_type}], err[{result}]");
 						if (!fail_ok) {
-							return (false, error);
+							return result;
 						}
                     }
 					else {
@@ -85,10 +85,10 @@ namespace BizDeck {
                 }
 				action_index++;
             }
-			return (true, null);
+			return success;
 		}
 
-		public async Task<(bool, string)> RunApp(JObject action) {
+		public async Task<BizDeckResult> RunApp(JObject action) {
 			string app_script_name = null;
 			string error = null;
 			if (app_script_keys.TrueForAll(s => action.ContainsKey(s))) {
@@ -97,12 +97,12 @@ namespace BizDeck {
 			else {
 				error = $"one of {app_script_keys} missing from {action}";
 				logger.Error($"RunApp: {error}");
-				return (false, error);
+				return new BizDeckResult(error);
 			}
 			return await app_driver.PlayApp(app_script_name);
 		}
 
-		public async Task<(bool, string)> RunActions(JObject action) {
+		public async Task<BizDeckResult> RunActions(JObject action) {
 			string action_script_name = null;
 			string error = null;
 			if (action_script_keys.TrueForAll(s => action.ContainsKey(s))) {
@@ -111,19 +111,19 @@ namespace BizDeck {
 			else {
 				error = $"one of {action_script_keys} missing from {action}";
 				logger.Error($"RunActions: {error}");
-				return (false, error);
+				return new BizDeckResult(error);
 			}
 			// Yes, we're recursing here!
 			JObject action_script = LoadAndParseActionScript(action_script_name);
 			if (action_script == null) {
 				error = $"LoadAndParseActionScript failed:{action_script_name}";
 				logger.Error($"RunActions: {error}");
-				return (false, error);
+				return new BizDeckResult(error);
 			}
 			return await PlayActions(action_script_name, action_script);
 		}
 
-		public async Task<(bool, string)> RunPythonBatchScript(JObject action) {
+		public async Task<BizDeckResult> RunPythonBatchScript(JObject action) {
 			string python_script_path = null;
 			string action_name = null;
 			JObject env = null;
@@ -150,12 +150,12 @@ namespace BizDeck {
 			else {
 				error = $"one of {python_script_keys} missing from {action}";
 				logger.Error($"RunPythonBatchScript: {error}");
-				return (false, error);
+				return new BizDeckResult(error);
             }
 			return await BizDeckPython.Instance.RunBatchScript(python_script_path, options);
         }
 
-		public async Task<(bool, string)> RunPythonAction(JObject action) {
+		public async Task<BizDeckResult> RunPythonAction(JObject action) {
 			string python_action_function = (string)action["function"];
 			// we check the members of action with TrueForAll in other
 			// methods. But we don't know here what parameters are expected
@@ -177,11 +177,12 @@ namespace BizDeck {
 			return await BizDeckPython.Instance.RunActionFunction(python_action_function, args);
 		}
 
-		public async Task<(bool, string)> HTTPGet(JObject action) {
+		public async Task<BizDeckResult> HTTPGet(JObject action) {
 			string url = null;
 			string target_file_name = null;
 			string action_name = null;
 			string error = null;
+			BizDeckResult result = null;
 			if (http_get_request_keys.TrueForAll(s => action.ContainsKey(s))) {
 				action_name = (string)action["name"];
 				url = (string)action["url"];
@@ -190,7 +191,7 @@ namespace BizDeck {
 			else {
 				error = $"one of {http_get_request_keys} missing from {action}";
 				logger.Error($"HTTPGet: {error}");
-				return (false, error);
+				return new BizDeckResult(error);
 			}
 			string data_sub_dir = Path.GetExtension(target_file_name).TrimStart('.');
 			string target_dir = Path.Combine(new string[] { config_helper.DataDir, data_sub_dir});
@@ -199,37 +200,36 @@ namespace BizDeck {
 				// this may be a file extension we haven't encountered, so ensure the
 				// %BDROOT%/dat/<data_sub_dir> folder exists
 				System.IO.Directory.CreateDirectory(target_dir);
-				(bool ok, object request_or_err) = BuildHttpRequest(url, "http_get", action);
-				if (!ok) {
-					return (ok, (string)request_or_err);
+				result = BuildHttpRequest(url, "http_get", action);
+				if (!result.OK) {
+					return result;
                 }
-				HttpRequestMessage hrm = (HttpRequestMessage)request_or_err;
+				HttpRequestMessage hrm = (HttpRequestMessage)result.Payload;
 				logger.Info($"HTTPGet: hrm.url[{hrm.RequestUri}]");
 				var http_cancel_token_source = new CancellationTokenSource(TimeSpan.FromSeconds(config_helper.BizDeckConfig.HttpGetTimeout));
 				var payload = await http_client.SendAsync(hrm, http_cancel_token_source.Token);
 				if (payload.StatusCode != System.Net.HttpStatusCode.OK) {
 					error = $"status[{payload.StatusCode}] for url[{hrm.RequestUri}]";
 					logger.Error($"HTTPGet: status[{payload.StatusCode}] for url[{hrm.RequestUri}]");
-					return (false, error);
+					return new BizDeckResult(error);
                 }
 				// Save the script contents into the dat dir
 				Stream file_write_stream = File.OpenWrite(target_path);
 				await payload.Content.CopyToAsync(file_write_stream);
 				logger.Info($"HTTPGet: {action_name} saved to {target_path}");
-				return (true, null);
+				return success;
 			}
 			catch (Exception ex) {
 				error = $"{action_name} failed to save to {target_path}, {ex}";
 				logger.Error($"HTTPGet: {error}");
-				return (false, error);
+				return new BizDeckResult(error);
 			}
 		}
 
 		public JObject LoadAndParseActionScript(string name_or_path) {
-			bool ok = true;
 			string result = null;
-			(ok, result) = config_helper.LoadStepsOrActions(name_or_path);
-			if (!ok) {
+			BizDeckResult load_result = config_helper.LoadStepsOrActions(name_or_path);
+			if (!load_result.OK) {
 				return null;
 			}
 			try {
@@ -242,37 +242,39 @@ namespace BizDeck {
 			return null;
 		}
 
-		private (bool, string) ExpandHttpFormat(HttpFormat hf, JObject action) {
+		private BizDeckResult ExpandHttpFormat(HttpFormat hf, JObject action) {
+			BizDeckResult result = null;
 			List<string> resolved_values = new();
 			bool ok = false;
-			string resolved_value = null;
 			using (var scope = NameStack.Instance.LocalScope(action)) {
 				foreach (string val_ref in hf.Values) {
-					(ok, resolved_value) = scope.Resolve(val_ref);
+					result = scope.Resolve(val_ref);
 					if (!ok) {
-						return (false, $"Resolve({val_ref}) failed in action[{action.ToString()}]");
+						logger.Error($"Resolve({val_ref}) failed in action[{action.ToString()}]");
+						return result;
                     }
-					resolved_values.Add(resolved_value);
+					resolved_values.Add(result.Message);
 				}
 			}
 			try {
-				return (true, String.Format(hf.Format, resolved_values.ToArray()));
+				return new BizDeckResult(true, String.Format(hf.Format, resolved_values.ToArray()));
 			}
 			catch (Exception ex) {
 				// catch formatting exceptions
 				logger.Error($"ExpandHttpFormat: failed in action[{ action.ToString()}]");
 				logger.Error($"ExpandHttpFormat: refs{hf.Values.ToString()}");
 				logger.Error($"ExpandHttpFormat: vals{resolved_values.ToString()}");
-				return (false, ex.Message);
+				return new BizDeckResult(ex.Message);
             }
         }
 
-		private (bool, object) BuildHttpRequest(string url, string method, JObject action) {
+		private BizDeckResult BuildHttpRequest(string url, string method, JObject action) {
 			HttpRequestMessage request = null;
 			string expanded_url = url;
 			bool ok = false;
 			HttpFormat bd_http_format = null;
 			Dictionary<string, HttpFormat> http_spec_map = null;
+			BizDeckResult result = null;
 			// Does the HttpFormatMap have a key that occurs in our unexpanded URL?
 			foreach (string url_sub_string in config_helper.HttpFormatMap.Keys) {
 				if (url.Contains(url_sub_string)) {
@@ -284,11 +286,13 @@ namespace BizDeck {
 						// We have a url expansion, which we must do before we
 						// fire the HttpRequestMessage ctor
 						bd_http_format = http_spec_map["url"];
-						(ok, expanded_url) = ExpandHttpFormat(bd_http_format, action);
-						if (!ok) {
-							// expanded_url is an err msg
-							return (false, expanded_url);
+						result = ExpandHttpFormat(bd_http_format, action);
+						if (!result.OK) {
+							return result;
 						}
+						else {
+							expanded_url = result.Message;
+                        }
 					}
 				}
             }
@@ -299,7 +303,6 @@ namespace BizDeck {
 				http_method = http_method_map[method];
             }
 			request = new HttpRequestMessage(http_method, expanded_url);
-			string expanded_header = null;
 			// We have a request in hand. If we found a BizDeck.HttpFormat
 			// specify any headers?
 			if (http_spec_map != null) {
@@ -309,18 +312,18 @@ namespace BizDeck {
 						// TODO: when we implement POST, we likely can't
 						// assume other spec fields are headers.
 						bd_http_format = http_spec_map[key];
-						(ok, expanded_header) = ExpandHttpFormat(bd_http_format, action);
+						result = ExpandHttpFormat(bd_http_format, action);
 						if (ok) {
-							request.Headers.Add(key, expanded_header);
+							request.Headers.Add(key, (IEnumerable<string>)result.Payload);
                         }
 						else {
 							// expanded_header will be an err msg
-							return (ok, expanded_header);
+							return result;
                         }
 					}
                 }
             }
-			return (true, request);
+			return new BizDeckResult(true, request);
         }
 	}
 }

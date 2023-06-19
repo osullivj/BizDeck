@@ -25,23 +25,21 @@ namespace BizDeck
             logger.Info($"Run: {name}");
         }
 
-        public async override Task<(bool, string)> RunAsync() {
+        public async override Task<BizDeckResult> RunAsync() {
             Run();
-            bool ok = true;
-            string result = null;
+            BizDeckResult result = null;
             JObject action_script = null;
 
             try {
                 action_script = driver.LoadAndParseActionScript(name);
-                (ok, result) = await driver.PlayActions(name, action_script).ConfigureAwait(false);
-                logger.Info($"RunAsync: name[{name}], ok[{ok}], err[{result}]");
+                result = await driver.PlayActions(name, action_script).ConfigureAwait(false);
+                logger.Info($"RunAsync: name[{name}], result[{result}]");
             }
             catch (Exception ex) {
-                result = ex.Message;
                 logger.Error($"RunAsync: name[{name}], result[{result}], {ex}");
-                return (false, result);
+                return new BizDeckResult(ex.Message);
             }
-            return (ok, result);
+            return result;
         }
     }
 }

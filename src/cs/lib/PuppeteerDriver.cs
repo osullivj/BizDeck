@@ -20,7 +20,7 @@ using Newtonsoft.Json.Linq;
 // reove user names and passwords from steps.
 namespace BizDeck {
 
-	public delegate Task<(bool, string)> Dispatch(JObject step);
+	public delegate Task<BizDeckResult> Dispatch(JObject step);
 		// define this driver's own callback dispatch signature
 		// for handling Chrome DevTools Recorder steps
 
@@ -59,8 +59,7 @@ namespace BizDeck {
 			wait_for_selector_options.Visible = true;
 		}
 
-		public async Task<(bool, string)> PlaySteps(string name, dynamic chrome_recording)
-        {
+		public async Task<BizDeckResult> PlaySteps(string name, dynamic chrome_recording) {
 			logger.Info($"PlaySteps: playing {name} on browser[{launch_options.ExecutablePath}]");
 			logger.Info($"PlaySteps: UserDataDir[{launch_options.UserDataDir}], Headless[{launch_options.Headless}], Devtools[{launch_options.Devtools}]");
 			// Clear state left over from previous PlaySteps
@@ -74,25 +73,25 @@ namespace BizDeck {
 			}
 			catch (Exception ex) {
 				logger.Error($"PlaySteps: browser launch failed: {ex}");
-				return (false, ex.Message);
+				return new BizDeckResult(ex.Message);
             }
 			JArray steps = chrome_recording.steps;
 			logger.Info($"PlaySteps: playing[{chrome_recording.title}], {steps.Count} steps");
-			bool step_ok = false;
 			string error = null;
 			int step_index = 0;
+			BizDeckResult step_result = null;
 			foreach (JObject step in steps) {
 				string step_type = (string)step.GetValue("type");
 				logger.Info($"PlaySteps: playing step {step_index}, type[{step_type}]");
 				if (dispatchers.ContainsKey(step_type)) {
-					(step_ok, error) = await dispatchers[step_type](step);
-					if (!step_ok) {
-						error = $"step {step_index}, type[{step_type}], err[{error}], ok[{step_ok}]";
+					step_result = await dispatchers[step_type](step);
+					if (!step_result.OK) {
+						error = $"step {step_index}, type[{step_type}], result[{step_result}]";
 						logger.Error($"PlaySteps: played {error}");
-						return (false, error);
+						return new BizDeckResult(error);
                     }
 					else {
-						logger.Info($"PlaySteps: played step {step_index}, type[{step_type}], ok[{step_ok}]");
+						logger.Info($"PlaySteps: played step {step_index}, type[{step_type}], result[{step_result}]");
                     }
 				}
 				else {
@@ -100,10 +99,10 @@ namespace BizDeck {
                 }
 				step_index++;
             }
-			return (true, null);
+			return BizDeckResult.Success;
 		}
 
-		public async Task<(bool, string)> SetViewport(JObject step)
+		public async Task<BizDeckResult> SetViewport(JObject step)
         {
 			if (current_page == null) {
 				pending_viewport_step = step;
@@ -122,15 +121,13 @@ namespace BizDeck {
 				}
 				catch (Exception ex) {
 					logger.Error($"SetViewport: failed {ex}");
-					return (false, ex.Message);
+					return new BizDeckResult(ex.Message);
 				}
 			}
-			return (true, null);
+			return BizDeckResult.Success;
         }
 
-		public async Task<(bool, string)> Navigate(JObject step)
-        {
-			bool ok = false;
+		public async Task<BizDeckResult> Navigate(JObject step) {
 			string error = null;
 			IResponse http_response = null;
 			string url = (string)step["url"];
@@ -143,13 +140,13 @@ namespace BizDeck {
 				}
 				catch (Exception ex) {
 					logger.Error($"Navigate: NewPageAsync failed {ex}");
-					return (false, ex.Message);
+					return new BizDeckResult(ex.Message);
 				}
 				if (pending_viewport_step != null) {
-					(ok, error) = await SetViewport(pending_viewport_step);
+					BizDeckResult set_viewport_result = await SetViewport(pending_viewport_step);
 					pending_viewport_step = null;
-					if (!ok) {
-						return (ok, error);
+					if (!set_viewport_result.OK) {
+						return set_viewport_result;
 					}
                 }
 			}
@@ -162,75 +159,73 @@ namespace BizDeck {
 			}
 			catch (Exception ex) {
 				logger.Error($"Navigate: NewPageAsync url[{url}] {ex}");
-				return (false, ex.Message);
+				return new BizDeckResult(ex.Message);
 			}
 			if (http_response.Status != System.Net.HttpStatusCode.OK) {
 				error = $"bad status[{http_response.StatusText}] for url[{url}]";
 				logger.Error($"Navigate: {error}");
-				return (false, error);
+				return new BizDeckResult(error);
             }
 			// At the point we know the navigation to url was succesful
 			urls_visited.Add(url);
-			return (true, null);
+			return BizDeckResult.Success;
         }
 
-		public async Task<(bool, string)> Click(JObject step)
+		public async Task<BizDeckResult> Click(JObject step)
         {
 			JArray selectors = (JArray)step["selectors"];
 			try { 
-				(bool query_ok, object element_or_error) = await QuerySelectorListAsync(selectors);
-				if (!query_ok) {
-					return (query_ok, (string)element_or_error);
+				BizDeckResult selector_result = await QuerySelectorListAsync(selectors);
+				if (!selector_result.OK) {
+					return selector_result;
                 }
-				IElementHandle element_handle = (IElementHandle)element_or_error;
+				IElementHandle element_handle = (IElementHandle)selector_result.Payload;
 				await element_handle.ClickAsync();
 			}
 			catch (Exception ex) {
 				logger.Error($"Click: {ex}");
-				return (false, ex.Message);
+				return new BizDeckResult(ex.Message);
             }
-			return (true, null);
+			return BizDeckResult.Success;
         }
 
-		public async Task<(bool, string)> Change(JObject step) {
+		public async Task<BizDeckResult> Change(JObject step) {
 			// This is a change step, so we may be type a user name or password
 			// into an edit field. Fortunately the selectors know about the type
 			// of input field. In that case QuerySelectorListAsync will use
 			// the third part of the tuple to signal a secrets key
 			JArray selectors = (JArray)step["selectors"];
-			bool ok = false;
-			object val_or_err = null;
 			string new_value = (string)step["value"];
 			// could the value be a secrets cache ref?
 			// screts cache?
-			(ok, val_or_err) = NameStack.Instance.Resolve(new_value);
-			if (ok) {
+			BizDeckResult resolve_result = NameStack.Instance.Resolve(new_value);
+			if (resolve_result.OK) {
 				logger.Info($"Change: {new_value} resolved in NameStack");
-				new_value = (string)val_or_err;
+				new_value = resolve_result.Message;
 			}
 			else {
 				logger.Info($"Change: {new_value} not resolved in NameStack");
 			}
-			(ok, val_or_err) = await QuerySelectorListAsync(selectors);
-			if (!ok) {
-				return (ok, (string)val_or_err);
+			BizDeckResult selector_result = await QuerySelectorListAsync(selectors);
+			if (!selector_result.OK) {
+				return selector_result;
             }
 			string extra_value = "";
 			if (step.ContainsKey("extra_value")) {
 				extra_value = (string)step["extra_value"];
 			}
 			try {
-				IElementHandle element_handle = (IElementHandle)val_or_err;
+				IElementHandle element_handle = (IElementHandle)selector_result.Payload;
 				await element_handle.TypeAsync(new_value + extra_value);
 			}
 			catch (Exception ex) {
 				logger.Error($"Change: {ex}");
-				return (false, ex.Message);
+				return new BizDeckResult(ex.Message);
             }
-			return (true, null);
+			return BizDeckResult.Success;
 		}
 
-		public async Task<(bool, string)> KeyDown(JObject step) {
+		public async Task<BizDeckResult> KeyDown(JObject step) {
 			string key = null;
 			try {
 				key = (string)step["key"];
@@ -238,12 +233,12 @@ namespace BizDeck {
 			}
 			catch (Exception ex) {
 				logger.Error($"KeyDown: key[{key}] {ex}");
-				return (false, ex.Message);
+				return new BizDeckResult(ex.Message);
 			}
-			return (true, null);
+			return BizDeckResult.Success;
 		}
 
-		public async Task<(bool, string)> KeyUp(JObject step) {
+		public async Task<BizDeckResult> KeyUp(JObject step) {
 			string key = null;
 			try {
 				key = (string)step["key"];
@@ -251,20 +246,20 @@ namespace BizDeck {
 			}
 			catch (Exception ex) {
 				logger.Error($"KeyUp: key[{key}] {ex}");
-				return (false, ex.Message);
+				return new BizDeckResult(ex.Message);
 			}
-			return (true, null);
+			return BizDeckResult.Success;
 		}
 
-		private async Task<(bool, object)> QuerySelectorListAsync(JArray selectors) {
+		private async Task<BizDeckResult> QuerySelectorListAsync(JArray selectors) {
 			if (current_page == null) {
-				return (false, "QuerySelectorAsync: no current page");
+				return BizDeckResult.NoCurrentPage;
             }
-			(bool ok, object err_or_element) = SelectorsToList(selectors);
-			if (!ok) {
-				return (ok, err_or_element);
+			BizDeckResult selectors_result = SelectorsToList(selectors);
+			if (!selectors_result.OK) {
+				return selectors_result;
             }
-			List<string> selector_list = (List<string>)err_or_element;
+			List<string> selector_list = (List<string>)selectors_result.Payload;
 			IElementHandle element = null;
 			foreach (var selector in selector_list) {
 				try {
@@ -273,22 +268,22 @@ namespace BizDeck {
 					// handle here it causes deadlock
 					element = await current_page.QuerySelectorAsync(selector);
 					if (element != null) {
-						return (true, element);
+						return new BizDeckResult(true, element);
                     }
 				}
 				catch (Exception ex) {
 					logger.Error($"QuerySelectorAsync: selector[{selector}], {ex}");
                 }
 			}
-			return (false, JsonConvert.SerializeObject(selectors));
+			return BizDeckResult.NoSelectorResolves;
 		}
 
-		private (bool, object) SelectorsToList(JArray selectors) {
+		private BizDeckResult SelectorsToList(JArray selectors) {
 			if (selectors == null) {
-				return (false, "SelectorsToList: null selectors array");
+				return BizDeckResult.NullSelectorArray;
             }
 			if (selectors.Count == 0) {
-				return (false, "SelectorsToList: empty selectors array");
+				return BizDeckResult.EmptySelectorArray;
 			}
 			var selector_list = new List<string>();
 			for (int i=0; i < selectors.Count; i++) {
@@ -302,8 +297,7 @@ namespace BizDeck {
 					logger.Error($"ChooseSelector: {ex}");
                 }
             }
-			// logger.Error($"ChooseSelector: no match for prefix[{selector_prefix}] in selectors[{selectors}]");
-			return (true, selector_list);
+			return new BizDeckResult(true, selector_list);
         }
 	}
 }

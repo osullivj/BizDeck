@@ -168,7 +168,7 @@ namespace BizDeck {
             stream_deck.SetBrightness(brightness);
         }
 
-        public (bool, string) RebuildButtonMaps() {
+        public BizDeckResult RebuildButtonMaps() {
             // This will trigger ConnectedDeck.SetupDeviceButtons(), which sets
             // the button images defined in BizDeckConfig.ButtonList, and also
             // does ClearKey when a button has been deleted. We need to do that
@@ -179,12 +179,12 @@ namespace BizDeck {
                 stream_deck.SetupDeviceButtons();
             }
             else {
-                return (false, "StreamDeck not connected");
+                return BizDeckResult.StreamDeckNotConnected;
             }
             return RebuildButtonActionMap();
         }
 
-        private (bool ok, string error) RebuildButtonActionMap( )  {
+        private BizDeckResult RebuildButtonActionMap( )  {
             bool rebuild_ok = true;
             string error = null;
             button_action_map.Clear();
@@ -193,8 +193,7 @@ namespace BizDeck {
             // Buttons for the dev tools recorder, which we're not using currently.
             // button_action_map["start_recording"] = new StartRecording(recorder);
             // button_action_map["stop_recording"] = new StopRecording(recorder);
-            foreach (ButtonDefinition bd in config_helper.BizDeckConfig.ButtonList)
-            {
+            foreach (ButtonDefinition bd in config_helper.BizDeckConfig.ButtonList) {
                 if (!button_action_map.ContainsKey(bd.Name)) {
                     switch (bd.Action) {
                         case "actions":
@@ -222,7 +221,7 @@ namespace BizDeck {
             else {
                 logger.Error($"RebuildButtonActionMap: no StreamDeck connection");
             }
-            return (rebuild_ok, error);
+            return new BizDeckResult(rebuild_ok, error);
         }
 
         // Convenience method to allow code that's not handling a websock event, so

@@ -10,11 +10,11 @@ namespace BizDeck
             stream_deck.NextPage();
         }
 
-        public async override Task<(bool,string)> RunAsync()
+        public async override Task<BizDeckResult> RunAsync()
         {
             Run();
             await Task.Delay(0);
-            return (true, null);
+            return BizDeckResult.Success;
         }
     }
 }

@@ -27,16 +27,21 @@ namespace BizDeck
         }
 
         public async override Task<BizDeckResult> RunAsync() {
-            string result = null;
-            Run();
-            BizDeckResult load_result = config_helper.LoadStepsOrActions(name);
-            if (!load_result.OK) {
-                return load_result;
+            try {
+                Run();
+                BizDeckResult load_result = config_helper.LoadStepsOrActions(name);
+                if (!load_result.OK) {
+                    return load_result;
+                }
+                JObject steps = JObject.Parse(load_result.Message);
+                BizDeckResult play_result = await driver.PlaySteps(name, steps).ConfigureAwait(false);
+                logger.Info($"RunAsync: name[{name}], result[{play_result}]");
+                return play_result;
             }
-            JObject steps = JObject.Parse(result);
-            BizDeckResult play_result = await driver.PlaySteps(name, steps).ConfigureAwait(false);
-            logger.Info($"RunAsync: name[{name}], result[{result}]");
-            return play_result;
+            catch (Exception ex) {
+                logger.Error($"RunAsync: name[{name}], {ex}");
+                return new BizDeckResult(ex.Message);
+            }
         }
     }
 }

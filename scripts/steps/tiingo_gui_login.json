@@ -1,0 +1,132 @@
+{
+    "title": "Tiingo GUI login",
+    "steps": [
+        {
+            "type": "setViewport",
+            "width": 1050,
+            "height": 800,
+            "deviceScaleFactor": 1,
+            "isMobile": false,
+            "hasTouch": false,
+            "isLandscape": false
+        },
+        {
+            "type": "navigate",
+            "url": "https://www.tiingo.com/",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://www.tiingo.com/",
+                    "title": ""
+                }
+            ]
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "div:nth-of-type(3) button:nth-of-type(2) > span.mat-button-wrapper"
+                ],
+                [
+                    "xpath//html/body/tiingo-root/div/div/div/tiingo-nav-bar/mat-toolbar/div[3]/tiingo-login-dropdown/div/div/button[2]"
+                ],
+                [
+                    "pierce/div:nth-of-type(3) button:nth-of-type(2) > span.mat-button-wrapper"
+                ]
+            ],
+            "offsetY": 13.5,
+            "offsetX": 8.765625
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Username"
+                ],
+                [
+                    "#mat-input-1"
+                ],
+                [
+                    "xpath///*[@id=\"mat-input-1\"]"
+                ],
+                [
+                    "pierce/#mat-input-1"
+                ]
+            ],
+            "offsetY": 5,
+            "offsetX": 140.5
+        },
+        {
+            "type": "change",
+            "value": "secrets.tiingo.username",
+            "selectors": [
+                [
+                    "aria/Username"
+                ],
+                [
+                    "#mat-input-1"
+                ],
+                [
+                    "xpath///*[@id=\"mat-input-1\"]"
+                ],
+                [
+                    "pierce/#mat-input-1"
+                ]
+            ],
+            "target": "main"
+        },
+        {
+            "type": "keyDown",
+            "target": "main",
+            "key": "Tab"
+        },
+        {
+            "type": "keyUp",
+            "key": "Tab",
+            "target": "main"
+        },
+        {
+            "type": "change",
+            "value": "secrets.tiingo.password",
+            "selectors": [
+                [
+                    "aria/Password"
+                ],
+                [
+                    "#mat-input-2"
+                ],
+                [
+                    "xpath///*[@id=\"mat-input-2\"]"
+                ],
+                [
+                    "pierce/#mat-input-2"
+                ]
+            ],
+            "target": "main"
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "div.cdk-overlay-container span.mat-button-wrapper"
+                ],
+                [
+                    "xpath///*[@id=\"mat-dialog-0\"]/tiingo-register-login-dialog/div/div[4]/form/div[3]/button/span[1]"
+                ],
+                [
+                    "pierce/div.cdk-overlay-container span.mat-button-wrapper"
+                ]
+            ],
+            "offsetY": 8,
+            "offsetX": 7.140625,
+            "assertedEvents": [
+                {
+                    "type": "navigation"
+                }
+            ]
+        }
+    ]
+}

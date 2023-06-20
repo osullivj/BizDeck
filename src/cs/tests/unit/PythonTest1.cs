@@ -12,9 +12,9 @@ namespace BizDeckUnitTests {
 
         [Test]
         public void TestInit() {
-            (bool ok, string err) = BizDeckPython.Instance.Init(ConfigHelper.Instance);
-            Assert.AreEqual(null, err);
-            Assert.AreEqual(true, ok);
+            BizDeckResult result = BizDeckPython.Instance.Init(ConfigHelper.Instance);
+            Assert.AreEqual(null, result.Payload);
+            Assert.AreEqual(true, result.OK);
 
             Assert.Pass();
         }

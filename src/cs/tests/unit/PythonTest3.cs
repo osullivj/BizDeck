@@ -15,23 +15,21 @@ namespace BizDeckUnitTests {
             BizDeckLogger.InitLogging();
             // pytest1.py writes to console
             Win32.AllocConsole();
-            (bool ok, string err) = BizDeckPython.Instance.Init(ConfigHelper.Instance);
+            BizDeckResult py_init_result = BizDeckPython.Instance.Init(ConfigHelper.Instance);
         }
 
         [Test]
         public async Task TestLoadQuandlYieldAction() {
-            // Load up cg/pytest1.json
+            // Load up scripts/actions/load_quandl_yield.json
             string actions_name = "load_quandl_yield";
-            bool ok = false;
-            string result = null;
-            (ok, result) = ConfigHelper.Instance.LoadStepsOrActions(actions_name);
-            Assert.AreNotEqual(null, result);
-            Assert.AreEqual(true, ok);
+            BizDeckResult load_result = ConfigHelper.Instance.LoadStepsOrActions(actions_name);
+            Assert.AreNotEqual(null, load_result.Payload);
+            Assert.AreEqual(true, load_result.OK);
             ActionsDriver actions_driver = new();
-            JObject actions = JObject.Parse(result);
-            (ok, result) = await actions_driver.PlayActions(actions_name, actions).ConfigureAwait(false);
-            Assert.AreEqual(null, result);
-            Assert.AreEqual(true, ok);
+            JObject actions = JObject.Parse(load_result.Message);
+            BizDeckResult play_result = await actions_driver.PlayActions(actions_name, actions).ConfigureAwait(false);
+            Assert.AreEqual(null, play_result.Payload);
+            Assert.AreEqual(true, play_result.OK);
             Assert.Pass();
         }
     }

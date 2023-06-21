@@ -233,7 +233,7 @@ namespace BizDeck {
 				return null;
 			}
 			try {
-				return JObject.Parse(result);
+				return JObject.Parse(load_result.Message);
 			}
 			catch (JsonReaderException ex) {
 				result = $"JSON error reading {name_or_path}, {ex}";
@@ -243,17 +243,16 @@ namespace BizDeck {
 		}
 
 		private BizDeckResult ExpandHttpFormat(HttpFormat hf, JObject action) {
-			BizDeckResult result = null;
+			BizDeckResult resolve_result = null;
 			List<string> resolved_values = new();
-			bool ok = false;
 			using (var scope = NameStack.Instance.LocalScope(action)) {
 				foreach (string val_ref in hf.Values) {
-					result = scope.Resolve(val_ref);
-					if (!ok) {
-						logger.Error($"Resolve({val_ref}) failed in action[{action.ToString()}]");
-						return result;
+					resolve_result = scope.Resolve(val_ref);
+					if (!resolve_result.OK) {
+						logger.Error($"Resolve({val_ref}) failed in action[{action}]");
+						return resolve_result;
                     }
-					resolved_values.Add(result.Message);
+					resolved_values.Add(resolve_result.Message);
 				}
 			}
 			try {

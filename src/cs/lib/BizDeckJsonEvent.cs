@@ -28,7 +28,7 @@ namespace BizDeck
         private object payload;
         
         [JsonProperty("message")]
-        public string Message { get => (string)payload; set => payload = value; }
+        public string Message { get => payload as string; set => payload = value; }
 
         // Convenienc statics to reduce the number of BizDeckResult instances
         // constructed at run time

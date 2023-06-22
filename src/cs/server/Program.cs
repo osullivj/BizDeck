@@ -18,8 +18,7 @@ namespace BizDeck {
             }
             BizDeckLogger.InitLogging();
             var logger = new BizDeckLogger(typeof(Program));
-            var server = new Server();
-            server.Run();
+            Server.Instance.Run();
             if (config.Console) {
                 Console.ReadKey(true);
             }

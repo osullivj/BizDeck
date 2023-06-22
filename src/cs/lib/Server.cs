@@ -41,7 +41,17 @@ namespace BizDeck {
         // Elgato hardware that may be connected.
         private DeckManager deck_manager;
 
-        public Server() {
+        // Used to exit the main Task.WaitAll
+        private CancellationTokenSource server_exit_token;
+
+        // Use of Lazy<T> gives us a thread safe singleton
+        // Instance property is the access point
+        // https://csharpindepth.com/articles/singleton
+        private static readonly Lazy<Server> lazy =
+            new Lazy<Server>(() => new Server());
+        public static Server Instance { get { return lazy.Value; } }
+
+        private Server() {
             logger = new(this);
             config_helper = ConfigHelper.Instance;
             // One shot copy so that hx gui can get default background from
@@ -124,13 +134,33 @@ namespace BizDeck {
                 stream_deck_task = Task.CompletedTask;
             }
             else {
-
                 stream_deck_task = stream_deck.ReadAsync();
                 stream_deck_task.ConfigureAwait(false);
             }
+            server_exit_token = new CancellationTokenSource();
             // Blocks this main thread waiting on the two tasks
-            Task.WaitAll(http_server_task, stream_deck_task);
+            Task[] server_tasks = { http_server_task, stream_deck_task };
+            try {
+                Task.WaitAll(server_tasks, server_exit_token.Token);
+            }
+            catch (System.OperationCanceledException ex) {
+                logger.Info($"Run: Task.WaitAll() cancelled: {ex.Message}");
+            }
+            catch (Exception ex) {
+                logger.Info($"Run: Task.WaitAll() {ex}");
+            }
         }
+
+
+        public void Shutdown() {
+            if (server_exit_token == null) {
+                logger.Error("Shutdown: no server_exit_token");
+                return;
+            }
+            logger.Info("Shutting down...");
+            server_exit_token.Cancel();
+        }
+
 
         private WebServer CreateWebServer() {
             // NB the static_module is added last below so it's the last candidate match,

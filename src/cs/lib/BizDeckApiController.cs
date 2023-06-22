@@ -56,7 +56,7 @@ namespace BizDeck {
 
         [Route(HttpVerbs.Get, "/run/actions/{actions_name}")]
         public async Task<string> RunActions(string actions_name) {
-            BizDeckResult load_actions_result = config_helper.LoadStepsOrActions(actions_name); 
+            BizDeckResult load_actions_result = null; 
             if (!load_actions_result.OK) {
                 return JsonConvert.SerializeObject(load_actions_result);
             }
@@ -64,6 +64,12 @@ namespace BizDeck {
             JObject actions = JObject.Parse(load_actions_result.Message);
             var result_tuple = await actions_driver.PlayActions(actions_name, actions).ConfigureAwait(false);
             return JsonConvert.SerializeObject(result_tuple);
+        }
+
+        [Route(HttpVerbs.Get, "/shutdown")]
+        public string Shutdown() {
+            Server.Instance.Shutdown();
+            return JsonConvert.SerializeObject(BizDeckResult.Success);
         }
     }
 }

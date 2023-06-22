@@ -8,6 +8,8 @@ namespace BizDeckUnitTests {
             // TODO: need and alternate cfg dir for test config
             // probably need alt dir tree for test scripts too
             // two secrets tests: HTTP construction, secret sub in tiingo_gui_login
+            // Q: should we make ConfigDir or SecretsPath overrideable so tests
+            // can set here to pick up alternates? JOS 2023-06-22
             string[] args = { "--appdata", TestContext.Parameters.Get("appdata", "c:\\osullivj\\src") };
             CmdLineOptions.InitAndLoadConfigHelper(args);
         }

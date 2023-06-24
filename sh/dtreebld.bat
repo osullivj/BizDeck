@@ -1,0 +1,1 @@
+%VPYTHON% %BDROOT%\src\py\build\build_deploy_tree.py %BDTREE%

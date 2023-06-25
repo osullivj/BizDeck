@@ -14,8 +14,9 @@ DEPLOY_TREE = {
         'secrets.json': 'cfg/secrets.json'
     },
     'bin/': {
-        '*': 'src/cs/server/bin/Release/net5.0/*.dll',
-        '*': 'src/cs/server/bin/Release/net5.0/*.dll',
+        '*.dll': 'src/cs/server/bin/Release/net5.0/*.dll',
+        '*.exe': 'src/cs/server/bin/Release/net5.0/*.exe',
+        'BizDeckServer.runtimeconfig.json': 'src/cs/server/bin/Release/net5.0/BizDeckServer.runtimeconfig.json',
     },
     'data/': {},
     'doc/': {},

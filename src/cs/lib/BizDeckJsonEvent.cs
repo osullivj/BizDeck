@@ -44,6 +44,8 @@ namespace BizDeck
         private static BizDeckResult no_selector_resolves = new(false, "QuerySelectorAsync: no selector resolves");
         public static BizDeckResult StreamDeckNotConnected { get => stream_deck_not_connected; }
         private static BizDeckResult stream_deck_not_connected = new(false, "StreamDeck not connected");
+        public static BizDeckResult BadConfigPath{ get => bad_config_path; }
+        private static BizDeckResult bad_config_path = new(false, "Bad config path, check --appdata param");
 
 
 

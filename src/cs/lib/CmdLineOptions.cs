@@ -18,7 +18,7 @@ namespace BizDeck
 
 		// static helper method for Server.cs or unit tests loading config given
 		// string[] args from Main or test cmd line params
-		public static BizDeckConfig InitAndLoadConfigHelper(string[] args) {
+		public static BizDeckResult InitAndLoadConfigHelper(string[] args) {
 			var parser = new Parser();
 			var result = parser.ParseArguments<CmdLineOptions>(args);
 			// Create and init config singleton

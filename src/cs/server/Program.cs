@@ -12,14 +12,16 @@ namespace BizDeck {
 
         static void Main(string[] args) {
             // First parse cmd line opts...
-            var config = CmdLineOptions.InitAndLoadConfigHelper(args);
-            if (config.Console) {
+            BizDeckResult load_config_result = CmdLineOptions.InitAndLoadConfigHelper(args);
+            if (!load_config_result.OK)
+                return;
+            if (ConfigHelper.Instance.BizDeckConfig.Console) {
                 Win32.AllocConsole();
             }
             BizDeckLogger.InitLogging();
             var logger = new BizDeckLogger(typeof(Program));
             Server.Instance.Run();
-            if (config.Console) {
+            if (ConfigHelper.Instance.BizDeckConfig.Console) {
                 Console.ReadKey(true);
             }
         }

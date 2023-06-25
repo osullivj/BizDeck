@@ -59,6 +59,9 @@ namespace BizDeck
         [JsonPropertyName("deck_brightness_percentage")]
         public int DeckBrightnessPercentage { get; set; }
 
+        [JsonPropertyName("secrets_path")]
+        public string SecretsPath { get; set; }
+
         [JsonPropertyName("button_list")]
         public List<ButtonDefinition> ButtonList { get; set; }
 

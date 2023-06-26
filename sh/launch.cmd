@@ -1,4 +1,4 @@
 @echo off
 setlocal
-%BDTREE%\bin\BizDeckServer.exe --appdata %BDTREE%
+%BDTREE%\bin\BizDeckServer.exe --config %BDTREE%\cfg\config.json
 endlocal

@@ -242,7 +242,7 @@ namespace BizDeck {
 			return null;
 		}
 
-		private BizDeckResult ExpandHttpFormat(HttpFormat hf, JObject action) {
+		public BizDeckResult ExpandHttpFormat(HttpFormat hf, JObject action) {
 			BizDeckResult resolve_result = null;
 			List<string> resolved_values = new();
 			using (var scope = NameStack.Instance.LocalScope(action)) {

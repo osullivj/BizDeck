@@ -48,20 +48,12 @@ namespace BizDeck {
             logger = new(this);
         }
 
-        public string LocalAppDataPath {
-            get => cmd_line_options.appdata;
+        public string BDRoot {
+            get => cmd_line_options.bdroot;
         }
 
         public string ConfigPath {
-            get => Path.Combine(new string[] { ConfigDir, "config.json" });
-        }
-
-        public string TraceConfigPath {
-            get => Path.Combine(new string[] { ConfigDir, "trace_config.json" });
-        }
-
-        public string SecretsPath {
-            get => Path.Combine(new string[] { ConfigDir, "secrets.json" });
+            get => cmd_line_options.config_path;
         }
 
         public string HttpFormatsPath {
@@ -69,31 +61,35 @@ namespace BizDeck {
         }
 
         public string ConfigDir {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "cfg" });
+            get => cmd_line_options.config_dir;
         }
 
         public string DataDir {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "data" });
+            get => Path.Combine(new string[] { BDRoot, "data" });
         }
 
         public string ScriptsDir {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "scripts" });
+            get => Path.Combine(new string[] { BDRoot, "scripts" });
         }
 
         public string LogDir {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "logs" });
+            get => Path.Combine(new string[] { BDRoot, "logs" });
         }
 
         public string HtmlDir {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "html" });
+            get => Path.Combine(new string[] { BDRoot, "html" });
         }
 
         public string IconsDir {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "icons" });
+            get => Path.Combine(new string[] { BDRoot, "icons" });
         }
 
+        // We attempt to load secrets from BizDeckConfig.SecretsPath
+        // If that fails we attempt to load from ConfigDir/BizDeckConfig.SecretsPath
+        public string ActualSecretsPath { private set; get; }
+
         public string PythonCoreSourcePath {
-            get => Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "src", "py", "core" });
+            get => Path.Combine(new string[] { BDRoot, "src", "py", "core" });
         }
 
         public BizDeckConfig BizDeckConfig { set; get; }
@@ -106,31 +102,55 @@ namespace BizDeck {
 
         public string GetFullIconPath(string button_image_path)
         {
-            return Path.Combine(new string[] { LocalAppDataPath, "BizDeck", button_image_path });
+            return Path.Combine(new string[] { BDRoot, button_image_path });
         }
 
         public string GetFullLogPath()
         {
-            return Path.Combine(new string[] { LocalAppDataPath, "BizDeck", BizDeckConfig.BrowserUserDataDir });
+            return Path.Combine(new string[] { BDRoot, BizDeckConfig.BrowserUserDataDir });
         }
 
-        public BizDeckConfig LoadConfig() {
+        public  BizDeckResult LoadConfig() {
+            // remember we cannot use the logger here as we the log dir comes from config
             try {
-                string secrets = File.ReadAllText(SecretsPath);
-                Secrets = JsonSerializer.Deserialize<Dictionary<string, string>>(secrets, json_serializer_options);
+                if (!File.Exists(ConfigPath)) {
+                    return BizDeckResult.BadConfigPath;
+                }
+                // load cfg/http_formats.json
+                string http_formats = File.ReadAllText(HttpFormatsPath);
+                HttpFormatMap = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, HttpFormat>>>(http_formats, json_serializer_options);
+                // load cfg/config.json
+                string config_json = File.ReadAllText(ConfigPath);
+                BizDeckConfig = JsonSerializer.Deserialize<BizDeckConfig>(config_json, json_serializer_options);
+                // loads secrets NV json dict
+                string secrets = null;
+                string[] fallback_path_elements = { ConfigDir, BizDeckConfig.SecretsPath };
+                string secrets_fallback_path = Path.Combine(fallback_path_elements);
+                if (File.Exists(BizDeckConfig.SecretsPath)) {
+                    ActualSecretsPath = BizDeckConfig.SecretsPath;
+                    secrets = File.ReadAllText(BizDeckConfig.SecretsPath);
+                }
+                else if (File.Exists(secrets_fallback_path)) {
+                    ActualSecretsPath = secrets_fallback_path;
+                    secrets = File.ReadAllText(secrets_fallback_path);
+                }
+                else {
+                    ActualSecretsPath = "no_secrets_loaded";
+                }
+                if (secrets != null) {
+                    Secrets = JsonSerializer.Deserialize<Dictionary<string, string>>(secrets, json_serializer_options);
+                }
+                else {
+                    Secrets = new Dictionary<string, string>();
+                }
                 foreach (var pair in Secrets) {
                     NameStack.Instance.AddNameValue($"secrets.{pair.Key}", pair.Value);
                 }
-                string http_formats = File.ReadAllText(HttpFormatsPath);
-                HttpFormatMap = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, HttpFormat>>>(http_formats, json_serializer_options);
-                TraceConfig = File.ReadAllText(TraceConfigPath);
-                string config_json = File.ReadAllText(ConfigPath);
-                BizDeckConfig = JsonSerializer.Deserialize<BizDeckConfig>(config_json, json_serializer_options);
                 int index = 0;
                 foreach (ButtonDefinition bm in BizDeckConfig.ButtonList) {
                     bm.ButtonIndex = index++;
                 }
-                return BizDeckConfig;
+                return BizDeckResult.Success;
             }
             catch (Exception ex) {
                 // Since we cannot load the config file, we cannot start the web server and
@@ -139,11 +159,11 @@ namespace BizDeck {
                 // we can save the error there...
                 ThrowErrorToBrowser($"LoadConfig from {ConfigDir}", ex.ToString());
             }
-            return null;
+            return BizDeckResult.BadConfigPath;
         }
 
         public void ThrowErrorToBrowser(string context, string error_message) {
-            string error_file_path = Path.Combine(new string[] { LocalAppDataPath, "biz_deck_error.html" });
+            string error_file_path = Path.Combine(new string[] { LogDir, "biz_deck_error.html" });
             string html = $"<body><h3>BizDeck {context} error</h3><p>{error_message}</p>";
             File.WriteAllText(error_file_path, html);
             var process = new System.Diagnostics.Process() {
@@ -234,7 +254,7 @@ namespace BizDeck {
             // to change as well.
             string app_launch_path = name_or_path;
             if (!File.Exists(name_or_path)) {
-                app_launch_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "scripts", "apps", $"{name_or_path}.json" });
+                app_launch_path = Path.Combine(new string[] { BDRoot, "scripts", "apps", $"{name_or_path}.json" });
             }
             var launch_json = await File.ReadAllTextAsync(app_launch_path);
             return ValidateAppLaunch(launch_json);
@@ -246,9 +266,9 @@ namespace BizDeck {
             string result = null;
             string script_path = name_or_path;
             if (!File.Exists(name_or_path)) {
-                script_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "scripts", "actions", $"{name_or_path}.json" });
+                script_path = Path.Combine(new string[] { BDRoot, "scripts", "actions", $"{name_or_path}.json" });
                 if (!File.Exists(script_path)) {
-                    script_path = Path.Combine(new string[] { LocalAppDataPath, "BizDeck", "scripts", "steps", $"{name_or_path}.json" });
+                    script_path = Path.Combine(new string[] { BDRoot, "scripts", "steps", $"{name_or_path}.json" });
                 }
             }
             try {

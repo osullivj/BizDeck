@@ -36,7 +36,7 @@ namespace BizDeck {
                 // so to execute it is to load the functions into the scope.
                 action_scope = action_engine.ExecuteFile(biz_deck_py_path);
                 // Set global vars in bizdeck.py
-                action_scope.SetVariable("BDRoot", config_helper.LocalAppDataPath);
+                action_scope.SetVariable("BDRoot", config_helper.BDRoot);
                 action_scope.SetVariable("Logger", logger);
                 return BizDeckResult.Success;
             }

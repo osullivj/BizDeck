@@ -116,7 +116,7 @@ def read_non_unique_key_rows(reader):
 class AddCsvToCacheAsDict(ActionFunction):
     def implementation(self, cache, group, csv, row_key=None, headers=None):
         print("enter impl")
-        csv_path = os.path.join(BDRoot, 'BizDeck', 'data', 'csv', csv)
+        csv_path = os.path.join(BDRoot, 'data', 'csv', csv)
         cs_cache_entry = None
         field_names = None
         with open(csv_path, "rt") as csv_file:

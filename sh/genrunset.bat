@@ -1,0 +1,1 @@
+%VPYTHON% %BDROOT%\src\py\build\generate_run_settings.py %BDROOT%\cfg\cs_unit_test_runsettings.json %BDROOT%\cfg\unit_test_config.json

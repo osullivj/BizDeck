@@ -2,3 +2,8 @@ html/index.html
 bin/
 obj/
 html/
+.idea/
+.vs/
+cfg/cs_unit_test_runsettings.json
+scripts/excel/
+Properties/

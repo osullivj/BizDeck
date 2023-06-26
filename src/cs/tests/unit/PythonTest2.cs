@@ -8,7 +8,7 @@ namespace BizDeckUnitTests {
     public class PythonTest2 {
         [SetUp]
         public void Setup() {
-            string[] args = { "--appdata", TestContext.Parameters.Get("appdata", "c:\\osullivj\\src") };
+            string[] args = { "--config", TestContext.Parameters.Get("config") };
             CmdLineOptions.InitAndLoadConfigHelper(args);
             // ConfigHelper and ActionsDriver will log post init,
             // so create logging subsys

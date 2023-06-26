@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using BizDeck;
 
@@ -10,23 +12,30 @@ namespace BizDeckUnitTests {
             // two secrets tests: HTTP construction, secret sub in tiingo_gui_login
             // Q: should we make ConfigDir or SecretsPath overrideable so tests
             // can set here to pick up alternates? JOS 2023-06-22
-            string[] args = { "--appdata", TestContext.Parameters.Get("appdata", "c:\\osullivj\\src") };
+            string[] args = { "--config", TestContext.Parameters.Get("config") };
             CmdLineOptions.InitAndLoadConfigHelper(args);
         }
 
         [Test]
         public void TestPlayScriptSecrets() {
             var bdconfig = ConfigHelper.Instance.BizDeckConfig;
-            // TODO add code that loads tiingo_gui_login and validates
-            // subs against test secrets cfg
+            var token_result = NameStack.Instance.Resolve("secrets.quandl.auth_token");
+            Assert.AreEqual("unit_test_token", token_result.Message);
             Assert.Pass();
         }
 
         [Test]
         public void TestHTTPSecrets() {
-            var bdconfig = ConfigHelper.Instance.BizDeckConfig;
-            // TODO add code that loads quandl_rates and checks that
-            // the URLs are decorated with auth keys correctly
+            var http_spec_map = ConfigHelper.Instance.HttpFormatMap["quandl"];
+            var bd_http_format = http_spec_map["url"];
+            var actions_driver = new ActionsDriver();
+            // See ActionsDriver.PlayScript()
+            dynamic action_script = actions_driver.LoadAndParseActionScript("quandl_rates");
+            JArray actions = action_script.actions;
+            var result = actions_driver.ExpandHttpFormat(bd_http_format, (JObject)actions[0]);
+            Assert.AreEqual(true, result.OK);
+            Assert.AreEqual("https://www.quandl.com/api/v1/datasets/FRED/DED3.csv?auth_token=unit_test_token",
+                result.Message);
             Assert.Pass();
         }
     }

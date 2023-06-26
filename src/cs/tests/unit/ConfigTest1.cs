@@ -6,7 +6,7 @@ namespace BizDeckUnitTests {
     public class ConfigTest1 {
         [SetUp]
         public void Setup() {
-            string[] args = { "--appdata", TestContext.Parameters.Get("appdata", "c:\\osullivj\\src") };
+            string[] args = { "--config", TestContext.Parameters.Get("config") };
             CmdLineOptions.InitAndLoadConfigHelper(args);
         }
 

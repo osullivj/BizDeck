@@ -12,4 +12,6 @@ data/csv/
 icons/about.txt
 __pycache__/
 venv/
+logs/
+src/cs/lib/favicon.ico
 

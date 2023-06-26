@@ -7,3 +7,9 @@ html/
 cfg/cs_unit_test_runsettings.json
 scripts/excel/
 Properties/
+sh/TestResult.xml
+data/csv/
+icons/about.txt
+__pycache__/
+venv/
+

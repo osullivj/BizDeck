@@ -14,7 +14,7 @@
   "icon_font_family": "Arial",
   "icon_font_size": 64,
   "deck_brightness_percentage": 75,
-  "secrets_path": "C:\\Users\\John\\Dropbox\\cfg\\secrets.json",
+  "secrets_path": "secrets.json",
   "button_list": [
     {
       "name": "page",

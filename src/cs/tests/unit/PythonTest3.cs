@@ -12,7 +12,7 @@ namespace BizDeckUnitTests {
             CmdLineOptions.InitAndLoadConfigHelper(args);
             // ConfigHelper and ActionsDriver will log post init,
             // so create logging subsys
-            BizDeckLogger.InitLogging();
+            BizDeckLogger.InitLogging("python_test3");
             // pytest1.py writes to console
             Win32.AllocConsole();
             BizDeckResult py_init_result = BizDeckPython.Instance.Init(ConfigHelper.Instance);

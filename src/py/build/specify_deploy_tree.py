@@ -17,6 +17,7 @@ DEPLOY_TREE = {
         '*.dll': 'src/cs/server/bin/Release/net5.0/*.dll',
         '*.exe': 'src/cs/server/bin/Release/net5.0/*.exe',
         'BizDeckServer.runtimeconfig.json': 'src/cs/server/bin/Release/net5.0/BizDeckServer.runtimeconfig.json',
+        'lib:': 'src/cs/server/bin/Debug/net5.0/lib',
     },
     'data/': {},
     'doc/': {},

@@ -2,18 +2,24 @@
 unit test the BizDeck core actions module
 NB this module is loaded by BizDeckPython.cs in the BizDeck server
 """
+# std pkgs
+import os
 import unittest
+# src/py/core
 import actions
+# src/py/mock
 from mock_logger import Logger
 from mock_cache import DataCache
+# .Net types via IronPython
 from System.Collections.Generic import Dictionary
 from System import Object
+
 
 class TestActions(unittest.TestCase):
 
     def setUp(self):
         # BizDeckPython.cs sets the BDRoot and Logger variable in actions.py
-        actions.BDRoot = "c:\\osullivj\\src"
+        actions.BDRoot = os.environ.get("BDROOT")
         actions.Logger = Logger()
         self.cache = DataCache()
 

@@ -4,14 +4,11 @@ import sys
 # plumbum
 from plumbum import cli, local
 from plumbum.path.utils import copy, delete
-from plumbum.path.local import LocalPath
 # dir tree spec
 from specify_deploy_tree import DEPLOY_TREE
+from bd_utils import configure_logging
 
-logging.basicConfig(level=logging.INFO,
-                    handlers=[logging.FileHandler("build_deploy_tree.log"),
-                              logging.StreamHandler()])
-logger = logging.getLogger("deploy")
+logger = configure_logging("deploy")
 
 
 class DeployTreeBuilder(cli.Application):

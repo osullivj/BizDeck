@@ -1,0 +1,1 @@
+%VPYTHON% %BDROOT%\src\py\build\zip_deploy_tree.py

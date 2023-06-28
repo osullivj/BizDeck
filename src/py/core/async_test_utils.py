@@ -1,29 +1,10 @@
 # std pkg
 import os
 import json
-import logging
 import shutil
 # 3rd pty
 from tornado.testing import AsyncTestCase, AsyncHTTPClient
-import psutil
-
-
-# configure logging to stdout and file
-def configure_logging(log_name):
-    logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(message)s',
-                    handlers=[logging.FileHandler(f"{log_name}.log"),
-                              logging.StreamHandler()])
-    return logging.getLogger(log_name)
-
-
-def find_bizdeck_process(exe_name="BizDeckServer.exe"):
-    # check there is no running BizDeck process
-    for proc in psutil.process_iter(['pid', 'name', 'username']):
-        logging.debug(f"ps:{proc.info}")
-        if proc.info.get('name') == exe_name:
-            return proc.info
-    return None
+from bd_utils import configure_logging, find_bizdeck_process
 
 
 # Base test case for our int tests

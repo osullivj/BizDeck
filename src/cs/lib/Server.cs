@@ -125,9 +125,6 @@ namespace BizDeck {
         public void Run() { 
             var http_server_task = http_server.RunAsync();
             http_server_task.ConfigureAwait(false);
-            // TODO: embedio boilerplate had this exit_signal,
-            // so we must figure how to do a clean exit...
-            var exit_signal = new ManualResetEvent(false);
             Task stream_deck_task;
             if (stream_deck == null) {
                 // StreamDeck init failed - maybe not plugged in?
@@ -157,7 +154,7 @@ namespace BizDeck {
                 logger.Error("Shutdown: no server_exit_token");
                 return;
             }
-            logger.Info("Shutting down...");
+            logger.Fatal("Shutting down...");
             server_exit_token.Cancel();
         }
 

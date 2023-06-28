@@ -20,13 +20,15 @@ namespace BizDeck
             Logger.Info($"{System.Environment.CurrentManagedThreadId} {msg}", bizDeckObject.GetType().Name);
         }
 
-        public void Error(string msg)
-        {
+        public void Error(string msg) {
             Logger.Error($"{System.Environment.CurrentManagedThreadId} {msg}", bizDeckObject.GetType().Name);
         }
 
-        public static void InitLogging(string log_file_base_name = "biz_deck")
-        {
+        public void Fatal(string msg) {
+            Logger.Fatal($"{System.Environment.CurrentManagedThreadId} {msg}", bizDeckObject.GetType().Name);
+        }
+
+        public static void InitLogging(string log_file_base_name = "biz_deck") {
             // Swan's FileLogger takes care of inserting a date
             // suffix in the log path as 2nd paran true means "daily"
             string[] log_path_array = { ConfigHelper.Instance.LogDir,

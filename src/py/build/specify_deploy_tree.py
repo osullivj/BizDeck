@@ -37,7 +37,8 @@ DEPLOY_TREE = {
     'logs/': {},
     'scripts/': {
         'actions/': {
-            'quandl_rates.json': 'scripts/actions/quandl_rates.json'
+            'quandl_rates.json': 'scripts/actions/quandl_rates.json',
+            'load_quandl_yield.json': 'scripts/actions/load_quandl_yield.json',
         },
         'apps/': {
             'excel.json': 'scripts/apps/excel.json',

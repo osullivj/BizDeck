@@ -41,6 +41,9 @@ class DeployTreeZipper(cli.Application):
         dist.mkdir()
         zip_path = dist / 'bizdeck'
         shutil.make_archive(zip_path, 'zip', root_dir=bdtree)
+        unzip_path = dist / 'unzip.bat'
+        with open(unzip_path, 'wt') as unzip_bat:
+            unzip_bat.write('powershell -command "Expand-Archive bizdeck.zip %LOCALAPPDATA%\\BizDeck"')
 
 
 if __name__ == "__main__":

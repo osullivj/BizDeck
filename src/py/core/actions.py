@@ -1,3 +1,5 @@
+# This is an IronPython module that uses .Net types
+# It will not work on the CPython runtime
 # std py pkgs provided by IronPython
 from csv import DictReader
 import functools

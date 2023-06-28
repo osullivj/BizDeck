@@ -8,8 +8,9 @@ from plumbum.path.local import LocalPath
 # dir tree spec
 from specify_deploy_tree import DEPLOY_TREE
 
-
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(level=logging.INFO,
+                    handlers=[logging.FileHandler("build_deploy_tree.log"),
+                              logging.StreamHandler()])
 logger = logging.getLogger("deploy")
 
 

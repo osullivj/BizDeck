@@ -7,11 +7,11 @@ import unittest
 # 3rd pty
 from tornado.testing import AsyncTestCase, gen_test, AsyncHTTPClient
 from tornado import gen
-from tornado.httpclient import HTTPClient
 import psutil
 
 # configure logging to stdout and file
 logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(message)s',
                     handlers=[logging.FileHandler("start_stop_test.log"),
                               logging.StreamHandler()])
 logger = logging.getLogger("start_stop_test")
@@ -33,14 +33,13 @@ class TestStartStop(AsyncTestCase):
         # result POV
         self.biz_deck_config = dict()
         self.bdtree = os.environ["BDTREE"]
-        config_path = os.path.join(self.bdtree, 'cfg', 'config.json')
-        logger.info(f'Loading config from {config_path}')
-        with open(config_path, 'rt') as config_file:
+        self.launch_cfg_path = os.path.join(self.bdtree, 'cfg', 'int_test_config.json')
+        logger.info(f'Loading config from {self.launch_cfg_path}')
+        with open(self.launch_cfg_path, 'rt') as config_file:
             self.biz_deck_config = json.loads(config_file.read())
         self.biz_deck_http_port = self.biz_deck_config.get('http_server_port')
         logger.info(f'HTTP port {self.biz_deck_http_port}')
         self.launch_exe_path = os.path.join(self.bdtree, 'bin', 'BizDeckServer.exe')
-        self.launch_cfg_path = os.path.join(self.bdtree, 'cfg', 'config.json')
         logger.info(f'Launch exe:{self.launch_exe_path}, path:{self.launch_cfg_path}')
         self.shutdown_url = f'http://localhost:{self.biz_deck_http_port}/api/shutdown'
         self.http_client = AsyncHTTPClient()

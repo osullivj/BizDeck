@@ -10,6 +10,7 @@
 DEPLOY_TREE = {
     'cfg/': {
         'config.json': 'cfg/config.json',
+        'int_test_config.json': 'cfg/int_test_config.json',
         'http_formats.json': 'cfg/http_formats.json',
         'secrets.json': 'cfg/secrets.json'
     },

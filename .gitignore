@@ -14,5 +14,6 @@ __pycache__/
 venv/
 logs/
 src/cs/lib/favicon.ico
+src/cs/server/favicon.ico
 *.log
 

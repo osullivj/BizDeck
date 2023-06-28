@@ -56,7 +56,7 @@ namespace BizDeck {
 
         [Route(HttpVerbs.Get, "/run/actions/{actions_name}")]
         public async Task<string> RunActions(string actions_name) {
-            BizDeckResult load_actions_result = null; 
+            BizDeckResult load_actions_result = config_helper.LoadStepsOrActions(actions_name);
             if (!load_actions_result.OK) {
                 return JsonConvert.SerializeObject(load_actions_result);
             }

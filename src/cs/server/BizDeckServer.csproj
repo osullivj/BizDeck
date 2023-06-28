@@ -5,7 +5,8 @@
     <TargetFramework>net5.0</TargetFramework>
     <ApplicationIcon>favicon.ico</ApplicationIcon>
     <StartupObject />
-    <NoWin32Manifest>true</NoWin32Manifest>
+    <NoWin32Manifest>false</NoWin32Manifest>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>

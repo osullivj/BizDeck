@@ -213,10 +213,17 @@ namespace BizDeck {
 					logger.Error($"HTTPGet: status[{payload.StatusCode}] for url[{hrm.RequestUri}]");
 					return new BizDeckResult(error);
                 }
-				// Save the script contents into the dat dir
-				Stream file_write_stream = File.OpenWrite(target_path);
-				await payload.Content.CopyToAsync(file_write_stream);
-				logger.Info($"HTTPGet: {action_name} saved to {target_path}");
+				// Save the script contents into the dat dir. Using block should
+				// ensure the file is close properly. Int testing revealed that
+				// an HTTPGet action followed by add_csv_to_cache_as_dict action
+				// py function fails as the IronPy add_csv_to_cache_as_dict fails
+				// with 17:20:43.208 ERR >> [BizDeckPython] 20 RunActionFunction: func[add_csv_to_cache_as_dict] failed System.IO.IOException:
+				// The process cannot access the file 'C:\osullivj\bld\BizDeck\data\csv\yield.csv' because it is being used by another process.
+				using (Stream file_write_stream = File.OpenWrite(target_path)) {
+					await payload.Content.CopyToAsync(file_write_stream);
+					logger.Info($"HTTPGet: {action_name} saved to {target_path}");
+					file_write_stream.Close();
+				}
 				return success;
 			}
 			catch (Exception ex) {

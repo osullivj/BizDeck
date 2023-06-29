@@ -13,6 +13,7 @@ using Newtonsoft.Json.Linq;
 namespace BizDeck {
     public class BizDeckApiController : WebApiController {
         private ConfigHelper config_helper;
+        private CacheEntryConverter cache_entry_converter = new();
 
         public BizDeckApiController(ConfigHelper ch) {
             config_helper = ch;
@@ -26,13 +27,16 @@ namespace BizDeck {
         [Route(HttpVerbs.Get, "/config")]
         public Task<BizDeckConfig> Config() => Task.FromResult(config_helper.BizDeckConfig);
 
-        [Route(HttpVerbs.Get, "/cache/{group?}/{key?}")]
-        public Task<CacheEntry> GetCacheEntry(string group, string cache_key) {
+        [Route(HttpVerbs.Get, "/cache/{group?}/{cache_key?}")]
+        public async Task GetCacheEntry(string group, string cache_key) {
             CacheEntry cache_entry = DataCache.Instance.GetCacheEntry(group, cache_key);
             if (cache_entry == null) {
                 throw HttpException.NotFound();
             }
-            return Task.FromResult<CacheEntry>(cache_entry);
+            HttpContext.Response.ContentType = "application/json";
+            using (var writer = HttpContext.OpenResponseText()) {
+                await writer.WriteAsync(JsonConvert.SerializeObject(cache_entry, cache_entry_converter));
+            }
         }
 
         [Route(HttpVerbs.Get, "/run/apps/{app?}")]

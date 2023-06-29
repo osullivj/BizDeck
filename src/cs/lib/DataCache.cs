@@ -16,11 +16,14 @@ namespace BizDeck {
     // One cache row, for the purposes of iterating over any type
     // of cache entry. When we're RegularCSV there's no key, so
     // key will be index.ToString()
+    [JsonObject]
     public class CacheEntryRow {
         private Dictionary<string, string> row;
         private string key;
 
+        [JsonProperty]
         public Dictionary<string,string> Row { get => row; set => row = value; }
+        [JsonIgnore]
         public string KeyValue { get => key; set => key = value; }
 
         public CacheEntryRow(Dictionary<string,string> r, string k) {
@@ -216,16 +219,20 @@ namespace BizDeck {
         private Dictionary<string, Dictionary<string, CacheEntry>> cache = new();
         private readonly object cache_lock = new();
         private bool changed = false;
+        private BizDeckLogger logger;
 
         [JsonIgnore]
         public bool HasChanged { get => changed; }
 
-        private DataCache() { }
+        private DataCache() {
+            logger = new(this);
+        }
 
         #region InsertMethods
         // InsertMethods are invoked from bizdeck.py utilities that do the CSV loading
         // They also create Excel IQY files 
         public void Insert(string group, string cache_key, List<Dictionary<string, string>> val, List<string> column_names) {
+            logger.Info($"Insert: inserting {group}/{cache_key} with cols:{column_names}");
             lock (cache_lock) {
                 Dictionary<string, CacheEntry> cache_group = null;
                 if (cache.ContainsKey(group)) {
@@ -238,10 +245,12 @@ namespace BizDeck {
                 cache_group[cache_key] = new CacheEntry(val, null, column_names);
                 changed = true;
             }
+            logger.Info($"Insert: inserted {group}/{cache_key}");
             ConfigHelper.Instance.SaveExcelQuery(group, cache_key);
         }
 
         public void Insert(string group, string cache_key, Dictionary<string, Dictionary<string, string>> val, string row_key, List<string> column_names) {
+            logger.Info($"Insert: inserting {group}/{cache_key} with row_key:{row_key} and cols:{column_names}");
             lock (cache_lock) {
                 Dictionary<string, CacheEntry> cache_group = null;
                 if (cache.ContainsKey(group)) {
@@ -254,6 +263,7 @@ namespace BizDeck {
                 cache_group[cache_key] = new CacheEntry(val, row_key, column_names);
                 changed = true;
             }
+            logger.Info($"Insert: inserted {group}/{cache_key} with row_key:{row_key}");
             ConfigHelper.Instance.SaveExcelQuery(group, cache_key);
         }
         #endregion InsertMethods
@@ -268,6 +278,7 @@ namespace BizDeck {
         public string SerializeToJsonEvent(bool reset_changed_flag = false) {
             string json = "{}";
             BizDeckJsonEvent cache_update = new("cache");
+            logger.Info($"SerializeToJsonEvent: serializing with reset_changed_flag:{reset_changed_flag}");
             lock (cache_lock) {
                 cache_update.Data = cache;
                 json = JsonConvert.SerializeObject(cache_update);
@@ -275,19 +286,23 @@ namespace BizDeck {
                     changed = false;
                 }
             }
+            logger.Info($"SerializeToJsonEvent: serialized json length:{json.Length}");
             return json;
         }
 
 
         public CacheEntry GetCacheEntry(string group, string cache_key) {
+            logger.Info($"GetCacheEntry: getting {group}/{cache_key}");
             lock (cache_lock) {
                 if (cache.ContainsKey(group)) {
                     Dictionary<string, CacheEntry> cache_group = cache[group];
                     if (cache_group.ContainsKey(cache_key)) {
+                        logger.Info($"GetCacheEntry: returning {group}/{cache_key}");
                         return cache_group[cache_key];
                     }
                 }
             }
+            logger.Info($"GetCacheEntry: unknown {group}/{cache_key}");
             return null;
         }
     }

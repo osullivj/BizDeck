@@ -2,8 +2,10 @@
 import os
 import json
 import shutil
+from subprocess import Popen
 # 3rd pty
 from tornado.testing import AsyncTestCase, AsyncHTTPClient
+from tornado import gen
 from bd_utils import configure_logging, find_bizdeck_process
 
 
@@ -42,3 +44,30 @@ class BizDeckIntTestCase(AsyncTestCase):
         self.logger.info(f'Launch exe:{self.launch_exe_path}, path:{self.launch_cfg_path}')
         self.shutdown_url = f'http://localhost:{self.biz_deck_http_port}/api/shutdown'
         self.http_client = AsyncHTTPClient()
+
+    async def start_biz_deck(self):
+        if not self.start_stop:
+            return None
+        popen_args = ' '.join([self.launch_exe_path, '--config', self.launch_cfg_path])
+        self.logger.info(f'start_biz_deck: args[{popen_args}]')
+        biz_deck_proc = Popen(popen_args)
+        self.logger.info(f'start_biz_deck: proc[{biz_deck_proc}]')
+        await gen.sleep(5)
+        return biz_deck_proc
+
+    async def stop_biz_deck(self, biz_deck_proc):
+        if not self.start_stop or not biz_deck_proc:
+            return
+        try:
+            shutdown_response = await self.http_client.fetch(self.shutdown_url)
+            # pause again for BizDeckServer.exe to exit...
+            retcode = biz_deck_proc.wait(timeout=5)
+            self.logger.info(f'stop_biz_deck: popen retcode:{retcode}')
+            # retcode=None means the proc is still running
+            self.assertNotEqual(retcode, None)
+        except ConnectionResetError as ex:
+            self.logger.info(f'stop_biz_deck: {ex}')
+            self.logger.info(f'stop_biz_deck: BizDeckServer.exe terminated before serving shutdown response')
+
+
+

@@ -14,17 +14,19 @@ class BizDeckIntTestCase(AsyncTestCase):
     def setUp(self):
         super().setUp()
         self.logger = configure_logging(self.__class__.__name__)
+        self.bdtree = os.getenv("BDTREE")
+        self.start_stop = int(os.getenv("BDSTARTSTOP", "1"))
         # check there is no running BizDeck process
-        proc_info = find_bizdeck_process()
-        if proc_info:
-            error = f"BizDeck already running: {proc_info}"
-            self.logger.error(error)
-            raise Exception(error)
+        if self.start_stop:
+            proc_info = find_bizdeck_process()
+            if proc_info:
+                error = f"BizDeck already running: ss[{self.start_stop}], {proc_info}"
+                self.logger.error(error)
+                raise Exception(error)
         # read deploy tree config to discover port. Exceptions for
         # missing env vars are fine here from the test behaviour and
         # result POV
         self.biz_deck_config = dict()
-        self.bdtree = os.environ["BDTREE"]
         self.launch_cfg_path = os.path.join(self.bdtree, 'cfg', 'int_test_config.json')
         self.csv_dir_path = os.path.join(self.bdtree, 'data', 'csv')
         if os.path.exists(self.csv_dir_path):

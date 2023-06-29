@@ -133,8 +133,14 @@ class AddCsvToCacheAsDict(ActionFunction):
         # change the . to _
         cache_key = csv.replace('.', '_')
         # Return correctly ordered column names as last parameter
+        # Prefer the DictReader field_names to headers, which may
+        # not be provided. If the csv has no headers field_names
+        # will be [] or None, and headers should have been supplied
+        py_column_names = field_names or headers
         column_names = List[str]()
-        map(column_names.Add, field_names)
+        for name in py_column_names:
+            # some csv files have spaces in field names
+            column_names.Add(name.replace(' ', ''))
         cache.Insert(group, cache_key, cs_cache_entry, row_key, column_names)
         return ""
 

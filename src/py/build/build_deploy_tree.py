@@ -32,7 +32,11 @@ class DeployTreeBuilder(cli.Application):
         target_path = local.path(target_dir)
         if target_path.exists():
             logger.info("Deleting %s" % target_path)
-            delete(target_path)
+            try:
+                delete(target_path)
+            except PermissionError as ex:
+                logger.error(ex.strerror)
+                return
         else:
             target_path.mkdir()
         bdroot = local.env["BDROOT"]

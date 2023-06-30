@@ -32,6 +32,9 @@ namespace BizDeck
         [JsonPropertyName("browser_websock_timeout")]
         public int BrowserWebsockTimeout { get; set; }
 
+        [JsonPropertyName("blink_interval")]
+        public int BlinkInterval { get; set; }
+
         [JsonPropertyName("browser_user_data_dir")]
         public string BrowserUserDataDir { get; set; }
 
@@ -43,6 +46,9 @@ namespace BizDeck
 
         [JsonPropertyName("devtools")]
         public bool DevTools { get; set; }
+
+        [JsonPropertyName("debug_logging")]
+        public bool DebugLogging { get; set; }
 
         [JsonPropertyName("headless")]
         public bool Headless { get; set; }

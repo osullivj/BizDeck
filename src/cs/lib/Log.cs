@@ -7,13 +7,18 @@ namespace BizDeck
     public class BizDeckLogger
     {
         private Object bizDeckObject;
+        private bool debug_logging;
+
         public BizDeckLogger( Object bdo)
         {
             bizDeckObject = bdo;
+            debug_logging = ConfigHelper.Instance.BizDeckConfig.DebugLogging;
         }
 
         public void Debug(string msg) {
-            Logger.Debug($"{System.Environment.CurrentManagedThreadId} {msg}", bizDeckObject.GetType().Name);
+            if (debug_logging) {
+                Logger.Debug($"{System.Environment.CurrentManagedThreadId} {msg}", bizDeckObject.GetType().Name);
+            }
         }
 
         public void Info(string msg) {

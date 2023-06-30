@@ -146,9 +146,13 @@ namespace BizDeck {
                 foreach (var pair in Secrets) {
                     NameStack.Instance.AddNameValue($"secrets.{pair.Key}", pair.Value);
                 }
+                // set ButtonDefinition members not supplied in config.json
+                // init button state is set: set with main image. Set is false
+                // when the button has been blanked.
                 int index = 0;
-                foreach (ButtonDefinition bm in BizDeckConfig.ButtonList) {
-                    bm.ButtonIndex = index++;
+                foreach (ButtonDefinition bd in BizDeckConfig.ButtonList) {
+                    bd.ButtonIndex = index++;
+                    bd.Set = true;
                 }
                 return BizDeckResult.Success;
             }
@@ -235,7 +239,7 @@ namespace BizDeck {
                     return new BizDeckResult("Script is not an app launch, or chrome recorder steps, or ETL actions");
                 }
             }
-            // Save the script contents into the cfg dir
+            // Save the script contents into the scripts dir
             string script_path = Path.Combine(new string[] { ScriptsDir, bm.Action, script_name });
             await File.WriteAllTextAsync(script_path, script);
             // Add the newly created button to config button map

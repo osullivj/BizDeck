@@ -9,6 +9,7 @@ namespace BizDeck {
 
         // Indexes are assigned by ConfigHelper code,
         // and not set from JSON
+        [JsonIgnore]
         public int ButtonIndex { get; set; }
 
         [JsonPropertyName("image")]
@@ -16,5 +17,11 @@ namespace BizDeck {
 
         [JsonPropertyName("action")]
         public string Action { get; set; }
+
+        [JsonIgnore]
+        public bool Set { get; set; }
+
+        [JsonPropertyName("blink")]
+        public bool Blink { get; set; }
     }
 }

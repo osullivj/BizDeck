@@ -44,6 +44,8 @@ namespace BizDeck {
         // Used to exit the main Task.WaitAll
         private CancellationTokenSource server_exit_token;
 
+        private Timer blink_timer;
+
         // Use of Lazy<T> gives us a thread safe singleton
         // Instance property is the access point
         // https://csharpindepth.com/articles/singleton
@@ -88,6 +90,9 @@ namespace BizDeck {
             RebuildButtonActionMap();
             // Instance and plug together Embedio server objects
             http_server = CreateWebServer();
+            // Create the timer object for blinking buttons
+            blink_timer = new Timer(this.BlinkTimerCallback, null, 5000, 
+                                config_helper.BizDeckConfig.BlinkInterval);
         }
 
         protected bool ConnectStreamDeck() {
@@ -270,7 +275,7 @@ namespace BizDeck {
             // [3]: 'yield.csv'
             CacheEntry cache_entry = null;
             if (ctx.Request.Url.Segments.Length < 4) {
-                // When Excel is given a we query for eg http://localhost:9271/excel/quandl/yield.csv
+                // When Excel is given a we query for eg http://localhost:9271/excel/quandl/yield_csv
                 // via .iqy file, then for some reason it will hit http://localhost:9271/excel/quandl/
                 // first, so we have to respond quick with a 404.
                 logger.Error($"ExcelCallback: not enough URL segments: {ctx.Request.RawUrl}");
@@ -296,6 +301,12 @@ namespace BizDeck {
                 // without any further help from app code here.
                 stream.Flush();
                 stream.Close();
+            }
+        }
+
+        private void BlinkTimerCallback(object state) {
+            if (stream_deck != null) {
+                stream_deck.BlinkDeviceButtons();
             }
         }
     }

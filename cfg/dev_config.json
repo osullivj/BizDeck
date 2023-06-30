@@ -5,10 +5,12 @@
   "browser_recorder_port": 9222,
   "browser_json_list_timeout": 5,
   "browser_websock_timeout": 1,
+  "blink_interval": 250,
   "browser_user_data_dir": "logs",
   "browser_path": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
   "console": true,
   "devtools": false,
+  "debug_logging": false,
   "headless": false,
   "http_get_timeout": 5,
   "icon_font_family": "Arial",
@@ -18,51 +20,44 @@
   "button_list": [
     {
       "name": "page",
-      "ButtonIndex": 0,
       "image": "icons\\page1.png",
       "action": "native"
     },
     {
       "name": "gui",
-      "ButtonIndex": 1,
       "image": "icons\\bd512.png",
       "action": "native"
     },
     {
       "name": "word",
-      "ButtonIndex": 2,
       "image": "icons\\word.png",
       "action": "apps"
     },
     {
       "name": "excel",
-      "ButtonIndex": 3,
       "image": "icons\\excel.png",
       "action": "apps"
     },
     {
       "name": "tiingo_gui_login",
-      "ButtonIndex": 4,
       "image": "icons\\tiingo.png",
       "action": "steps"
     },
     {
       "name": "quandl_ycb",
-      "ButtonIndex": 5,
       "image": "icons\\quandl_ycb.png",
       "action": "actions"
     },
     {
       "name": "quandl_rates",
-      "ButtonIndex": 6,
       "image": "icons\\quandl_rates.png",
       "action": "actions"
     },
     {
       "name": "google",
-      "ButtonIndex": 7,
       "image": "icons\\google.png",
-      "action": "steps"
+      "action": "steps",
+      "blink": true
     }
   ],
   "background_icons": [

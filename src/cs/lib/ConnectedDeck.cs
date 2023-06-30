@@ -131,7 +131,7 @@ namespace BizDeck {
         }
 
         public void SetupDeviceButtons( ) {
-            logger.Info($"SetupDeviceButtons: button_list.Count[{button_list.Count}]");
+            logger.Debug($"SetupDeviceButtons: button_list.Count[{button_list.Count}]");
             byte[] buffer = null;
             // Button 0 is the pager button, so we always send that whatever page is current
             var pager_button = button_list[0];
@@ -143,8 +143,14 @@ namespace BizDeck {
             int buttons_sent = 1;
             foreach (var button in button_list) {
                 if (button.ButtonIndex >= start_index && button.ButtonIndex <= end_index) {
-                    buffer = icon_cache.GetIconBufferJPEG(button.ButtonImagePath);
-                    this.SetKey(buttons_sent++, buffer);
+                    if (button.Set) {
+                        buffer = icon_cache.GetIconBufferJPEG(button.ButtonImagePath);
+                        this.SetKey(buttons_sent, buffer);
+                    }
+                    else {
+                        this.ClearKey(buttons_sent);
+                    }
+                    buttons_sent++;
                 }
             }
             // Clear keys not set by our config. NB is we stop BizDeck and restart with
@@ -153,6 +159,20 @@ namespace BizDeck {
             while (buttons_sent < this.ButtonCount) {
                 this.ClearKey(buttons_sent++);
             }
+        }
+
+        public void BlinkDeviceButtons() {
+            foreach (var bd in button_list) {
+                if (bd.Blink) {
+                    if (bd.Set) {
+                        bd.Set = false;
+                    }
+                    else {
+                        bd.Set = true;
+                    }
+                }
+            }
+            SetupDeviceButtons();
         }
 
         public void NextPage() {

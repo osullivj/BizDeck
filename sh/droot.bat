@@ -9,6 +9,11 @@ set VSTEST="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common
 :: Useful for switching between running them against a BDTREE deploy tree
 :: and running them against a VS debug session
 set BDSTARTSTOP=1
+:: We don't set timeouts with @gen_test(timeout=) because that hardwires
+:: 20 works running against the dep tree with start stop
+:: NB cpyitests_vsdebug.bat sets it higher so the test code
+:: will wait while debugging C# in VS
+set ASYNC_TEST_TIMEOUT=20
 :: you should not need to change the lines below
 set VPYTHON=%BDROOT%\venv\scripts\python.exe
 set PYTHONPATH=%BDROOT%\src\py\build;%BDROOT%\src\py\core

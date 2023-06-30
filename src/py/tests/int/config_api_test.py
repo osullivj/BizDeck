@@ -24,7 +24,9 @@ class TestConfigAPI(BizDeckIntTestCase):
         self.assertEqual(config_response.code, 200)
         config_dict = json.loads(config_response.body)
         self.assertIsNotNone(config_dict)
-        self.assertEqual(self.biz_deck_config['ConfigPath'], config_dict['ConfigPath'])
+        # TODO: config.json uses lower case keys. C# JsonSerialization
+        # uses camel case style of C# properties.
+        self.assertEqual(self.biz_deck_config['browser_path'], config_dict['BrowserPath'])
         await self.stop_biz_deck(biz_deck_proc)
 
 

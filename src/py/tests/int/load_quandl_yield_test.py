@@ -1,11 +1,9 @@
 # std pkg
 import json
 import os
-from subprocess import Popen
 import unittest
 # 3rd pty
-from tornado.testing import AsyncTestCase, gen_test, AsyncHTTPClient
-from tornado import gen
+from tornado.testing import gen_test
 # bizdeck
 from async_test_utils import BizDeckIntTestCase
 
@@ -16,7 +14,8 @@ class TestLoadQuandlYield(BizDeckIntTestCase):
         super().setUp()
         self.quandl_rates_url = f'http://localhost:{self.biz_deck_http_port}/api/run/actions/quandl_rates'
         self.load_quandl_yield_url = f'http://localhost:{self.biz_deck_http_port}/api/run/actions/load_quandl_yield'
-        self.get_quandl_yield_url = f'http://localhost:{self.biz_deck_http_port}/api/cache/quandl/yield_csv'
+        self.api_get_quandl_yield_url = f'http://localhost:{self.biz_deck_http_port}/api/cache/quandl/yield_csv'
+        self.xl_get_quandl_yield_url = f'http://localhost:{self.biz_deck_http_port}/excel/quandl/yield_csv'
 
     @gen_test
     async def test_load_quandl_yield(self):
@@ -32,15 +31,26 @@ class TestLoadQuandlYield(BizDeckIntTestCase):
         self.logger.info(f"test_load_quandl_yield: retcode[{load_response.code} for {self.load_quandl_yield_url}")
         self.assertEqual(load_response.code, 200)
         # get cache contents
-        self.logger.info(f"test_load_quandl_yield: HTTT REST {self.get_quandl_yield_url}")
-        get_response = await self.http_client.fetch(self.get_quandl_yield_url)
-        self.logger.info(f"test_load_quandl_yield: retcode[{get_response.code} for {self.get_quandl_yield_url}")
-        self.assertEqual(get_response.code, 200)
+        self.logger.info(f"test_load_quandl_yield: HTTP REST {self.api_get_quandl_yield_url}")
+        api_get_response = await self.http_client.fetch(self.api_get_quandl_yield_url)
+        self.logger.info(f"test_load_quandl_yield: retcode[{api_get_response.code} for {self.api_get_quandl_yield_url}")
+        self.assertEqual(api_get_response.code, 200)
         # turn the response into a py obj
-        quandl_csv = json.loads(get_response.body)
+        quandl_csv = json.loads(api_get_response.body)
         self.logger.info("test_load_quandl_yield: {type}, {count} rows, {row_key} key".format(**quandl_csv))
         self.assertEqual(quandl_csv['type'], 'PrimaryKeyCSV')
         self.assertEqual(quandl_csv['row_key'], 'Date')
+        # now check the Excel features: the /excel/quandl/yield.csv URL for an Excel friendly
+        # HTML table, and the creation of scripts/excel/quandl_yield_csv.iqy
+        self.logger.info(f"test_load_quandl_yield: Excel HTML table {self.xl_get_quandl_yield_url}")
+        xl_get_response = await self.http_client.fetch(self.xl_get_quandl_yield_url)
+        self.logger.info(f"test_load_quandl_yield: retcode[{xl_get_response.code} for {self.api_get_quandl_yield_url}")
+        self.assertEqual(xl_get_response.code, 200)
+        self.assertFalse(b'No cached data' in xl_get_response.body)
+        self.assertTrue(b'Key' in xl_get_response.body)
+        self.assertTrue(b'1MO' in xl_get_response.body)
+        iqy_path = os.path.join(self.bdtree, 'scripts', 'excel', 'quandl_yield_csv.iqy')
+        self.assertTrue(os.path.exists(iqy_path))
         await self.stop_biz_deck(biz_deck_proc)
 
 

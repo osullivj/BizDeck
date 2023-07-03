@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace BizDeck
 {
@@ -14,67 +15,67 @@ namespace BizDeck
             this.ButtonList = new List<ButtonDefinition>();
         }
 
-        [JsonPropertyName("usb_hid_device_index")]
+        [JsonProperty("usb_hid_device_index")]
         public int USBHIDDeviceIndex { get; set; }
 
-        [JsonPropertyName("http_host_name")]
+        [JsonProperty("http_host_name")]
         public string HTTPHostName { get; set; }
 
-        [JsonPropertyName("http_server_port")]
+        [JsonProperty("http_server_port")]
         public int HTTPServerPort { get; set; }
 
-        [JsonPropertyName("browser_recorder_port")]
+        [JsonProperty("browser_recorder_port")]
         public int BrowserRecorderPort { get; set; }
 
-        [JsonPropertyName("browser_json_list_timeout")]
+        [JsonProperty("browser_json_list_timeout")]
         public int BrowserJsonListTimeout{ get; set; }
 
-        [JsonPropertyName("browser_websock_timeout")]
+        [JsonProperty("browser_websock_timeout")]
         public int BrowserWebsockTimeout { get; set; }
 
-        [JsonPropertyName("blink_interval")]
+        [JsonProperty("blink_interval")]
         public int BlinkInterval { get; set; }
 
-        [JsonPropertyName("browser_user_data_dir")]
+        [JsonProperty("browser_user_data_dir")]
         public string BrowserUserDataDir { get; set; }
 
-        [JsonPropertyName("browser_path")]
+        [JsonProperty("browser_path")]
         public string BrowserPath { get; set; }
 
-        [JsonPropertyName("console")]
+        [JsonProperty("console")]
         public bool Console { get; set; }
 
-        [JsonPropertyName("devtools")]
+        [JsonProperty("devtools")]
         public bool DevTools { get; set; }
 
-        [JsonPropertyName("debug_logging")]
+        [JsonProperty("debug_logging")]
         public bool DebugLogging { get; set; }
 
-        [JsonPropertyName("headless")]
+        [JsonProperty("headless")]
         public bool Headless { get; set; }
 
-        [JsonPropertyName("http_get_timeout")]
+        [JsonProperty("http_get_timeout")]
         public int HttpGetTimeout { get; set; }
 
-        [JsonPropertyName("icon_font_family")]
+        [JsonProperty("icon_font_family")]
         public string IconFontFamily { get; set; }
 
-        [JsonPropertyName("icon_font_size")]
+        [JsonProperty("icon_font_size")]
         public int IconFontSize{ get; set; }
 
-        [JsonPropertyName("deck_brightness_percentage")]
+        [JsonProperty("deck_brightness_percentage")]
         public int DeckBrightnessPercentage { get; set; }
 
-        [JsonPropertyName("secrets_path")]
+        [JsonProperty("secrets_path")]
         public string SecretsPath { get; set; }
 
-        [JsonPropertyName("button_list")]
+        [JsonProperty("button_list")]
         public List<ButtonDefinition> ButtonList { get; set; }
 
-        [JsonPropertyName("background_icons")]
+        [JsonProperty("background_icons")]
         public List<string> BackgroundIcons { get; set; }
 
-        [JsonPropertyName("background_default")]
+        [JsonProperty("background_default")]
         public string BackgroundDefault { get; set; }
     }
 }

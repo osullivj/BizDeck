@@ -228,13 +228,13 @@ namespace BizDeck {
             foreach (ButtonDefinition bd in config_helper.BizDeckConfig.ButtonList) {
                 if (!button_action_map.ContainsKey(bd.Name)) {
                     switch (bd.Action) {
-                        case "actions":
+                        case ButtonImplType.Actions:
                             button_action_map[bd.Name] = new ActionsButton(bd.Name, websock);
                             break;
-                        case "steps":
+                        case ButtonImplType.Steps:
                             button_action_map[bd.Name] = new StepsButton(bd.Name);
                             break;
-                        case "apps":
+                        case ButtonImplType.Apps:
                             button_action_map[bd.Name] = new AppButton(bd.Name, websock);
                             break;
                         default:

@@ -1,18 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.Json;
 using System.Threading.Tasks;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace BizDeck {
 
     // HttpFormat: used for loading http_formats.json
     public class HttpFormat {
-        [JsonPropertyName("format")]
+        [JsonProperty("format")]
         public string Format { get; set; }
 
-        [JsonPropertyName("values")]
+        [JsonProperty("values")]
         public List<string> Values { get; set; }
     }
 
@@ -26,12 +26,9 @@ namespace BizDeck {
 
         private CmdLineOptions cmd_line_options;
         private BizDeckLogger logger;
-        private JsonSerializerOptions json_serializer_options = new();
 
         private ConfigHelper() {
-            // setup the JSON serialization options used by Load/SaveConfig
-            json_serializer_options.AllowTrailingCommas = true;
-            json_serializer_options.WriteIndented = true;
+            // TODO converter json options
         }
 
         public void Init(CmdLineOptions opts) {
@@ -118,10 +115,11 @@ namespace BizDeck {
                 }
                 // load cfg/http_formats.json
                 string http_formats = File.ReadAllText(HttpFormatsPath);
-                HttpFormatMap = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, HttpFormat>>>(http_formats, json_serializer_options);
+
+                HttpFormatMap = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, HttpFormat>>>(http_formats);
                 // load cfg/config.json
                 string config_json = File.ReadAllText(ConfigPath);
-                BizDeckConfig = JsonSerializer.Deserialize<BizDeckConfig>(config_json, json_serializer_options);
+                BizDeckConfig = JsonConvert.DeserializeObject<BizDeckConfig>(config_json);
                 // loads secrets NV json dict
                 string secrets = null;
                 string[] fallback_path_elements = { ConfigDir, BizDeckConfig.SecretsPath };
@@ -138,7 +136,7 @@ namespace BizDeck {
                     ActualSecretsPath = "no_secrets_loaded";
                 }
                 if (secrets != null) {
-                    Secrets = JsonSerializer.Deserialize<Dictionary<string, string>>(secrets, json_serializer_options);
+                    Secrets = JsonConvert.DeserializeObject<Dictionary<string, string>>(secrets);
                 }
                 else {
                     Secrets = new Dictionary<string, string>();
@@ -181,8 +179,7 @@ namespace BizDeck {
 
         public async Task<BizDeckResult> SaveConfig() {
             try {
-                string config_json = JsonSerializer.Serialize<BizDeckConfig>(BizDeckConfig, 
-                                                                    json_serializer_options);
+                string config_json = JsonConvert.SerializeObject(BizDeckConfig);
                 await File.WriteAllTextAsync(ConfigPath, config_json);
                 logger.Info($"SaveConfig: config saved to path[{ConfigPath}]");
             }
@@ -219,36 +216,36 @@ namespace BizDeck {
             }
             // Create the new button mapping now so we can populate as we
             // apply checks to the script type.
-            ButtonDefinition bm = new();
-            bm.Name = button_name;
-            bm.ButtonIndex = BizDeckConfig.ButtonList.Count;
-            bm.ButtonImagePath = $"icons\\{button_name}.png";
+            ButtonDefinition bd = new();
+            bd.Name = button_name;
+            bd.ButtonIndex = BizDeckConfig.ButtonList.Count;
+            bd.ButtonImagePath = $"icons\\{button_name}.png";
             // Is is an app launch or steps?
             BizDeckResult validation = ValidateAppLaunch(script);
             if (validation.OK) {
-                bm.Action = "apps";
+                bd.Action = ButtonImplType.Apps;
             }
             else {
                 if (script.Contains("steps")) {
-                    bm.Action = "steps";
+                    bd.Action = ButtonImplType.Steps;
                 }
                 else if (script.Contains("actions")) {
-                    bm.Action = "actions";
+                    bd.Action = ButtonImplType.Actions;
                 }
                 else { 
                     return new BizDeckResult("Script is not an app launch, or chrome recorder steps, or ETL actions");
                 }
             }
             // Save the script contents into the scripts dir
-            string script_path = Path.Combine(new string[] { ScriptsDir, bm.Action, script_name });
+            string script_path = Path.Combine(new string[] { ScriptsDir, bd.ImplTypeAsString, script_name });
             await File.WriteAllTextAsync(script_path, script);
             // Add the newly created button to config button map
-            BizDeckConfig.ButtonList.Add(bm);
+            BizDeckConfig.ButtonList.Add(bd);
             BizDeckResult save_result = await SaveConfig();
             if (!save_result.OK) {
                 return new BizDeckResult($"{script_path} save failed for new button {script_name}");
             }
-            return new BizDeckResult(true, $"{script_path}/{script_name} created for button index:{bm.ButtonIndex}, name:{bm.Name}");
+            return new BizDeckResult(true, $"{script_path}/{script_name} created for {bd}");
         }
 
 
@@ -308,7 +305,7 @@ namespace BizDeck {
         #region InternalMethods
         protected BizDeckResult ValidateAppLaunch(string launch_json)
         {
-            var launch = JsonSerializer.Deserialize<AppLaunch>(launch_json);
+            var launch = JsonConvert.DeserializeObject<AppLaunch>(launch_json);
             if (launch == null)
                 return new BizDeckResult("null app_launch");
             if (launch.ExeDocUrl == null)

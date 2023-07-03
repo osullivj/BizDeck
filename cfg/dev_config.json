@@ -5,7 +5,7 @@
   "browser_recorder_port": 9222,
   "browser_json_list_timeout": 5,
   "browser_websock_timeout": 1,
-  "blink_interval": 250,
+  "blink_interval": 500,
   "browser_user_data_dir": "logs",
   "browser_path": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
   "console": true,
@@ -21,12 +21,12 @@
     {
       "name": "page",
       "image": "icons\\page1.png",
-      "action": "native"
+      "action": "system"
     },
     {
       "name": "gui",
       "image": "icons\\bd512.png",
-      "action": "native"
+      "action": "system"
     },
     {
       "name": "word",
@@ -57,7 +57,8 @@
       "name": "google",
       "image": "icons\\google.png",
       "action": "steps",
-      "blink": true
+      "blink": true,
+      "mode": "KillOnClick"
     }
   ],
   "background_icons": [

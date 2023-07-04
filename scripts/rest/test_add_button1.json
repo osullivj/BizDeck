@@ -1,0 +1,8 @@
+{
+    "script_name": "google_calendar.json",
+    "script": {
+        "exe_doc_url": "https://calendar.google.com",
+        "args": ""
+    },
+    "background": "bg4" 
+}

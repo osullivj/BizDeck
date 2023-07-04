@@ -13,10 +13,13 @@ using Newtonsoft.Json.Linq;
 namespace BizDeck {
     public class BizDeckApiController : WebApiController {
         private ConfigHelper config_helper;
+        private BizDeckLogger logger;
         private CacheEntryConverter cache_entry_converter = new();
+        private List<string> add_button_request_keys = new() { "script_name", "script", "background" };
 
         public BizDeckApiController(ConfigHelper ch) {
             config_helper = ch;
+            logger = new(this);
         }
 
         // http://localhost:9271/api/status
@@ -74,6 +77,39 @@ namespace BizDeck {
         public string Shutdown() {
             Server.Instance.Shutdown();
             return JsonConvert.SerializeObject(BizDeckResult.Success);
+        }
+
+        [Route(HttpVerbs.Post, "/add_button")]
+        public async Task<string> AddButton([BizDeckData] JObject button_defn) {
+            string script_name = null;
+            JToken script = null;
+            string background = null;
+            try {
+                if (add_button_request_keys.TrueForAll(s => button_defn.ContainsKey(s))) {
+                    script_name = (string)button_defn["script_name"];
+                    script = (JToken)button_defn["script"];
+                    background = (string)button_defn["background"];
+                }
+            }
+            catch (Exception ex) {
+                string error = $"AddButton: cannot extract parse script data from [{button_defn}], ex[{ex.Message}]";
+                logger.Error(error);
+                return JsonConvert.SerializeObject(new BizDeckResult(error));
+            }
+            // resume on any thread so we free this thread for more websock event handling
+            BizDeckResult add_button_result = await config_helper.AddButton(script_name, script.ToString(), background);
+            if (!add_button_result.OK) {
+                logger.Error($"AddButton: add_button failed for name[{script_name}] in {button_defn}");
+                throw HttpException.BadRequest($"JSON parse failure {add_button_result.Message}");
+            }
+            else {
+                // We don't have a websock context here as this is an HTTP POST. So we
+                // cannot do a Server.SendConfig() as it requires a websock context.
+                // TODO: rewire SendConfig etc to use broadcast events when no
+                // websock context is supplied.
+                BizDeckResult rebuild_result = Server.Instance.RebuildButtonMaps();
+                return JsonConvert.SerializeObject(rebuild_result);
+            }
         }
     }
 }

@@ -10,7 +10,7 @@
   "browser_path": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
   "console": true,
   "devtools": false,
-  "debug_logging": false,
+  "debug_logging": true,
   "headless": false,
   "http_get_timeout": 5,
   "icon_font_family": "Arial",
@@ -21,43 +21,57 @@
     {
       "name": "page",
       "image": "icons\\page1.png",
-      "action": "system"
+      "action": "System",
+      "blink": false,
+      "mode": "Permanent"
     },
     {
       "name": "gui",
       "image": "icons\\bd512.png",
-      "action": "system"
+      "action": "System",
+      "blink": false,
+      "mode": "Permanent"
     },
     {
       "name": "word",
       "image": "icons\\word.png",
-      "action": "apps"
+      "action": "Apps",
+      "blink": false,
+      "mode": "Permanent"
     },
     {
       "name": "excel",
       "image": "icons\\excel.png",
-      "action": "apps"
+      "action": "Apps",
+      "blink": false,
+      "mode": "Permanent"
     },
     {
       "name": "tiingo_gui_login",
       "image": "icons\\tiingo.png",
-      "action": "steps"
+      "action": "Steps",
+      "blink": false,
+      "mode": "Permanent"
     },
     {
       "name": "quandl_ycb",
       "image": "icons\\quandl_ycb.png",
-      "action": "actions"
+      "action": "Actions",
+      "blink": false,
+      "mode": "Permanent"
     },
     {
       "name": "quandl_rates",
       "image": "icons\\quandl_rates.png",
-      "action": "actions"
+      "action": "Actions",
+      "blink": false,
+      "mode": "Permanent"
     },
     {
       "name": "google",
       "image": "icons\\google.png",
-      "action": "steps",
-      "blink": true,
+      "action": "Steps",
+      "blink": false,
       "mode": "KillOnClick"
     }
   ],

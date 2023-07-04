@@ -23,7 +23,7 @@ namespace BizDeck
         public bool OK { get => ok; set => ok = value; }
         private bool ok = true;
 
-        [JsonProperty("payload")]
+        [JsonIgnore]    // Internal use only: on the wire it's always BizDeckResult.Message
         public object Payload { get => payload; set => payload = value;}
         private object payload;
         
@@ -46,7 +46,8 @@ namespace BizDeck
         private static BizDeckResult stream_deck_not_connected = new(false, "StreamDeck not connected");
         public static BizDeckResult BadConfigPath{ get => bad_config_path; }
         private static BizDeckResult bad_config_path = new(false, "Bad config path, check --appdata param");
-
+        public static BizDeckResult BadAddButtonPayload { get => bad_add_button_payload; }
+        private static BizDeckResult bad_add_button_payload = new(false, "Bad /api/add_button payload, check logs");
 
 
         // Use this ctor to construct both success and fail results

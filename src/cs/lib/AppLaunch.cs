@@ -1,17 +1,17 @@
 ﻿using System.Collections.Generic;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
-namespace BizDeck
-{
+
+namespace BizDeck {
     /// <summary>
     /// JSON deserialize object for app launch config.
     /// </summary>
-    public class AppLaunch
-    {
-        [JsonPropertyName("exe_doc_url")]
+    public class AppLaunch {
+        [JsonProperty("exe_doc_url")]
         public string ExeDocUrl { get; set; }
 
-        [JsonPropertyName("args")]
+        [JsonProperty("args")]
         public string Args { get; set; }
     }
 }

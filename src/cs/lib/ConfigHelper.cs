@@ -26,9 +26,10 @@ namespace BizDeck {
 
         private CmdLineOptions cmd_line_options;
         private BizDeckLogger logger;
+        private JsonSerializerSettings json_serializer_settings = new();
 
         private ConfigHelper() {
-            // TODO converter json options
+            json_serializer_settings.Formatting = Formatting.Indented;
         }
 
         public void Init(CmdLineOptions opts) {
@@ -179,7 +180,7 @@ namespace BizDeck {
 
         public async Task<BizDeckResult> SaveConfig() {
             try {
-                string config_json = JsonConvert.SerializeObject(BizDeckConfig);
+                string config_json = JsonConvert.SerializeObject(BizDeckConfig, json_serializer_settings);
                 await File.WriteAllTextAsync(ConfigPath, config_json);
                 logger.Info($"SaveConfig: config saved to path[{ConfigPath}]");
             }

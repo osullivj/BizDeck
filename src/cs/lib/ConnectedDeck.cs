@@ -162,8 +162,10 @@ namespace BizDeck {
         }
 
         public void BlinkDeviceButtons() {
+            bool blink_required = false;
             foreach (var bd in button_list) {
                 if (bd.Blink) {
+                    blink_required = true;
                     if (bd.Set) {
                         bd.Set = false;
                     }
@@ -172,7 +174,9 @@ namespace BizDeck {
                     }
                 }
             }
-            SetupDeviceButtons();
+            if (blink_required) {
+                SetupDeviceButtons();
+            }
         }
 
         public void NextPage() {

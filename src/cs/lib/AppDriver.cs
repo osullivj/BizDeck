@@ -35,8 +35,9 @@ namespace BizDeck
                 return load_app_result;
             }
             launch = (AppLaunch)load_app_result.Payload;
-            logger.Info($"Run: {name_or_path}:{launch.ExeDocUrl}");
+            logger.Info($"PlayApp: {name_or_path}:{launch.ExeDocUrl}");
             // start default app, doc or url
+            /*
             var process = new System.Diagnostics.Process() {
                 StartInfo = new System.Diagnostics.ProcessStartInfo(launch.ExeDocUrl) {
                     // TODO: make these configgable in the app launch scripts
@@ -44,11 +45,23 @@ namespace BizDeck
                     ErrorDialog = true,
                     Arguments = launch.Args
                 }
-            };
+            }; */
+            var process = new System.Diagnostics.Process();
+            var start_info = new System.Diagnostics.ProcessStartInfo(launch.ExeDocUrl);
+            if (launch.ExeDocUrl.StartsWith("http")) {
+                // shell allows Windows to spot the URL and launch browser
+                start_info.UseShellExecute = true;
+            }
+            else {
+                start_info.UseShellExecute = false;
+                start_info.ErrorDialog = true;
+                start_info.Arguments = launch.Args;
+            }
+            process.StartInfo = start_info;
             // If this blocks with no visible error, check the path in your
             // steps json very carefully!
             process.Start();
-            logger.Info($"Run: running {name_or_path}:{launch}");
+            logger.Info($"PlayApp: running {name_or_path}:{launch}");
             return BizDeckResult.Success;
         }
     }

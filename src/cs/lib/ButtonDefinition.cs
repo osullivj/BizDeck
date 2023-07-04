@@ -27,6 +27,12 @@ namespace BizDeck {
             {ButtonImplType.Steps, "steps"},
             {ButtonImplType.Apps, "apps"}
         };
+
+        public ButtonDefinition() {
+            // Set isn't supplied by config. Unless we set it true, it will default
+            // to false, being a bool. We want the initial state to always be set.
+            Set = true;
+        }
             
 
         [JsonProperty("name")]

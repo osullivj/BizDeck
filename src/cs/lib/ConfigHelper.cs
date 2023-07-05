@@ -309,7 +309,14 @@ namespace BizDeck {
         #region InternalMethods
         protected BizDeckResult ValidateAppLaunch(string launch_json)
         {
-            var launch = JsonConvert.DeserializeObject<AppLaunch>(launch_json);
+            AppLaunch launch = null;
+            try {
+                launch = JsonConvert.DeserializeObject<AppLaunch>(launch_json);
+            }
+            catch (Exception ex) {
+                logger.Error("$ValidateAppLaunch: {ex.Message}");
+                return new BizDeckResult(ex.Message);
+            }
             if (launch == null)
                 return new BizDeckResult("null app_launch");
             if (launch.ExeDocUrl == null)

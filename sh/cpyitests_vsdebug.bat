@@ -11,5 +11,5 @@ set BDTREE=%BDROOT%
 set BDSTARTSTOP=0
 :: Tornado AsyncTestCase timeout
 set ASYNC_TEST_TIMEOUT=3600
-%VPYTHON% %BDROOT%\src\py\tests\int\add_button_api_test1.py
+%VPYTHON% %BDROOT%\src\py\tests\int\add_button_api_test3.py
 endlocal

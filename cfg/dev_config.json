@@ -10,7 +10,7 @@
   "browser_path": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
   "console": true,
   "devtools": false,
-  "debug_logging": true,
+  "debug_logging": false,
   "headless": false,
   "http_get_timeout": 5,
   "icon_font_family": "Arial",

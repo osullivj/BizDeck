@@ -53,7 +53,9 @@ DEPLOY_TREE = {
             'tiingo_gui_login.json': 'scripts/steps/tiingo_gui_login.json',
         },
         'rest/': {
-            'test_add_button1.json': 'scripts/rest/test_add_button1.json'
+            'test_add_button1.json': 'scripts/rest/test_add_button1.json',
+            'test_add_button2.json': 'scripts/rest/test_add_button2.json',
+            'test_add_button3.json': 'scripts/rest/test_add_button3.json'
         }
     },
     'src/': {

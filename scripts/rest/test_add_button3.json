@@ -1,0 +1,10 @@
+{
+    "name": "google_calendar.json",
+    "background": "bg5",
+    "blink": true,
+    "mode": "KillOnClick",
+    "script": {
+        "exe_doc_url": "https://calendar.google.com",
+        "args": ""
+    }
+}

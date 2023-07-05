@@ -19,6 +19,8 @@ class BizDeckIntTestCase(AsyncTestCase):
         test_name = self.__class__.__name__
         self.logger = configure_logging(test_name)
         self.bdtree = os.getenv("BDTREE")
+        self.bdroot = os.getenv("BDROOT")
+        self.is_deploy_tree = self.bdtree != self.bdroot
         self.start_stop = int(os.getenv("BDSTARTSTOP", "1"))
         # check there is no running BizDeck process
         if self.start_stop:
@@ -33,9 +35,9 @@ class BizDeckIntTestCase(AsyncTestCase):
         self.biz_deck_config = dict()
         self.launch_cfg_path = os.path.join(self.bdtree, 'cfg', 'int_test_config.json')
         self.backup_cfg_path = os.path.join(self.bdtree, 'cfg', 'int_test_config.json_backup')
-        self.result_cfg_path = os.path.join(self.bdtree, 'cfg', f'{test_name}.config.json')
+        self.result_cfg_path = os.path.join(self.bdtree, 'logs', f'{test_name}.config.json')
         self.csv_dir_path = os.path.join(self.bdtree, 'data', 'csv')
-        if os.path.exists(self.csv_dir_path):
+        if os.path.exists(self.csv_dir_path) and self.is_deploy_tree:
             # clean up any downloads from previous tests
             self.logger.info(f'Deleting csv dir:{self.csv_dir_path}')
             shutil.rmtree(self.csv_dir_path)

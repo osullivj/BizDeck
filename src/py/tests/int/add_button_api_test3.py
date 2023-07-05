@@ -15,7 +15,7 @@ class TestAddButtonAPI(BizDeckIntTestCase):
     def setUp(self):
         super().setUp()
         self.add_button_url = f'http://localhost:{self.biz_deck_http_port}/api/add_button'
-        payload_path = os.path.join(self.bdtree, 'scripts', 'rest', 'test_add_button1.json')
+        payload_path = os.path.join(self.bdtree, 'scripts', 'rest', 'test_add_button3.json')
         self.add_cleanup_file(os.path.join(self.bdtree, 'scripts', 'apps', 'google_calendar.json'))
         self.add_cleanup_file(os.path.join(self.bdtree, 'icons', 'google_calendar.png'))
         with open(payload_path, 'rt') as payload_file:
@@ -43,7 +43,8 @@ class TestAddButtonAPI(BizDeckIntTestCase):
         new_button_list = new_config_dict['button_list']
         self.assertEqual(len(old_button_list)+1, len(new_button_list))
         last_button = new_button_list[-1]
-        self.assertFalse(last_button['blink'])
+        self.assertTrue(last_button['blink'])
+        self.assertEqual(last_button['mode'], 'KillOnClick')
         await self.stop_biz_deck(biz_deck_proc)
 
 

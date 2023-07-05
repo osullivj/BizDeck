@@ -89,6 +89,12 @@ namespace BizDeck {
                         if (!action_result.OK) {
                             await main_server_object.SendNotification("Button action failed", action_result.Message);
                         }
+                        else {
+                            if (button_entry.Mode == ButtonMode.KillOnClick) {
+                                await config_helper.DeleteButton(button_entry.Name);
+                                main_server_object.RebuildButtonMaps();
+                            }
+                        }
                     }
                 }
                 else {

@@ -83,27 +83,10 @@ namespace BizDeck {
 
         [Route(HttpVerbs.Post, "/add_button")]
         public async Task<string> AddButton([BizDeckData] JObject button_defn) {
-            /*
-            // Mandatory: client must supply these fields
-            string script_name = null;
-            // Optional: client may supply these fields. Here we set to 
-            // same default vals as ButtonDefinition ctor.
-            ButtonMode mode = ButtonMode.Persistent;
-            bool blink = false;
-            // JToken decls for the optional fields
-            JToken jmode;
-            JToken jblink; */
             JToken script = null;
             ButtonDefinition bd = null;
             string background = null;
-            try { /*
-                if (add_button_request_keys.TrueForAll(s => button_defn.ContainsKey(s))) {
-                    script_name = (string)button_defn["script_name"];
-                    script = (JToken)button_defn["script"];
-                    background = (string)button_defn["background"];
-                    if (button_defn.TryGetValue("mode", out jmode)) {
-
-                    } */
+            try {
                 // Extract the buttonDefinition fields from the object
                 bd = button_defn.ToObject<ButtonDefinition>();
                 // Fields not in ButtonDefinition

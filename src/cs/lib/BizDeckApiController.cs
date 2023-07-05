@@ -15,7 +15,9 @@ namespace BizDeck {
         private ConfigHelper config_helper;
         private BizDeckLogger logger;
         private CacheEntryConverter cache_entry_converter = new();
-        private List<string> add_button_request_keys = new() { "script_name", "script", "background" };
+        // API add button request fields are the same as a ButtonDefinition
+        // we require name and background; blink and mode can default
+        private List<string> add_button_request_keys = new() { "name",  "background", "script"};
 
         public BizDeckApiController(ConfigHelper ch) {
             config_helper = ch;
@@ -81,25 +83,42 @@ namespace BizDeck {
 
         [Route(HttpVerbs.Post, "/add_button")]
         public async Task<string> AddButton([BizDeckData] JObject button_defn) {
+            /*
+            // Mandatory: client must supply these fields
             string script_name = null;
+            // Optional: client may supply these fields. Here we set to 
+            // same default vals as ButtonDefinition ctor.
+            ButtonMode mode = ButtonMode.Persistent;
+            bool blink = false;
+            // JToken decls for the optional fields
+            JToken jmode;
+            JToken jblink; */
             JToken script = null;
+            ButtonDefinition bd = null;
             string background = null;
-            try {
+            try { /*
                 if (add_button_request_keys.TrueForAll(s => button_defn.ContainsKey(s))) {
                     script_name = (string)button_defn["script_name"];
                     script = (JToken)button_defn["script"];
                     background = (string)button_defn["background"];
-                }
+                    if (button_defn.TryGetValue("mode", out jmode)) {
+
+                    } */
+                // Extract the buttonDefinition fields from the object
+                bd = button_defn.ToObject<ButtonDefinition>();
+                // Fields not in ButtonDefinition
+                script = (JToken)button_defn["script"];
+                background = (string)button_defn["background"];
             }
             catch (Exception ex) {
-                string error = $"AddButton: cannot extract parse script data from [{button_defn}], ex[{ex.Message}]";
+                string error = $"/api/add_button: cannot extract button defn or script from [{button_defn}], ex[{ex.Message}]";
                 logger.Error(error);
-                return JsonConvert.SerializeObject(new BizDeckResult(error));
+                throw HttpException.BadRequest(error);
             }
             // resume on any thread so we free this thread for more websock event handling
-            BizDeckResult add_button_result = await config_helper.AddButton(script_name, script.ToString(), background);
+            BizDeckResult add_button_result = await config_helper.AddButton(bd.Name, script.ToString(), background, bd.Blink, bd.Mode);
             if (!add_button_result.OK) {
-                logger.Error($"AddButton: add_button failed for name[{script_name}] in {button_defn}");
+                logger.Error($"AddButton: add_button failed for name[{bd.Name}] in {button_defn}");
                 throw HttpException.BadRequest($"JSON parse failure {add_button_result.Message}");
             }
             else {

@@ -32,8 +32,10 @@ namespace BizDeck {
             // Set isn't supplied by config. Unless we set it true, it will default
             // to false, being a bool. We want the initial state to always be set.
             Set = true;
+            // Also supply default values that may be omitted from /api/add_button
+            Mode = ButtonMode.Persistent;
+            Blink = false;
         }
-            
 
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -64,7 +66,7 @@ namespace BizDeck {
         public ButtonMode Mode { get; set; }
 
         public override string ToString() {
-            return $"Button:name[{Name}], inx[{ButtonIndex}], img[{ButtonImagePath}], type[{ImplTypeAsString}], mode[{Mode}]";
+            return $"Button:name[{Name}], inx[{ButtonIndex}], img[{ButtonImagePath}], type[{ImplTypeAsString}], mode[{Mode}], blink[{Blink}]";
         }
     }
 }

@@ -15,7 +15,9 @@ class BizDeckIntTestCase(AsyncTestCase):
 
     def setUp(self):
         super().setUp()
-        self.logger = configure_logging(self.__class__.__name__)
+        # Derived class name
+        test_name = self.__class__.__name__
+        self.logger = configure_logging(test_name)
         self.bdtree = os.getenv("BDTREE")
         self.start_stop = int(os.getenv("BDSTARTSTOP", "1"))
         # check there is no running BizDeck process
@@ -30,12 +32,16 @@ class BizDeckIntTestCase(AsyncTestCase):
         # result POV
         self.biz_deck_config = dict()
         self.launch_cfg_path = os.path.join(self.bdtree, 'cfg', 'int_test_config.json')
+        self.backup_cfg_path = os.path.join(self.bdtree, 'cfg', 'int_test_config.json_backup')
+        self.result_cfg_path = os.path.join(self.bdtree, 'cfg', f'{test_name}.config.json')
         self.csv_dir_path = os.path.join(self.bdtree, 'data', 'csv')
         if os.path.exists(self.csv_dir_path):
             # clean up any downloads from previous tests
             self.logger.info(f'Deleting csv dir:{self.csv_dir_path}')
             shutil.rmtree(self.csv_dir_path)
+        # load the config, and make a backup
         self.logger.info(f'Loading config from {self.launch_cfg_path}')
+        shutil.copyfile(self.launch_cfg_path, self.backup_cfg_path)
         with open(self.launch_cfg_path, 'rt') as config_file:
             self.biz_deck_config = json.loads(config_file.read())
         self.biz_deck_http_port = self.biz_deck_config.get('http_server_port')
@@ -44,6 +50,27 @@ class BizDeckIntTestCase(AsyncTestCase):
         self.logger.info(f'Launch exe:{self.launch_exe_path}, path:{self.launch_cfg_path}')
         self.shutdown_url = f'http://localhost:{self.biz_deck_http_port}/api/shutdown'
         self.http_client = AsyncHTTPClient()
+        self.files_to_cleanup = []
+
+    def tearDown(self):
+        # copy end state config to file named for test so it's available
+        # after the test for debugging purposes
+        shutil.copyfile(self.launch_cfg_path, self.result_cfg_path)
+        # now restore original config
+        shutil.copyfile(self.backup_cfg_path, self.launch_cfg_path)
+        # delete backup
+        os.remove(self.backup_cfg_path)
+        # any other cleanups before next test?
+        for fpath in self.files_to_cleanup:
+            if os.path.exists(fpath):
+                os.remove(fpath)
+
+    def add_cleanup_file(self, fpath):
+        self.files_to_cleanup.append(fpath)
+
+    def reload_config(self):
+        with open(self.launch_cfg_path, 'rt') as config_file:
+            return json.loads(config_file.read())
 
     async def start_biz_deck(self):
         if not self.start_stop:

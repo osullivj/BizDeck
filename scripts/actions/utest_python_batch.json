@@ -1,0 +1,11 @@
+{
+	"actions": [
+		{
+			"type": "python_batch",
+			"name": "simplest_python_batch",
+			"path": "c:\\osullivj\\src\\BizDeck\\src\\py\\tests\\unit\\simplest_python_batch.py",
+			"args": [],
+			"env": {}
+		}
+	]
+}

@@ -20,8 +20,8 @@ namespace BizDeckUnitTests {
 
         [Test]
         public async Task TestPytest1Action() {
-            // Load up cg/pytest1.json
-            string actions_name = "pytest1";
+            // Load up scripts/actions/utest_python_batch.json
+            string actions_name = "utest_python_batch";
             BizDeckResult load_result = ConfigHelper.Instance.LoadStepsOrActions(actions_name);
             Assert.AreNotEqual(null, load_result.Payload);
             Assert.AreEqual(true, load_result.OK);

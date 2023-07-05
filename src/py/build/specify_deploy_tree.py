@@ -51,6 +51,9 @@ DEPLOY_TREE = {
         'steps/': {
             'google.json': 'scripts/steps/google.json',
             'tiingo_gui_login.json': 'scripts/steps/tiingo_gui_login.json',
+        },
+        'rest/': {
+            'test_add_button1.json': 'scripts/rest/test_add_button1.json'
         }
     },
     'src/': {

@@ -2,8 +2,8 @@
 import json
 import os
 import unittest
-import urllib
 # 3rd pty
+from tornado import gen
 from tornado.testing import gen_test
 from tornado.httpclient import HTTPRequest
 # bizdeck
@@ -16,11 +16,11 @@ class TestAddButtonAPI(BizDeckIntTestCase):
         super().setUp()
         self.add_button_url = f'http://localhost:{self.biz_deck_http_port}/api/add_button'
         payload_path = os.path.join(self.bdtree, 'scripts', 'rest', 'test_add_button1.json')
+        self.add_cleanup_file(os.path.join(self.bdtree, 'scripts', 'apps', 'google_calendar.json'))
         with open(payload_path, 'rt') as payload_file:
             self.payload = payload_file.read()
         # specify content type so server knows it's a single payload,
         # not multipart for large files
-        # headers = {'Content-Type':"application/x-www-form-urlencoded"}
         headers = {'Content-Type': 'text/plain'}
         self.add_button_request = HTTPRequest(url=self.add_button_url, method='POST',
                                               headers=headers, body=self.payload)
@@ -34,8 +34,15 @@ class TestAddButtonAPI(BizDeckIntTestCase):
         add_response = await self.http_client.fetch(self.add_button_request)
         self.logger.info(f"test_add_button_api: retcode[{add_response.code}], body[{add_response.body}] for {self.add_button_url}")
         self.assertEqual(add_response.code, 200)
-        # TODO: load the updated config.json to validate
-        # self.assertEqual(self.biz_deck_config['browser_path'], config_dict['BrowserPath'])
+        # wait a second while the server rewrites and closes config
+        await gen.sleep(1)
+        new_config_dict = self.reload_config()
+        self.assertEqual(self.biz_deck_config['browser_path'], new_config_dict['browser_path'])
+        old_button_list = self.biz_deck_config['button_list']
+        new_button_list = new_config_dict['button_list']
+        self.assertEqual(len(old_button_list)+1, len(new_button_list))
+        last_button = new_button_list[-1]
+        self.assertFalse(last_button['blink'])
         await self.stop_biz_deck(biz_deck_proc)
 
 

@@ -201,7 +201,8 @@ namespace BizDeck {
             return await SaveConfig();
         }
 
-        public async Task<BizDeckResult> AddButton(string script_name, string script, string background)
+        public async Task<BizDeckResult> AddButton(string script_name, string script, string background, 
+                                                    bool blink=false, ButtonMode mode=ButtonMode.Persistent)
         {
             // name will have an extenstion like .json, so remove it...
             string button_name = Path.GetFileNameWithoutExtension(script_name);
@@ -209,7 +210,7 @@ namespace BizDeck {
             // Does the button already exist?
             int index = BizDeckConfig.ButtonList.FindIndex(button => button.Name == button_name);
             if ( index != -1) {
-                return new BizDeckResult($"{script_name} already exists");
+                return new BizDeckResult($"{script_name} already in ButtonList");
             }
             bool created = IconCache.Instance.CreateLabelledIconPNG(background, button_name);
             if (!created) {
@@ -221,6 +222,8 @@ namespace BizDeck {
             bd.Name = button_name;
             bd.ButtonIndex = BizDeckConfig.ButtonList.Count;
             bd.ButtonImagePath = $"icons\\{button_name}.png";
+            bd.Blink = blink;
+            bd.Mode = mode;
             // Is is an app launch or steps?
             BizDeckResult validation = ValidateAppLaunch(script);
             if (validation.OK) {

@@ -37,42 +37,42 @@
       "image": "icons\\word.png",
       "action": "Apps",
       "blink": false,
-      "mode": "Permanent"
+      "mode": "Persistent"
     },
     {
       "name": "excel",
       "image": "icons\\excel.png",
       "action": "Apps",
       "blink": false,
-      "mode": "Permanent"
+      "mode": "Persistent"
     },
     {
       "name": "tiingo_gui_login",
       "image": "icons\\tiingo.png",
       "action": "Steps",
       "blink": false,
-      "mode": "Permanent"
+      "mode": "Persistent"
     },
     {
       "name": "quandl_ycb",
       "image": "icons\\quandl_ycb.png",
       "action": "Actions",
       "blink": false,
-      "mode": "Permanent"
+      "mode": "Persistent"
     },
     {
       "name": "quandl_rates",
       "image": "icons\\quandl_rates.png",
       "action": "Actions",
       "blink": false,
-      "mode": "Permanent"
+      "mode": "Persistent"
     },
     {
       "name": "google",
       "image": "icons\\google.png",
       "action": "Steps",
       "blink": false,
-      "mode": "KillOnClick"
+      "mode": "Persistent"
     }
   ],
   "background_icons": [

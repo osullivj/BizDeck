@@ -27,6 +27,7 @@ namespace BizDeck {
         private CmdLineOptions cmd_line_options;
         private BizDeckLogger logger;
         private JsonSerializerSettings json_serializer_settings = new();
+        private object button_list_lock = new object();
 
         private ConfigHelper() {
             json_serializer_settings.Formatting = Formatting.Indented;
@@ -44,6 +45,11 @@ namespace BizDeck {
             // gets invoked by BizDeckLogger.InitLogging once the log file
             // has been created. JOS 2023-05-08
             logger = new(this);
+        }
+
+        [JsonIgnore]
+        public object ButtonListLock {
+            get => button_list_lock;
         }
 
         public string BDRoot {
@@ -208,9 +214,11 @@ namespace BizDeck {
             string button_name = Path.GetFileNameWithoutExtension(script_name);
             logger.Info($"AddButton: script_name[{script_name}] button_name[{button_name}] bg[{background}]");
             // Does the button already exist?
-            int index = BizDeckConfig.ButtonList.FindIndex(button => button.Name == button_name);
-            if ( index != -1) {
-                return new BizDeckResult($"{script_name} already in ButtonList");
+            lock (ButtonListLock) {
+                int index = BizDeckConfig.ButtonList.FindIndex(button => button.Name == button_name);
+                if (index != -1) {
+                    return new BizDeckResult($"{script_name} already in ButtonList");
+                }
             }
             bool created = IconCache.Instance.CreateLabelledIconPNG(background, button_name);
             if (!created) {
@@ -243,8 +251,11 @@ namespace BizDeck {
             // Save the script contents into the scripts dir
             string script_path = Path.Combine(new string[] { ScriptsDir, bd.ImplTypeAsString, script_name });
             await File.WriteAllTextAsync(script_path, script);
-            // Add the newly created button to config button map
-            BizDeckConfig.ButtonList.Add(bd);
+            logger.Info($"AddButton: {script_name} saved to {script_path}");
+            lock (ButtonListLock) {
+                // Add the newly created button to config button map
+                BizDeckConfig.ButtonList.Add(bd);
+            }
             BizDeckResult save_result = await SaveConfig();
             if (!save_result.OK) {
                 return new BizDeckResult($"{script_path} save failed for new button {script_name}");
@@ -255,11 +266,14 @@ namespace BizDeck {
 
         public async Task<BizDeckResult> LoadAppLaunch(string name_or_path)
         {
-            // TODO: refactor to use BDAR return type. NB ValidateAppLaunch will have
-            // to change as well.
             string app_launch_path = name_or_path;
             if (!File.Exists(name_or_path)) {
                 app_launch_path = Path.Combine(new string[] { BDRoot, "scripts", "apps", $"{name_or_path}.json" });
+                if (!File.Exists(app_launch_path)) {
+                    string error = $"ValidateAppLaunch: {app_launch_path} does not exist";
+                    logger.Error(error);
+                    return new BizDeckResult(error);
+                }
             }
             var launch_json = await File.ReadAllTextAsync(app_launch_path);
             return ValidateAppLaunch(launch_json);

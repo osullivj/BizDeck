@@ -25,6 +25,7 @@ namespace BizDeck
         }
 
         public async Task<BizDeckResult> PlayApp(string name_or_path) {
+            logger.Info($"PlayApp: {name_or_path}");
             AppLaunch launch;
             BizDeckResult load_app_result = await config_helper.LoadAppLaunch(name_or_path);
             if (!load_app_result.OK) {
@@ -37,15 +38,6 @@ namespace BizDeck
             launch = (AppLaunch)load_app_result.Payload;
             logger.Info($"PlayApp: {name_or_path}:{launch.ExeDocUrl}");
             // start default app, doc or url
-            /*
-            var process = new System.Diagnostics.Process() {
-                StartInfo = new System.Diagnostics.ProcessStartInfo(launch.ExeDocUrl) {
-                    // TODO: make these configgable in the app launch scripts
-                    UseShellExecute = false,
-                    ErrorDialog = true,
-                    Arguments = launch.Args
-                }
-            }; */
             var process = new System.Diagnostics.Process();
             var start_info = new System.Diagnostics.ProcessStartInfo(launch.ExeDocUrl);
             if (launch.ExeDocUrl.StartsWith("http")) {

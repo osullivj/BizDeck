@@ -15,6 +15,7 @@ namespace BizDeck {
         // BizDeck action scripts. Each of those three button types includes a driver
         // to launch the app, play the recorder step script, or execute the actions.
         private Dictionary<string, ButtonAction> button_action_map = new Dictionary<string, ButtonAction>();
+        private object button_action_map_lock = new object();
 
         // ConnectedDeck owns the HID connection to the StreamDeck
         private ConnectedDeck stream_deck = null;
@@ -219,41 +220,44 @@ namespace BizDeck {
         private BizDeckResult RebuildButtonActionMap( )  {
             bool rebuild_ok = true;
             string error = null;
-            button_action_map.Clear();
-            button_action_map["page"] = new Pager(stream_deck);
-            button_action_map["gui"] = new ShowBizDeckGUI(BizDeckStatus.Instance.MyURL);
-            // Buttons for the dev tools recorder, which we're not using currently.
-            // button_action_map["start_recording"] = new StartRecording(recorder);
-            // button_action_map["stop_recording"] = new StopRecording(recorder);
-            foreach (ButtonDefinition bd in config_helper.BizDeckConfig.ButtonList) {
-                if (!button_action_map.ContainsKey(bd.Name)) {
-                    switch (bd.Action) {
-                        case ButtonImplType.Actions:
-                            button_action_map[bd.Name] = new ActionsButton(bd.Name, websock);
-                            break;
-                        case ButtonImplType.Steps:
-                            button_action_map[bd.Name] = new StepsButton(bd.Name);
-                            break;
-                        case ButtonImplType.Apps:
-                            button_action_map[bd.Name] = new AppButton(bd.Name, websock);
-                            break;
-                        default:
-                            error = "unknown action[{bd.Action}] for button[{bd.Name}]";
-                            logger.Error($"RebuildButtonActionMap: {error}");
-                            rebuild_ok = false;
-                            break;
+            lock (button_action_map_lock) {
+                button_action_map.Clear();
+                button_action_map["page"] = new Pager(stream_deck);
+                button_action_map["gui"] = new ShowBizDeckGUI(BizDeckStatus.Instance.MyURL);
+                lock (config_helper.ButtonListLock) { 
+                    foreach (ButtonDefinition bd in config_helper.BizDeckConfig.ButtonList) {
+                        if (!button_action_map.ContainsKey(bd.Name)) {
+                            switch (bd.Action) {
+                                case ButtonImplType.Actions:
+                                    button_action_map[bd.Name] = new ActionsButton(bd.Name, websock);
+                                    break;
+                                case ButtonImplType.Steps:
+                                    button_action_map[bd.Name] = new StepsButton(bd.Name);
+                                    break;
+                                case ButtonImplType.Apps:
+                                    button_action_map[bd.Name] = new AppButton(bd.Name, websock);
+                                    break;
+                                default:
+                                    error = "unknown action[{bd.Action}] for button[{bd.Name}]";
+                                    logger.Error($"RebuildButtonActionMap: {error}");
+                                    rebuild_ok = false;
+                                    break;
+                            }
+                        }
                     }
                 }
             }
-            // Let the ConnectedDeck know about the button action map so it can
-            // fire the ButtonAction.RunAsync implementations
-            if (stream_deck != null) {
-                stream_deck.ButtonActionMap = button_action_map;
-            }
-            else {
-                logger.Error($"RebuildButtonActionMap: no StreamDeck connection");
-            }
             return new BizDeckResult(rebuild_ok, error);
+        }
+
+        public ButtonAction GetButtonAction(string name) {
+            ButtonAction ba = null;
+            lock (button_action_map_lock) {
+                if (button_action_map.ContainsKey(name)) {
+                    return button_action_map[name];
+                }
+            }
+            return ba;
         }
 
         // Convenience method to allow code that's not handling a websock event, so

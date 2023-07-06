@@ -17,6 +17,7 @@ namespace BizDeck
         public override void Run() { }
 
         public async override Task<BizDeckResult> RunAsync() {
+            logger.Info($"RunAsync: {name}");
             return await app_driver.PlayApp(name);
         }
 

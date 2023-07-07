@@ -5,7 +5,9 @@ import shutil
 from subprocess import Popen
 # 3rd pty
 from tornado.testing import AsyncTestCase, AsyncHTTPClient
+from tornado.websocket import websocket_connect
 from tornado import gen
+import tornado.platform
 from bd_utils import configure_logging, find_bizdeck_process
 
 
@@ -16,8 +18,8 @@ class BizDeckIntTestCase(AsyncTestCase):
     def setUp(self):
         super().setUp()
         # Derived class name
-        test_name = self.__class__.__name__
-        self.logger = configure_logging(test_name)
+        self.test_name = self.__class__.__name__
+        self.logger = configure_logging(self.test_name)
         self.bdtree = os.getenv("BDTREE")
         self.bdroot = os.getenv("BDROOT")
         self.is_deploy_tree = self.bdtree != self.bdroot
@@ -33,9 +35,10 @@ class BizDeckIntTestCase(AsyncTestCase):
         # missing env vars are fine here from the test behaviour and
         # result POV
         self.biz_deck_config = dict()
+        self.log_dir = os.path.join(self.bdroot, "logs")
         self.launch_cfg_path = os.path.join(self.bdtree, 'cfg', 'int_test_config.json')
         self.backup_cfg_path = os.path.join(self.bdtree, 'cfg', 'int_test_config.json_backup')
-        self.result_cfg_path = os.path.join(self.bdtree, 'logs', f'{test_name}.config.json')
+        self.result_cfg_path = os.path.join(self.bdtree, 'logs', f'{self.test_name}.config.json')
         self.csv_dir_path = os.path.join(self.bdtree, 'data', 'csv')
         if os.path.exists(self.csv_dir_path) and self.is_deploy_tree:
             # clean up any downloads from previous tests
@@ -51,8 +54,10 @@ class BizDeckIntTestCase(AsyncTestCase):
         self.launch_exe_path = os.path.join(self.bdtree, 'bin', 'BizDeckServer.exe')
         self.logger.info(f'Launch exe:{self.launch_exe_path}, path:{self.launch_cfg_path}')
         self.shutdown_url = f'http://localhost:{self.biz_deck_http_port}/api/shutdown'
+        self.websock_url = f'ws://localhost:{self.biz_deck_http_port}/ws'
         self.http_client = AsyncHTTPClient()
         self.files_to_cleanup = []
+        self.websock_messages = []
 
     def tearDown(self):
         # copy end state config to file named for test so it's available
@@ -66,6 +71,13 @@ class BizDeckIntTestCase(AsyncTestCase):
         for fpath in self.files_to_cleanup:
             if os.path.exists(fpath):
                 os.remove(fpath)
+        self.logger.info("tearDown: %d websock messages recved" % len(self.websock_messages))
+        for inx, msg_dict in enumerate(self.websock_messages):
+            mtype = msg_dict.get('type', 'notype')
+            mname = f'{self.test_name}_{mtype}_{inx}.json'
+            mpath = os.path.join(self.log_dir, mname)
+            with open(mpath, 'wt') as mfile:
+                mfile.write(json.dumps(msg_dict))
 
     def add_cleanup_file(self, fpath):
         self.files_to_cleanup.append(fpath)
@@ -73,6 +85,22 @@ class BizDeckIntTestCase(AsyncTestCase):
     def reload_config(self):
         with open(self.launch_cfg_path, 'rt') as config_file:
             return json.loads(config_file.read())
+
+    async def connect_websock(self):
+        self.websock = await websocket_connect(self.websock_url,
+                            on_message_callback=self.on_websock_message, subprotocols=['json'])
+
+    def on_websock_message(self, msg):
+        msg_dict = None
+        try:
+            msg_dict = json.loads(msg)
+        except Exception as ex:
+            self.logger.error("on_websock_message: JSON exception:%s" % str(ex))
+            self.logger.error("on_websock_message: msg(%s)" % msg)
+            # reraise the Exception to fail the test on bad json
+            raise ex
+        self.websock_messages.append(msg_dict)
+        self.logger.info('on_websock_message: type(%s)' % msg_dict.get('type'))
 
     async def start_biz_deck(self):
         if not self.start_stop:

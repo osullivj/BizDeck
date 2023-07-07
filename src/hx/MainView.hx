@@ -210,19 +210,18 @@ class MainView extends VBox {
 				var subcfg:haxe.DynamicAccess<Dynamic> = val;
 				for (subkey in subcfg.keys()) {
 					var subval:Any = subcfg.get(subkey);
-					if (subkey=="ButtonList") {
+					if (subkey=="button_list") {
 						var button_list:haxe.DynamicAccess<Dynamic> = subval;
 						for (btn_defn in button_list) {
-							var btn_row:Any = {bd_btns_index:btn_defn.ButtonIndex,
-										bd_btns_name:btn_defn.Name,
-										bd_btns_type:btn_defn.Action,
-										bd_btns_icon:btn_defn.ButtonImagePath};
+							var btn_row:Any = {bd_btns_name:btn_defn.name,
+										bd_btns_type:btn_defn.action,
+										bd_btns_icon:btn_defn.image};
 							buttons_data_source.add(btn_row);
-							button_file_names.push(btn_defn.Name + ".json");
-							if (btn_defn.Action != "native") {
-								var del_btn_row:Any = {bd_del_btn_name:btn_defn.Name,
-													bd_del_btn_type:btn_defn.Action,
-													bd_del_btn_icon:btn_defn.ButtonImagePath};
+							button_file_names.push(btn_defn.name + ".json");
+							if (btn_defn.action != "System") {
+								var del_btn_row:Any = {bd_del_btn_name:btn_defn.name,
+													bd_del_btn_type:btn_defn.action,
+													bd_del_btn_icon:btn_defn.image};
 								del_buttons_data_source.add(del_btn_row);
 							}
 							trace("mv.on_config: btn_row=" + btn_row);

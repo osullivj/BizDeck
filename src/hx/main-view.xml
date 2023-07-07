@@ -29,10 +29,9 @@
 				<spacer height="5%" />
 				<tableview id="bd_buttons_tableview" width="100%" height="80%">
 					<header width="100%">
-						<column id="bd_btns_index" text="Index" width="25%" height="32"/>
-						<column id="bd_btns_name" text="Name" width="25%" height="32"/>
-						<column id="bd_btns_type" text="Type" width="25%" height="32"/>
-						<column id="bd_btns_icon" text="Icon" width="25%" height="32"/>					
+						<column id="bd_btns_name" text="Name" width="33%" height="32"/>
+						<column id="bd_btns_type" text="Type" width="33%" height="32"/>
+						<column id="bd_btns_icon" text="Icon" width="33%" height="32"/>					
 					</header>
 					<item-renderer verticalAlign="center" height="50">
 						<label id="bd_btns_index" horizontalAlign="center" />

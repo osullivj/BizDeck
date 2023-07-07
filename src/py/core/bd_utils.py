@@ -1,14 +1,19 @@
 # std pkg
 import logging
+import os
 # 3rd pty
 import psutil
 
 
 # configure logging to stdout and file
 def configure_logging(log_name):
+    log_path = f"{log_name}.log"
+    bdroot = os.getenv('BDROOT')
+    if bdroot:
+        log_path = os.path.join(bdroot, "logs", log_path)
     logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(message)s',
-                    handlers=[logging.FileHandler(f"{log_name}.log"),
+                    handlers=[logging.FileHandler(log_path),
                               logging.StreamHandler()])
     return logging.getLogger(log_name)
 

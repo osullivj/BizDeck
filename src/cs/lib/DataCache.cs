@@ -220,6 +220,7 @@ namespace BizDeck {
         private readonly object cache_lock = new();
         private bool changed = false;
         private BizDeckLogger logger;
+        CacheConverter cache_converter = new();
 
         [JsonIgnore]
         public bool HasChanged { get => changed; }
@@ -276,18 +277,18 @@ namespace BizDeck {
         // cycles, unless we use recursive locking, which is best avoided as
         // it complicates thinking about the stack state of multipled threads.
         public string SerializeToJsonEvent(bool reset_changed_flag = false) {
-            string json = "{}";
-            BizDeckJsonEvent cache_update = new("cache");
+            string json_prefix = "{\"type\":\"cache\", \"data\":";
+            string json_suffix = "}";
+            string json_data = "{}";
             logger.Info($"SerializeToJsonEvent: serializing with reset_changed_flag:{reset_changed_flag}");
             lock (cache_lock) {
-                cache_update.Data = cache;
-                json = JsonConvert.SerializeObject(cache_update);
+                json_data = JsonConvert.SerializeObject(cache, cache_converter);
                 if (reset_changed_flag) {
                     changed = false;
                 }
             }
-            logger.Info($"SerializeToJsonEvent: serialized json length:{json.Length}");
-            return json;
+            logger.Info($"SerializeToJsonEvent: serialized json length:{json_data.Length}");
+            return json_prefix + json_data + json_suffix;
         }
 
 

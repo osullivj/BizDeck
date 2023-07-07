@@ -74,7 +74,7 @@ class ActionFunction(object):
                 if not ptype or type(pval) == ptype:
                     param_dict[pname] = pval
                 else:
-                    param_errors.append("%s: %s param is %s not %s" % (self.func.__name__, pname, type(pval), ptype))
+                    param_errors.append("unpack_params: %s param is %s not %s" % (pname, type(pval), ptype))
         return param_dict, param_errors
 
 
@@ -92,7 +92,8 @@ def read_unique_key_rows(reader, key):
         cs_row_dict = Dictionary[str, str]()
         for k,v in py_row_dict.items():
             cs_row_dict.Add(k.replace(' ', ''), v)
-        cs_cache_entry.Add(key_value, cs_row_dict)
+        if not cs_cache_entry.TryAdd(key_value, cs_row_dict):
+            Logger.Error('read_uniqie_key_row: duplicate key[%s]' % key_value)
     return cs_cache_entry
 
 

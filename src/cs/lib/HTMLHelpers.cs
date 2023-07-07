@@ -28,6 +28,7 @@ namespace BizDeck {
         // When a cache entry is empty, or doesn't exist, then send a NoData
         // table header to Excel or browser. 
         public static byte[] NoDataTableHeader = Encoding.UTF8.GetBytes("<thead><tr><th>No cached data</th></tr></thead>");
+        public static byte[] NullField = Encoding.UTF8.GetBytes("null");
 
         public static async Task FieldToStream(BizDeckLogger logger, byte[] field, Stream s, bool header = false) {
             byte[] start = FieldStart;
@@ -47,7 +48,7 @@ namespace BizDeck {
         }
 
         public static async Task FieldToStream(BizDeckLogger logger, string field, Stream s, bool header = false) {
-            byte[] bfield = Encoding.UTF8.GetBytes(field);
+            byte[] bfield = field != null ? Encoding.UTF8.GetBytes(field) : NullField;
             await FieldToStream(logger, bfield, s, header);
         }
 

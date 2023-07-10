@@ -157,7 +157,12 @@ namespace BizDeck {
             };
 
             using var stream = this.Open();
-            stream.SetFeature(brightness_request);
+            try {
+                stream.SetFeature(brightness_request);
+            }
+            catch (Exception ex) {
+                logger.Error($"SetBrightness: SetFeature failed: {ex.Message}");
+            }
         }
 
         public void SetupDeviceButtons( ) {

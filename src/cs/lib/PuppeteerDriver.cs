@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using PuppeteerSharp;
@@ -49,9 +50,23 @@ namespace BizDeck {
 			// setup browser process launch options
 			launch_options.Headless = config_helper.BizDeckConfig.Headless;
 			launch_options.ExecutablePath = config_helper.BizDeckConfig.BrowserPath;
-			launch_options.UserDataDir = config_helper.GetFullLogPath();
+
 			launch_options.Devtools = config_helper.BizDeckConfig.DevTools;
 			launch_options.Args = new string[1] { $"--remote-debugging-port={config_helper.BizDeckConfig.BrowserRecorderPort}" };
+			string budd = config_helper.BizDeckConfig.BrowserUserDataDir;
+			if (!String.IsNullOrWhiteSpace(budd)) {
+				// If config has an empty string for browser_user_data_dir, we let it default
+				// IF an absolute path has been supplied, we pass it through
+				// If it's a relative path, we assume relative to BDROOT
+				if (!Path.IsPathRooted(budd)) {
+					budd = Path.Combine(config_helper.BDRoot, budd);
+				}
+				launch_options.UserDataDir = budd;
+				logger.Info($"ctor: UserDataDir[{budd}]");
+			}
+			else {
+				logger.Info($"ctor: no browser_user_data_dir in config, not supplying --user-data-dir");
+            }
 
 			// WaitForSelectorOptions
 			wait_for_selector_options.Hidden = false;

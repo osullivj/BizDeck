@@ -109,11 +109,6 @@ namespace BizDeck {
             return Path.Combine(new string[] { BDRoot, button_image_path });
         }
 
-        public string GetFullLogPath()
-        {
-            return Path.Combine(new string[] { BDRoot, BizDeckConfig.BrowserUserDataDir });
-        }
-
         public  BizDeckResult LoadConfig() {
             // remember we cannot use the logger here as we the log dir comes from config
             try {

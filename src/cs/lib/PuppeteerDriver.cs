@@ -35,7 +35,7 @@ namespace BizDeck {
 		JObject pending_viewport_step;
 		WaitForSelectorOptions wait_for_selector_options = new();
 		List<string> urls_visited = new();
-
+		
 		public PuppeteerDriver() {
 			logger = new(this);
 			config_helper = ConfigHelper.Instance;
@@ -226,8 +226,8 @@ namespace BizDeck {
 				return selector_result;
             }
 			string extra_value = "";
-			if (step.ContainsKey("extra_value")) {
-				extra_value = (string)step["extra_value"];
+			if (step.ContainsKey("bd_extra_value")) {
+				extra_value = (string)step["bd_extra_value"];
 			}
 			try {
 				IElementHandle element_handle = (IElementHandle)selector_result.Payload;

@@ -64,6 +64,10 @@ namespace BizDeck {
             get => Path.Combine(new string[] { ConfigDir, "http_formats.json" });
         }
 
+        public string ScrapersPath {
+            get => Path.Combine(new string[] { ConfigDir, "scrapers.json" });
+        }
+
         public string ConfigDir {
             get => cmd_line_options.config_dir;
         }
@@ -102,6 +106,8 @@ namespace BizDeck {
 
         public Dictionary<string, string> Secrets { get; private set; }
 
+        public Dictionary<string, string> Scrapers { get; private set; }
+
         public Dictionary<string, Dictionary<string, HttpFormat>> HttpFormatMap {get; private set;}
 
         public string GetFullIconPath(string button_image_path)
@@ -117,8 +123,10 @@ namespace BizDeck {
                 }
                 // load cfg/http_formats.json
                 string http_formats = File.ReadAllText(HttpFormatsPath);
-
                 HttpFormatMap = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, HttpFormat>>>(http_formats);
+                // load the scrapers
+                string scrapers_json = File.ReadAllText(ScrapersPath);
+                Scrapers = JsonConvert.DeserializeObject<Dictionary<string, string>>(scrapers_json);
                 // load cfg/config.json
                 string config_json = File.ReadAllText(ConfigPath);
                 BizDeckConfig = JsonConvert.DeserializeObject<BizDeckConfig>(config_json);

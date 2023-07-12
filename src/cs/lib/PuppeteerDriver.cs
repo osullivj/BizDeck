@@ -46,6 +46,7 @@ namespace BizDeck {
 			dispatchers["change"] = this.Change;
 			dispatchers["keyDown"] = this.KeyDown;
 			dispatchers["keyUp"] = this.KeyUp;
+			dispatchers["bdScrape"] = this.Scrape;
 
 			// setup browser process launch options
 			launch_options.Headless = config_helper.BizDeckConfig.Headless;
@@ -266,6 +267,71 @@ namespace BizDeck {
 			return BizDeckResult.Success;
 		}
 
+		public async Task<BizDeckResult> Scrape(JObject step) {
+			if (current_page == null) {
+				logger.Error($"Scrape: no current page for {step}");
+				return BizDeckResult.NoCurrentPage;
+            }
+			string root_xpath = null;
+			string cache_group = null;
+			string cache_key = null;
+			JObject field_mappings = null;
+			try {
+				root_xpath = (string)step["root_xpath"];
+				cache_group = (string)step["cache_group"];
+				cache_key = (string)step["cache_key"];
+				field_mappings = (JObject)step["field_mappings"];
+				IElementHandle[] handle_array = await current_page.XPathAsync(root_xpath);
+				logger.Info($"Scrape: {root_xpath} yields {handle_array.Length} elements");
+				// The root_xpath may resolve to several children. Extract all the fields
+				// from each child
+				List<Dictionary<string, string>> cache_values = new(handle_array.Length);
+				List<string> cache_column_names = new(field_mappings.Count);
+				foreach (var handle in handle_array) {
+					Dictionary<string, string> cache_row = new();
+					foreach (var pair in field_mappings) {
+						string xpath_rel = pair.Key;
+						string scrape_js = null;
+						JObject scrape_spec = pair.Value as JObject;
+						string scrape_js_key = (string)scrape_spec["bd_scraper_js"];
+						if (config_helper.Scrapers.ContainsKey(scrape_js_key)) {
+							scrape_js = config_helper.Scrapers[scrape_js_key];
+                        }
+						else {
+							logger.Error($"Scrape: {scrape_js_key} scraper key did not resolve");
+							continue;
+						}
+						string cache_field = (string)scrape_spec["bd_cache_field"];
+						// This if will only eval true on the first time round
+						// this inner loop, so we don't repeat the cache_column_names
+						// population for each row...
+						if (cache_column_names.Count < field_mappings.Count) {
+							cache_column_names.Add(cache_field);
+                        }
+						// Now let's exec the scrape JS to get the field value
+						// First we need to resolve xpath_rel, then we run the JS
+						var child_handle_array = await handle.XPathAsync(xpath_rel);
+						if (child_handle_array == null) {
+							logger.Error($"Scrape: {xpath_rel} rel path did not resolve");
+							continue;
+                        }
+						if (child_handle_array.Length > 1) {
+							logger.Info($"Scrape: {xpath_rel} resolves to {child_handle_array.Length} elements");
+                        }
+						string val = await child_handle_array[0].EvaluateFunctionAsync<string>(scrape_js);
+						cache_row[cache_field] = val;
+					}
+					cache_values.Add(cache_row);
+                }
+				DataCache.Instance.Insert(cache_group, cache_key, cache_values, cache_column_names);
+			}
+			catch (Exception ex) {
+				logger.Error($"Scrape: {ex}");
+				return new BizDeckResult(ex.Message);
+			}
+			return BizDeckResult.Success;
+		}
+
 		private async Task<BizDeckResult> QuerySelectorListAsync(JArray selectors) {
 			if (current_page == null) {
 				return BizDeckResult.NoCurrentPage;
@@ -287,7 +353,10 @@ namespace BizDeck {
                     }
 				}
 				catch (Exception ex) {
-					logger.Error($"QuerySelectorAsync: selector[{selector}], {ex}");
+					// Selector misses are routine. We follow the Chrome Recorder playback
+					// practice of trying all the selectors in turn. Switch on debug
+					// logging to see the misses.
+					logger.Debug($"QuerySelectorAsync: selector[{selector}], {ex}");
                 }
 			}
 			return BizDeckResult.NoSelectorResolves;

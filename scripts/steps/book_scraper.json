@@ -1,0 +1,52 @@
+{
+    "title": "BookScraper",
+    "steps": [
+        {
+            "type": "setViewport",
+            "width": 696,
+            "height": 505,
+            "deviceScaleFactor": 1,
+            "isMobile": false,
+            "hasTouch": false,
+            "isLandscape": false
+        },
+        {
+            "type": "navigate",
+            "url": "chrome://new-tab-page/",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "chrome://new-tab-page/",
+                    "title": "New Tab"
+                }
+            ]
+        },
+        {
+            "type": "navigate",
+            "url": "https://books.toscrape.com/",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://books.toscrape.com/",
+                    "title": ""
+                }
+            ]
+        },
+        {
+            "type": "bdScrape",
+            "bd_root_xpath": "//*[@id=\"default\"]/div/div/div/div/section/div[2]/ol/li",
+            "bd_cache_group": "scraped",
+            "bd_cache_key": "books",            
+            "bd_field_mappings": {
+                "h3": {
+                    "bd_scraper_js": "innerText",
+                    "bd_cache_field": "Title"
+                },
+                "div[1]/p": {
+                    "bd_scraper_js": "innerText",
+                    "bd_cache_field": "Prbjeice"                
+                }
+            }
+        }
+    ]
+}

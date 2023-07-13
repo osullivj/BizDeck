@@ -47,7 +47,7 @@ class TestLoadQuandlYield(BizDeckIntTestCase):
         # HTML table, and the creation of scripts/excel/quandl_yield_csv.iqy
         self.logger.info(f"test_load_quandl_yield: Excel HTML table {self.xl_get_quandl_yield_url}")
         xl_get_response = await self.http_client.fetch(self.xl_get_quandl_yield_url)
-        self.logger.info(f"test_load_quandl_yield: retcode[{xl_get_response.code} for {self.api_get_quandl_yield_url}")
+        self.logger.info(f"test_load_quandl_yield: retcode[{xl_get_response.code} for {self.xl_get_quandl_yield_url}")
         self.assertEqual(xl_get_response.code, 200)
         self.assertFalse(b'No cached data' in xl_get_response.body)
         self.assertTrue(b'Key' in xl_get_response.body)

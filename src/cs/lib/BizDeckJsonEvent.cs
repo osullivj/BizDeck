@@ -48,6 +48,8 @@ namespace BizDeck
         private static BizDeckResult bad_config_path = new(false, "Bad config path, check --appdata param");
         public static BizDeckResult BadAddButtonPayload { get => bad_add_button_payload; }
         private static BizDeckResult bad_add_button_payload = new(false, "Bad /api/add_button payload, check logs");
+        public static BizDeckResult BadActionsScript { get => bad_actions_script; }
+        private static BizDeckResult bad_actions_script = new(false, "Bad actions script, check logs");
 
 
         // Use this ctor to construct both success and fail results

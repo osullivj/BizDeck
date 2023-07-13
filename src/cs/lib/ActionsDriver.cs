@@ -53,6 +53,10 @@ namespace BizDeck {
         {
 			logger.Info($"PlayActions: playing {name}");
 			JArray action_array = actions.actions;
+			if (action_array == null) {
+				logger.Error($"PlayActions: no action_array in actions[{actions}]");
+				return BizDeckResult.BadActionsScript;
+			}
 			int action_index = 0;
 			bool fail_ok = false;
 			BizDeckResult result = null;

@@ -57,10 +57,20 @@ namespace BizDeck {
             if (!load_steps_result.OK) {
                 return JsonConvert.SerializeObject(load_steps_result);
             }
-            PuppeteerDriver steps_driver = new();
-            JObject steps = JObject.Parse(load_steps_result.Message);
-            var result_tuple = await steps_driver.PlaySteps(steps_name, steps).ConfigureAwait(false);
-            return JsonConvert.SerializeObject(result_tuple);
+            try {
+                PuppeteerDriver steps_driver = new();
+                JObject steps = JObject.Parse(load_steps_result.Message);
+                var result_tuple = await steps_driver.PlaySteps(steps_name, steps).ConfigureAwait(false);
+                if (!result_tuple.OK) {
+                    throw HttpException.BadRequest(result_tuple.Message);
+                }
+                return JsonConvert.SerializeObject(result_tuple);
+            }
+            catch (Exception ex) {
+                string error = $"/api/run/steps/{steps_name}: ex[{ex.Message}]";
+                logger.Error(error);
+                throw HttpException.BadRequest(error);
+            }
         }
 
         [Route(HttpVerbs.Get, "/run/actions/{actions_name}")]
@@ -69,10 +79,20 @@ namespace BizDeck {
             if (!load_actions_result.OK) {
                 return JsonConvert.SerializeObject(load_actions_result);
             }
-            ActionsDriver actions_driver = new();
-            JObject actions = JObject.Parse(load_actions_result.Message);
-            var result_tuple = await actions_driver.PlayActions(actions_name, actions).ConfigureAwait(false);
-            return JsonConvert.SerializeObject(result_tuple);
+            try {
+                ActionsDriver actions_driver = new();
+                JObject actions = JObject.Parse(load_actions_result.Message);
+                var result_tuple = await actions_driver.PlayActions(actions_name, actions).ConfigureAwait(false);
+                if (!result_tuple.OK) {
+                    throw HttpException.BadRequest(result_tuple.Message);
+                }
+                return JsonConvert.SerializeObject(result_tuple);
+            }
+            catch (Exception ex) {
+                string error = $"/api/run/actions/{actions_name}: ex[{ex.Message}]";
+                logger.Error(error);
+                throw HttpException.BadRequest(error);
+            }
         }
 
         [Route(HttpVerbs.Get, "/shutdown")]

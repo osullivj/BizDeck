@@ -88,8 +88,9 @@ namespace BizDeck {
 				browser = await Puppeteer.LaunchAsync(launch_options);
 			}
 			catch (Exception ex) {
-				logger.Error($"PlaySteps: browser launch failed: {ex}");
-				return new BizDeckResult(ex.Message);
+				string launch_error = $"PlaySteps: browser launch failed: {ex}";
+				logger.Error(launch_error);
+				return new BizDeckResult(launch_error);
             }
 			JArray steps = chrome_recording.steps;
 			logger.Info($"PlaySteps: playing[{chrome_recording.title}], {steps.Count} steps");
@@ -277,10 +278,10 @@ namespace BizDeck {
 			string cache_key = null;
 			JObject field_mappings = null;
 			try {
-				root_xpath = (string)step["root_xpath"];
-				cache_group = (string)step["cache_group"];
-				cache_key = (string)step["cache_key"];
-				field_mappings = (JObject)step["field_mappings"];
+				root_xpath = (string)step["bd_root_xpath"];
+				cache_group = (string)step["bd_cache_group"];
+				cache_key = (string)step["bd_cache_key"];
+				field_mappings = (JObject)step["bd_field_mappings"];
 				IElementHandle[] handle_array = await current_page.XPathAsync(root_xpath);
 				logger.Info($"Scrape: {root_xpath} yields {handle_array.Length} elements");
 				// The root_xpath may resolve to several children. Extract all the fields
@@ -311,7 +312,7 @@ namespace BizDeck {
 						// Now let's exec the scrape JS to get the field value
 						// First we need to resolve xpath_rel, then we run the JS
 						var child_handle_array = await handle.XPathAsync(xpath_rel);
-						if (child_handle_array == null) {
+						if (child_handle_array == null || child_handle_array.Length == 0) {
 							logger.Error($"Scrape: {xpath_rel} rel path did not resolve");
 							continue;
                         }

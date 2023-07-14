@@ -14,8 +14,8 @@ class TestBookScraper(BizDeckIntTestCase):
     def setUp(self):
         super().setUp()
         self.scraper_url = f'http://localhost:{self.biz_deck_http_port}/api/run/steps/book_scraper'
-        self.api_get_scraped_books_url = f'http://localhost:{self.biz_deck_http_port}/api/cache/scraped/books_csv'
-        self.xl_get_scraped_books_url = f'http://localhost:{self.biz_deck_http_port}/excel/scraped/books_csv'
+        self.api_get_scraped_books_url = f'http://localhost:{self.biz_deck_http_port}/api/cache/scraped/books'
+        self.xl_get_scraped_books_url = f'http://localhost:{self.biz_deck_http_port}/excel/scraped/books'
 
     @gen_test
     async def test_book_scraper(self):
@@ -45,7 +45,7 @@ class TestBookScraper(BizDeckIntTestCase):
         self.assertFalse(b'No cached data' in xl_get_response.body)
         # self.assertTrue(b'Key' in xl_get_response.body)
         # self.assertTrue(b'1MO' in xl_get_response.body)
-        iqy_path = os.path.join(self.bdtree, 'scripts', 'excel', 'scraped_books_csv.iqy')
+        iqy_path = os.path.join(self.bdtree, 'scripts', 'excel', 'scraped_books.iqy')
         self.assertTrue(os.path.exists(iqy_path))
         # wait to allow incoming websock msgs
         await gen.sleep(2)

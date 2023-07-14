@@ -34,17 +34,17 @@
         },
         {
             "type": "bdScrape",
-            "bd_root_xpath": "//*[@id=\"default\"]/div/div/div/div/section/div[2]/ol/li",
+            "bd_root_xpath": "//*[@id='default']/div/div/div/div/section/div[2]/ol/li",
             "bd_cache_group": "scraped",
             "bd_cache_key": "books",            
             "bd_field_mappings": {
-                "h3": {
+                ".//h3": {
                     "bd_scraper_js": "innerText",
                     "bd_cache_field": "Title"
                 },
-                "div[1]/p": {
+                ".//div[@class='product_price']/p[1]": {
                     "bd_scraper_js": "innerText",
-                    "bd_cache_field": "Prbjeice"                
+                    "bd_cache_field": "Price"                
                 }
             }
         }

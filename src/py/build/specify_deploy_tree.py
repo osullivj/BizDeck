@@ -12,7 +12,8 @@ DEPLOY_TREE = {
         'config.json': 'cfg/config.json',
         'int_test_config.json': 'cfg/int_test_config.json',
         'http_formats.json': 'cfg/http_formats.json',
-        'secrets.json': 'cfg/secrets.json'
+        'secrets.json': 'cfg/secrets.json',
+        'scrapers.json': 'cfg/scrapers.json',
     },
     'bin/': {
         '*.dll': 'src/cs/server/bin/Release/net5.0/*.dll',
@@ -51,6 +52,7 @@ DEPLOY_TREE = {
         'steps/': {
             'google.json': 'scripts/steps/google.json',
             'tiingo_gui_login.json': 'scripts/steps/tiingo_gui_login.json',
+            'book_scraper.json': 'scripts/steps/book_scraper.json',
         },
         'rest/': {
             'test_add_button1.json': 'scripts/rest/test_add_button1.json',

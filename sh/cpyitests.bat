@@ -10,4 +10,5 @@ set ASYNC_TEST_TIMEOUT=20
 %VPYTHON% %BDROOT%\src\py\tests\int\load_quandl_yield_test.py
 %VPYTHON% %BDROOT%\src\py\tests\int\add_button_api_test1.py
 %VPYTHON% %BDROOT%\src\py\tests\int\add_button_api_test2.py
+%VPYTHON% %BDROOT%\src\py\tests\int\book_scraper_test.py
 endlocal

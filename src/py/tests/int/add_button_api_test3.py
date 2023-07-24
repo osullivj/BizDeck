@@ -38,7 +38,7 @@ class TestAddButtonAPI(BizDeckIntTestCase):
         # wait a second while the server rewrites and closes config
         await gen.sleep(1)
         new_config_dict = self.reload_config()
-        self.assertEqual(self.biz_deck_config['browser_path'], new_config_dict['browser_path'])
+        self.assertEqual(self.biz_deck_config['default_browser'], new_config_dict['default_browser'])
         old_button_list = self.biz_deck_config['button_list']
         new_button_list = new_config_dict['button_list']
         self.assertEqual(len(old_button_list)+1, len(new_button_list))

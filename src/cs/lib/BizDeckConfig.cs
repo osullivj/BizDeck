@@ -13,6 +13,7 @@ namespace BizDeck
         public BizDeckConfig()
         {
             this.ButtonList = new List<ButtonDefinition>();
+            this.BrowserMap = new Dictionary<string, BrowserLaunch>();
         }
 
         [JsonProperty("usb_hid_device_index")]
@@ -33,26 +34,20 @@ namespace BizDeck
         [JsonProperty("browser_websock_timeout")]
         public int BrowserWebsockTimeout { get; set; }
 
+        [JsonProperty("reuse_browser_instances")]
+        public bool ReuseBrowserInstances { get; set; }
+
+        [JsonProperty("default_browser")]
+        public string DefaultBrowser { get; set; }
+
         [JsonProperty("blink_interval")]
         public int BlinkInterval { get; set; }
-
-        [JsonProperty("browser_user_data_dir")]
-        public string BrowserUserDataDir { get; set; }
-
-        [JsonProperty("browser_path")]
-        public string BrowserPath { get; set; }
 
         [JsonProperty("console")]
         public bool Console { get; set; }
 
-        [JsonProperty("devtools")]
-        public bool DevTools { get; set; }
-
         [JsonProperty("debug_logging")]
         public bool DebugLogging { get; set; }
-
-        [JsonProperty("headless")]
-        public bool Headless { get; set; }
 
         [JsonProperty("http_get_timeout")]
         public int HttpGetTimeout { get; set; }
@@ -68,6 +63,9 @@ namespace BizDeck
 
         [JsonProperty("secrets_path")]
         public string SecretsPath { get; set; }
+
+        [JsonProperty("browser_map")]
+        public Dictionary<string, BrowserLaunch> BrowserMap { get; set; }
 
         [JsonProperty("button_list")]
         public List<ButtonDefinition> ButtonList { get; set; }

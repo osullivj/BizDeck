@@ -51,7 +51,6 @@ namespace BizDeck
         public static BizDeckResult BadActionsScript { get => bad_actions_script; }
         private static BizDeckResult bad_actions_script = new(false, "Bad actions script, check logs");
 
-
         // Use this ctor to construct both success and fail results
         public BizDeckResult(bool ok, object val) {
             this.ok = ok;

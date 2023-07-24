@@ -162,6 +162,18 @@ namespace BizDeck {
                     bd.ButtonIndex = index++;
                     bd.Set = true;
                 }
+                // check that DefaultBrowser is in the BrowserMap
+                if (String.IsNullOrWhiteSpace(BizDeckConfig.DefaultBrowser)) {
+                    string error = $"missing or empty default_browser in {ConfigPath}";
+                    ThrowErrorToBrowser($"LoadConfig: from {ConfigDir}", error);
+                    return new BizDeckResult(error);
+                }
+                if (!BizDeckConfig.BrowserMap.ContainsKey(BizDeckConfig.DefaultBrowser)) {
+                    string error = $"{BizDeckConfig.DefaultBrowser} not in BrowserMap";
+                    ThrowErrorToBrowser($"LoadConfig: from {ConfigDir}", error);
+                    return new BizDeckResult(error);
+
+                }
                 return BizDeckResult.Success;
             }
             catch (Exception ex) {

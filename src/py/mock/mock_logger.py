@@ -3,10 +3,10 @@ import logging
 
 class Logger(object):
     def Info(self, text):
-        logging.Info(text)
+        logging.info(text)
 
     def Error(self, text):
-        logging.Error(text)
+        logging.error(text)
 
     def Warn(self, text):
-        logging.Warn(text)
+        logging.warn(text)

@@ -26,10 +26,10 @@ namespace BizDeck {
 		// for handling Chrome DevTools Recorder steps
 
 	public class PuppeteerDriver {
-		LaunchOptions launch_options = new();
 		ConfigHelper config_helper;
 		BizDeckLogger logger;
 		Dictionary<string, Dispatch> dispatchers = new();
+		BrowserLaunch browser_launch;
 		IBrowser browser;
 		IPage current_page;
 		JObject pending_viewport_step;
@@ -48,78 +48,72 @@ namespace BizDeck {
 			dispatchers["keyUp"] = this.KeyUp;
 			dispatchers["bdScrape"] = this.Scrape;
 
-			// setup browser process launch options
-			launch_options.Headless = config_helper.BizDeckConfig.Headless;
-			launch_options.ExecutablePath = config_helper.BizDeckConfig.BrowserPath;
-
-			launch_options.Devtools = config_helper.BizDeckConfig.DevTools;
-			launch_options.Args = new string[1] { $"--remote-debugging-port={config_helper.BizDeckConfig.BrowserRecorderPort}" };
-			string budd = config_helper.BizDeckConfig.BrowserUserDataDir;
-			if (!String.IsNullOrWhiteSpace(budd)) {
-				// If config has an empty string for browser_user_data_dir, we let it default
-				// IF an absolute path has been supplied, we pass it through
-				// If it's a relative path, we assume relative to BDROOT
-				if (!Path.IsPathRooted(budd)) {
-					budd = Path.Combine(config_helper.BDRoot, budd);
-				}
-				launch_options.UserDataDir = budd;
-				logger.Info($"ctor: UserDataDir[{budd}]");
-			}
-			else {
-				logger.Info($"ctor: no browser_user_data_dir in config, not supplying --user-data-dir");
-            }
-
 			// WaitForSelectorOptions
 			wait_for_selector_options.Hidden = false;
 			wait_for_selector_options.Timeout = config_helper.BizDeckConfig.HttpGetTimeout;
 			wait_for_selector_options.Visible = true;
 		}
 
-		public async Task<BizDeckResult> PlaySteps(string name, dynamic chrome_recording) {
-			logger.Info($"PlaySteps: playing {name} on browser[{launch_options.ExecutablePath}]");
-			logger.Info($"PlaySteps: UserDataDir[{launch_options.UserDataDir}], Headless[{launch_options.Headless}], Devtools[{launch_options.Devtools}]");
+		public async Task<BizDeckResult> PlaySteps(string name, JObject chrome_recording) {
 			// Clear state left over from previous PlaySteps
 			current_page = null;
 			pending_viewport_step = null;
-			// Create browser instance. NB we're not doing ConfigureAwait(false)
-			// to enable resumption on another thread, but that is what happens
-			// in the logs. So there must be a ConfigureAwait() in PuppeteerSharp.
+			JArray steps = null;
+			string title = null;
+
 			try {
-				browser = await Puppeteer.LaunchAsync(launch_options);
+				// Create browser instance. NB we're not doing ConfigureAwait(false)
+				// to enable resumption on another thread, but that is what happens
+				// in the logs. So there must be a ConfigureAwait() in PuppeteerSharp.
+				browser_launch = BuildBrowserLaunch(chrome_recording);
+				BizDeckResult result = await BrowserProcessCache.Instance.GetBrowserInstance(browser_launch);
+				if (!result.OK) {
+					return result;
+                }
+				browser = (IBrowser)result.Payload;
 			}
 			catch (Exception ex) {
 				string launch_error = $"PlaySteps: browser launch failed: {ex}";
 				logger.Error(launch_error);
 				return new BizDeckResult(launch_error);
             }
-			JArray steps = chrome_recording.steps;
-			logger.Info($"PlaySteps: playing[{chrome_recording.title}], {steps.Count} steps");
-			string error = null;
-			int step_index = 0;
-			BizDeckResult step_result = null;
-			foreach (JObject step in steps) {
-				string step_type = (string)step.GetValue("type");
-				logger.Info($"PlaySteps: playing step {step_index}, type[{step_type}]");
-				if (dispatchers.ContainsKey(step_type)) {
-					step_result = await dispatchers[step_type](step);
-					if (!step_result.OK) {
-						error = $"step {step_index}, type[{step_type}], result[{step_result}]";
-						logger.Error($"PlaySteps: played {error}");
-						return new BizDeckResult(error);
-                    }
+			try {
+				steps = (JArray)chrome_recording["steps"];
+				title = (string)chrome_recording["title"];
+				logger.Info($"PlaySteps: playing[{title}], {steps.Count} steps");
+				string error = null;
+				int step_index = 0;
+				BizDeckResult step_result = null;
+				foreach (JObject step in steps) {
+					string step_type = (string)step.GetValue("type");
+					logger.Info($"PlaySteps: playing step {step_index}, type[{step_type}]");
+					if (dispatchers.ContainsKey(step_type)) {
+						step_result = await dispatchers[step_type](step);
+						if (!step_result.OK) {
+							error = $"step {step_index}, type[{step_type}], result[{step_result}]";
+							logger.Error($"PlaySteps: played {error}");
+							return new BizDeckResult(error);
+						}
+						else {
+							logger.Info($"PlaySteps: played step {step_index}, type[{step_type}], result[{step_result}]");
+						}
+					}
 					else {
-						logger.Info($"PlaySteps: played step {step_index}, type[{step_type}], result[{step_result}]");
-                    }
+						logger.Error($"PlaySteps: skipping unknown step_type[{step_type}]");
+					}
+					step_index++;
 				}
-				else {
-					logger.Error($"PlaySteps: skipping unknown step_type[{step_type}]");
-                }
-				step_index++;
-            }
+			}
+			catch (Exception ex) {
+				string play_error = $"PlaySteps: browser script failed: {ex}";
+				logger.Error(play_error);
+				return new BizDeckResult(play_error);
+			}
 			return BizDeckResult.Success;
 		}
 
-		public async Task<BizDeckResult> SetViewport(JObject step)
+        #region StepsMethods
+        public async Task<BizDeckResult> SetViewport(JObject step)
         {
 			if (current_page == null) {
 				pending_viewport_step = step;
@@ -332,8 +326,10 @@ namespace BizDeck {
 			}
 			return BizDeckResult.Success;
 		}
+        #endregion StepsMethods
 
-		private async Task<BizDeckResult> QuerySelectorListAsync(JArray selectors) {
+        #region InternalMethods
+        private async Task<BizDeckResult> QuerySelectorListAsync(JArray selectors) {
 			if (current_page == null) {
 				return BizDeckResult.NoCurrentPage;
             }
@@ -384,5 +380,29 @@ namespace BizDeck {
             }
 			return new BizDeckResult(true, selector_list);
         }
-	}
+
+		private BrowserLaunch BuildBrowserLaunch(JObject script) {
+			string browser_key = config_helper.BizDeckConfig.DefaultBrowser;
+			if (script.ContainsKey("bd_browser")) {
+				string override_browser_key = (string)script["bd_browser"];
+				if (!config_helper.BizDeckConfig.BrowserMap.ContainsKey(override_browser_key)) {
+					logger.Error($"BuildBrowserLaunch: browser override[{override_browser_key}] not in BrowserMap");
+				}
+				else {
+					browser_key = override_browser_key;
+				}
+			}
+			// copy config BrowserLaunch as we may need to modify DevTools and Headless
+			BrowserLaunch bl = new BrowserLaunch(config_helper.BizDeckConfig.BrowserMap[browser_key]);
+			if (script.ContainsKey("bd_dev_tools")) {
+				bl.DevTools = (bool)script["bd_dev_tools"];
+			}
+			if (script.ContainsKey("bd_headless")) {
+				bl.Headless = (bool)script["bd_headless"];
+			}
+			return bl;
+		}
+
+        #endregion InternalMethods
+    }
 }

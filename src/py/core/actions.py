@@ -92,8 +92,10 @@ def read_unique_key_rows(reader, key):
         cs_row_dict = Dictionary[str, str]()
         for k,v in py_row_dict.items():
             cs_row_dict.Add(k.replace(' ', ''), v)
-        if not cs_cache_entry.TryAdd(key_value, cs_row_dict):
-            Logger.Error('read_uniqie_key_row: duplicate key[%s]' % key_value)
+        if cs_cache_entry.ContainsKey(key_value):
+            Logger.Error('read_unique_key_row: duplicate key[%s]' % key_value)
+        else:
+            cs_cache_entry.Add(key_value, cs_row_dict)
     return cs_cache_entry
 
 

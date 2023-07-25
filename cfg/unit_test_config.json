@@ -5,17 +5,30 @@
   "browser_recorder_port": 9222,
   "browser_json_list_timeout": 5,
   "browser_websock_timeout": 1,
-  "browser_user_data_dir": "logs",
-  "browser_path": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+  "reuse_browser_instances": true,
+  "default_browser": "chrome",
+  "blink_interval": 500,
   "console": true,
-  "devtools": false,
   "debug_logging": false,
-  "headless": false,
   "http_get_timeout": 5,
   "icon_font_family": "Arial",
   "icon_font_size": 64,
   "deck_brightness_percentage": 75,
   "secrets_path": "secrets.json",
+  "browser_map": {
+      "msedge": {
+          "exe_path": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+          "user_data_dir": "logs",
+          "dev_tools": false,
+          "headless": false
+      },
+      "chrome": {
+          "exe_path": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+          "user_data_dir": "logs",
+          "dev_tools": false,
+          "headless": false        
+      }
+  },
   "button_list": [
     {
       "name": "page",

@@ -52,7 +52,7 @@ class TestLoadQuandlYield(BizDeckIntTestCase):
         self.assertFalse(b'No cached data' in xl_get_response.body)
         self.assertTrue(b'Key' in xl_get_response.body)
         self.assertTrue(b'1MO' in xl_get_response.body)
-        iqy_path = os.path.join(self.bdtree, 'scripts', 'excel', 'quandl_yield_csv.iqy')
+        iqy_path = os.path.join(self.ch.bdtree, 'scripts', 'excel', 'quandl_yield_csv.iqy')
         self.assertTrue(os.path.exists(iqy_path))
         # wait to allow incoming websock msgs
         await gen.sleep(2)

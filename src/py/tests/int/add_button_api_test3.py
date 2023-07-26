@@ -15,9 +15,9 @@ class TestAddButtonAPI(BizDeckIntTestCase):
     def setUp(self):
         super().setUp()
         self.add_button_url = f'http://localhost:{self.biz_deck_http_port}/api/add_button'
-        payload_path = os.path.join(self.bdtree, 'scripts', 'rest', 'test_add_button3.json')
-        self.add_cleanup_file(os.path.join(self.bdtree, 'scripts', 'apps', 'google_calendar.json'))
-        self.add_cleanup_file(os.path.join(self.bdtree, 'icons', 'google_calendar.png'))
+        payload_path = os.path.join(self.ch.bdtree, 'scripts', 'rest', 'test_add_button3.json')
+        self.add_cleanup_file(os.path.join(self.ch.bdtree, 'scripts', 'apps', 'google_calendar.json'))
+        self.add_cleanup_file(os.path.join(self.ch.bdtree, 'icons', 'google_calendar.png'))
         with open(payload_path, 'rt') as payload_file:
             self.payload = payload_file.read()
         # specify content type so server knows it's a single payload,

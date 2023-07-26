@@ -13,7 +13,9 @@ RUN_SETTINGS = """<?xml version="1.0" encoding="utf-8"?>
     </TestRunParameters>  
 </RunSettings>"""
 
-
+# generate the XML settings file used by C# unit testing
+# to pass in parameters via TestContext C# API. See eg
+# src/cs/tests/unit/ConfigTest1.cs Setup method.
 def generate_run_settings(target_path, config_path):
     with open(target_path, 'wt') as settings_file:
         settings = RUN_SETTINGS.format(THIS_FILE=__file__, CONFIG_PATH=config_path)
@@ -22,6 +24,6 @@ def generate_run_settings(target_path, config_path):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: %VPYTHON% <target_path> <config_path>")
+        print("Usage: %VPYTHON% %BDROOT%/src/py/build/generate_run_settings.py <target_path> <config_path>")
     else:
         generate_run_settings(sys.argv[1], sys.argv[2])

@@ -8,8 +8,6 @@
   "reuse_browser_instances": true,
   "default_browser": "chrome",
   "blink_interval": 500,
-  "browser_user_data_dir": "logs",
-  "browser_path": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
   "console": false,
   "debug_loggin": true,
   "http_get_timeout": 5,

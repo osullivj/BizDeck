@@ -161,6 +161,10 @@ namespace BizDeck {
 					}
                 }
 			}
+			if (url.Contains("chrome:")) {
+				logger.Info($"Navigate: skipping internal chrome url {url}");
+				return BizDeckResult.Success;
+            }
 			// NB the HTML should be fully rendered when GoToAsync returns
 			// But it may be possible that JS will causes elements to
 			// render aftrwards...
@@ -389,6 +393,7 @@ namespace BizDeck {
 					logger.Error($"BuildBrowserLaunch: browser override[{override_browser_key}] not in BrowserMap");
 				}
 				else {
+					logger.Info($"BuildBrowserLaunch: script browser override[{override_browser_key}]");
 					browser_key = override_browser_key;
 				}
 			}
@@ -396,9 +401,11 @@ namespace BizDeck {
 			BrowserLaunch bl = new BrowserLaunch(config_helper.BizDeckConfig.BrowserMap[browser_key]);
 			if (script.ContainsKey("bd_dev_tools")) {
 				bl.DevTools = (bool)script["bd_dev_tools"];
+				logger.Info($"BuildBrowserLaunch: script dev_tools override[{bl.DevTools}]");
 			}
 			if (script.ContainsKey("bd_headless")) {
 				bl.Headless = (bool)script["bd_headless"];
+				logger.Info($"BuildBrowserLaunch: script headless override[{bl.Headless}]");
 			}
 			return bl;
 		}

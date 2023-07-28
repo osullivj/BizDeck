@@ -96,9 +96,15 @@ namespace BizDeck {
 			// in the logs. So there must be a ConfigureAwait() in PuppeteerSharp.
 			try {
 				browser = await Puppeteer.LaunchAsync(launch_options);
+				if (browser == null) {
+					logger.Error($"GetBrowserInstance: launch failed with {bl}");
+                }
+				else {
+					logger.Error($"GetBrowserInstance: launch succeeded with {bl}");
+				}
 			}
 			catch (Exception ex) {
-				string launch_error = $"GetBrowserInstance: browser launch failed: {ex}";
+				string launch_error = $"GetBrowserInstance: browser launch failed: [{bl}] [{ex}]";
 				logger.Error(launch_error);
 				return new BizDeckResult(launch_error);
 			}

@@ -60,6 +60,7 @@ namespace BizDeck {
 			pending_viewport_step = null;
 			JArray steps = null;
 			string title = null;
+			string play_error = null;
 
 			try {
 				// Create browser instance. NB we're not doing ConfigureAwait(false)
@@ -105,8 +106,12 @@ namespace BizDeck {
 				}
 			}
 			catch (Exception ex) {
-				string play_error = $"PlaySteps: browser script failed: {ex}";
+				play_error = $"PlaySteps: browser script failed: {ex}";
 				logger.Error(play_error);
+				return new BizDeckResult(play_error);
+			}
+			await BrowserProcessCache.Instance.ReleaseBrowserInstance(browser_launch, browser);
+			if (play_error != null) {
 				return new BizDeckResult(play_error);
 			}
 			return BizDeckResult.Success;

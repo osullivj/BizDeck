@@ -1,8 +1,5 @@
 {
     "title": "BookScraper",
-    "bd_dev_tools": false,
-    "bd_headless": false,
-    "bd_browser": "chrome",
     "steps": [
         {
             "type": "setViewport",

@@ -5,8 +5,8 @@
   "browser_recorder_port": 9222,
   "browser_json_list_timeout": 5,
   "browser_websock_timeout": 1,
-  "reuse_browser_instances": true,
-  "default_browser": "chrome",
+  "reuse_browser_instances": false,
+  "default_browser": "msedge",
   "blink_interval": 500,
   "console": false,
   "debug_loggin": true,
@@ -27,7 +27,19 @@
           "user_data_dir": "logs",
           "dev_tools": false,
           "headless": false
-      }
+      },
+      "msedge_headless": {
+          "exe_path": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+          "user_data_dir": "logs",
+          "dev_tools": false,
+          "headless": true
+      },
+      "chrome_headless": {
+          "exe_path": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+          "user_data_dir": "logs",
+          "dev_tools": false,
+          "headless": true
+      }      
   },
   "button_list": [
     {

@@ -24,6 +24,8 @@ class TestQuandlRates(BizDeckIntTestCase):
         for csv_name in ['yield', 'ded3', 'dswp10']:
             csv_path = os.path.join(self.csv_dir_path, f'{csv_name}.csv')
             self.assertEqual(os.path.exists(csv_path), True)
+        # wait to allow async actions in svr to complete
+        await gen.sleep(2)
         await self.stop_biz_deck(biz_deck_proc)
 
 

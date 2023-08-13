@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- nuspec for a package build from a DTREE -->
+<package >
+  <metadata>
+    <id>BizDeck.Bin</id>
+    <version>1.0.0</version>
+    <authors>John O'Sullivan</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <icon>icons\bd180.png</icon>
+    <projectUrl>https://github.com/osullivj/BizDeck</projectUrl>
+    <repository type="git" url="https://github.com/osullivj/BizDeck"/>
+    <description>BizDeck binaries and config</description>
+    <releaseNotes></releaseNotes>
+    <readme>README.md</readme>
+    <copyright>John O'Sullivan</copyright>
+    <tags></tags>
+    <dependencies>
+      <group targetFramework=".net5.0">
+      </group>
+    </dependencies>
+  </metadata>
+</package>

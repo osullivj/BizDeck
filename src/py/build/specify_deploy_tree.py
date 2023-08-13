@@ -8,6 +8,8 @@
 # Source tree paths are relative to BDROOT.
 
 DEPLOY_TREE = {
+    'README.md': 'README.md',
+    'BizDeck.Bin.nuspec': 'BizDeck.Bin.nuspec',
     'cfg/': {
         'config.json': 'cfg/config.json',
         'int_test_config.json': 'cfg/int_test_config.json',

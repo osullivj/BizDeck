@@ -4,6 +4,7 @@ set BDTREE=C:\osullivj\bld\BizDeck
 set HXROOT=C:\osullivj\bld\HaxeToolkit
 set IRONPYTHON=c:\osullivj\bin\irnpy340\ipy.exe
 set CPYTHON=c:\osullivj\bin\py311x64\python.exe
+set NUGET=c:\osullivj\bin\nuget.exe
 set VSTEST="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
 :: CPython int tests can be configged to start and stop BizDeck
 :: Useful for switching between running them against a BDTREE deploy tree

@@ -100,7 +100,7 @@ namespace BizDeck {
 					logger.Error($"GetBrowserInstance: launch failed with {bl}");
                 }
 				else {
-					logger.Error($"GetBrowserInstance: launch succeeded with {bl}");
+					logger.Info($"GetBrowserInstance: launch succeeded with {bl}");
 				}
 			}
 			catch (Exception ex) {

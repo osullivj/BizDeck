@@ -233,7 +233,7 @@ namespace BizDeck {
         // InsertMethods are invoked from bizdeck.py utilities that do the CSV loading
         // They also create Excel IQY files 
         public void Insert(string group, string cache_key, List<Dictionary<string, string>> val, List<string> column_names) {
-            logger.Info($"Insert: inserting {group}/{cache_key} with cols:{column_names}");
+            logger.Info($"Insert: inserting {group}/{cache_key} with cols:{String.Join(",", column_names)}");
             lock (cache_lock) {
                 Dictionary<string, CacheEntry> cache_group = null;
                 if (cache.ContainsKey(group)) {

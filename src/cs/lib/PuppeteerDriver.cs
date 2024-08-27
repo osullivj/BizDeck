@@ -173,9 +173,14 @@ namespace BizDeck {
 			// NB the HTML should be fully rendered when GoToAsync returns
 			// But it may be possible that JS will causes elements to
 			// render aftrwards...
-			logger.Info($"Navigate: GoToAsync({url})");
+			WaitUntilNavigation nav_wait = WaitUntilNavigation.Load;
+			if (step.ContainsKey("bd_wait")) {
+				Enum.TryParse<WaitUntilNavigation>((string)step["bd_wait"], out nav_wait);
+            }
+			logger.Info($"Navigate: GoToAsync({url}, {nav_wait})");
 			try {
-				http_response = await current_page.GoToAsync(url);
+				// https://stackoverflow.com/questions/65971972/puppeteer-sharp-get-html-after-js-finished-running
+				http_response = await current_page.GoToAsync(url, nav_wait);
 			}
 			catch (Exception ex) {
 				logger.Error($"Navigate: NewPageAsync url[{url}] {ex}");

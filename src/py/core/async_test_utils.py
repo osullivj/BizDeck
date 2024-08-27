@@ -14,7 +14,6 @@ from bd_utils import configure_logging, find_bizdeck_process, ConfigHelper
 # Base test case for our int tests
 # use droot.bat dev env vars to discover the config in the deploy tree
 class BizDeckIntTestCase(AsyncTestCase):
-
     def setUp(self):
         super().setUp()
         # Derived class name

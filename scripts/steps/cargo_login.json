@@ -1,0 +1,157 @@
+{
+    "title": "cargo_login",
+    "steps": [
+        {
+            "type": "setViewport",
+            "width": 1128,
+            "height": 643,
+            "deviceScaleFactor": 1,
+            "isMobile": false,
+            "hasTouch": false,
+            "isLandscape": false
+        },
+        {
+            "type": "navigate",
+            "url": "chrome://whats-new/",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "chrome://whats-new/",
+                    "title": "What’s new"
+                }
+            ]
+        },
+        {
+            "type": "navigate",
+            "url": "https://brit-qa-uatx.unqork.io/app/common-components-fe",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://brit-qa-uatx.unqork.io/app/common-components-fe",
+                    "title": ""
+                }
+            ]
+        },
+        {
+            "type": "change",
+            "value": "secrets.brit.username",
+            "selectors": [
+                [
+                    "aria/Your username is your email addresss."
+                ],
+                [
+                    "#i0116"
+                ],
+                [
+                    "xpath///*[@id=\"i0116\"]"
+                ],
+                [
+                    "pierce/#i0116"
+                ]
+            ],
+            "target": "main"
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Next"
+                ],
+                [
+                    "#idSIButton9"
+                ],
+                [
+                    "xpath///*[@id=\"idSIButton9\"]"
+                ],
+                [
+                    "pierce/#idSIButton9"
+                ],
+                [
+                    "text/Next"
+                ]
+            ],
+            "offsetY": 21.28125,
+            "offsetX": 55
+        },
+        {
+            "type": "change",
+            "value": "secrets.brit.password",
+            "selectors": [
+                [
+                    "aria/Enter the password for john.o'sullivan@britinsurance.com"
+                ],
+                [
+                    "#i0118"
+                ],
+                [
+                    "xpath///*[@id=\"i0118\"]"
+                ],
+                [
+                    "pierce/#i0118"
+                ]
+            ],
+            "target": "main"
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Sign in"
+                ],
+                [
+                    "#idSIButton9"
+                ],
+                [
+                    "xpath///*[@id=\"idSIButton9\"]"
+                ],
+                [
+                    "pierce/#idSIButton9"
+                ],
+                [
+                    "text/Sign in"
+                ]
+            ],
+            "offsetY": 17.28125,
+            "offsetX": 58,
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://login.microsoftonline.com/8cee18df-5e2a-4664-8d07-0566ffea6dcd/login",
+                    "title": "Sign in to your account"
+                }
+            ]
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Yes"
+                ],
+                [
+                    "#idSIButton9"
+                ],
+                [
+                    "xpath///*[@id=\"idSIButton9\"]"
+                ],
+                [
+                    "pierce/#idSIButton9"
+                ],
+                [
+                    "text/Yes"
+                ]
+            ],
+            "offsetY": 9.28125,
+            "offsetX": 60,
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://brit-qa-uatx.unqork.io/auth/oidc/Unqork-QA/cb?code=0.ATEA3xjujCpeZEaNBwVm_-ptzVjYFwPBvxlIpu4uUMrw9gzjAAA.AgABBAIAAAApTwJmzXqdR4BN2miheQMYAgDs_wUA9P8OT6mERYVXLswQYPQEwvEH5Xnjd7jZMOKf64g8yqP-iY9fnCwPV7QppIwocVckg1Sm4pdRXz1eYdrVP7FzAL-IVQ2uY8YgeEqvVTvvxTdkZZlvNZlZnAfbeXM2ki8pB1T-1HSkD7gw9iNyR0YqU85s5rfHzIkWKJXdBp_n7B93NTuNX1B0DpR-t7x4Wj5vdFDEe833DU67qrPK4hs2zfyzhIezB21YqaHByCfuCIFNC4TzRcnMl_LUlyaky6fzcEBxQufKdiJmMzBV_LxWxHKeyAmzycJ8I7WCDCKa0kfRB4PTy3-sVzQrCX7jSQlLD5WpeZjIwxPlS5eYXHSKbKwVLO4ThlE1_h-UJ55lzLQ8iDSZ2feXfJPCzhJfFzwFJ1bOElvue4v0rjdcl03FJoZTlQArZJ6krAH74hzM6OZqAjxrQ3Y0M82fB2vzs7Ka5ci3CYP1RHf4IaXSsDBvJyU0XzG_9RRHentni4CBxqi1YS7T06uoIO7s5nz4ZcqCwwHC-oi7tP6TGTTnI9RfV1z9LJ1S1MHeUmsKGqzDBZLZF8O_CJr5KXgAmgjqfXyYF6lQ1SfxdZ0Dxk16pF_LmABiZnYPsOHrCb6e8F3uXPKbb9qocYJ7yZAsTGVFFyV4_S5dWFmegvHsJgD-sCjf27edQ0XUjgT9Vt6QS_JOtA7wERsGbqIzAHPwdPqsUEdzYD9dB8exe5-4VHtHfjo3jfScO9iJcP1rP-yIyPuOP-CrLp0_9lVso5PVMPPrptlIwffQkzbIgZ3iRVFoIqXxZ_H9&state=eyJkZXN0aW5hdGlvbiI6IiMvZGlzcGxheS82NGMzZjI4NGI3MTE1OWI4ZTdhYzkwYzQiLCJzc29OYW1lIjoiVW5xb3JrLVFBIiwiaXNQcmV2aWV3IjpmYWxzZSwiZG9tYWluIjoiIiwiY29udGV4dCI6e319&session_state=0ba0aac1-8d42-4fac-bd12-58ad6ecf2356#",
+                    "title": ""
+                }
+            ]
+        }
+    ]
+}

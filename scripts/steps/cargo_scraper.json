@@ -1,0 +1,49 @@
+{
+    "title": "CargoScraper",
+    "steps": [
+        {
+            "type": "setViewport",
+            "width": 696,
+            "height": 505,
+            "deviceScaleFactor": 1,
+            "isMobile": false,
+            "hasTouch": false,
+            "isLandscape": false
+        },
+        {
+            "type": "navigate",
+            "url": "chrome://new-tab-page/",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "chrome://new-tab-page/",
+                    "title": "New Tab"
+                }
+            ]
+        },
+        {
+            "type": "navigate",
+            "url": "https://brit-qa-uatx.unqork.io/app/common-components-fe",
+            "bd_wait": "Networkidle0",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://brit-qa-uatx.unqork.io/app/common-components-fe",
+                    "title": ""
+                }
+            ]
+        },
+        {
+            "type": "bdScrape", 
+            "bd_root_xpath": "//div/button/..",
+            "bd_cache_group": "scraped",
+            "bd_cache_key": "cargo",            
+            "bd_field_mappings": {
+                "./button": {
+                    "bd_scraper_js": "innerText",
+                    "bd_cache_field": "cargo_id"
+                }
+            }
+        }
+    ]
+}

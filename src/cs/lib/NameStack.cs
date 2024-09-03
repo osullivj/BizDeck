@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -16,6 +18,8 @@ namespace BizDeck {
         public static NameStack Instance { get { return lazy.Value; } }
 
         private Dictionary<string, string> global = new();
+        private Regex name_stack_ref = new(@"<(.*?)>");
+
         private BizDeckResult fail = new BizDeckResult(false, "unresolved"); 
 
         private NameStack() { }
@@ -31,6 +35,41 @@ namespace BizDeck {
                 return new BizDeckResult(true, global[key]);
             }
             return fail;
+        }
+
+        public BizDeckResult Interpolate(string field) {
+            MatchCollection matches = name_stack_ref.Matches(field);
+
+            // No matches, so no need for variable substitution
+            if (matches.Count == 0) {
+                return new BizDeckResult(true, field);
+            }
+            // One or more matches...
+            StringBuilder sb = new();
+            int field_index = 0;
+            foreach (Match match in matches) {
+                if (match.Success && match.Groups.Count > 0) {
+                    // match.Groups == ['<cargo_id>', 'cargo_id']
+                    var var_name = match.Groups[1].Value;
+                    var var_result = NameStack.Instance.Resolve(var_name);
+                    if (!var_result.OK) {
+                        return var_result;
+                    }
+                    // We have a match, and a replacement. Was there a preamble to the 
+                    // current match we need to copy into the interpolated result?
+                    if (match.Index > field_index) {
+                        sb.Append(field.Substring(field_index, match.Index));
+                    }
+                    sb.Append(var_result.Payload);
+                    field_index = match.Index + match.Groups[0].Length;
+                }
+            }
+            // We've handled the matches, and any prefix text before each match. Is there any
+            // suffix text?
+            if (field_index < field.Length - 1) {
+                sb.Append(field.Substring(field_index));
+            }
+            return new BizDeckResult(true, sb.ToString());
         }
 
         public class Scope : IDisposable {

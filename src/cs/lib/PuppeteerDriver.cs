@@ -386,7 +386,13 @@ namespace BizDeck {
 				try {
 					// NB selectors is a list of one element lists
 					selector = (string)(selectors[i][0]);
-					selector_list.Add(selector);
+					BizDeckResult ir = NameStack.Instance.Interpolate(selector);
+					if (ir.OK) {
+						selector_list.Add(ir.Message);
+					}
+					else {
+						logger.Error($"ChooseSelector: selector({selector}) did not interpolate");
+					}
 				}
 				catch (Exception ex) {
 					logger.Error($"ChooseSelector: {ex}");

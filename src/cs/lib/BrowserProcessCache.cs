@@ -12,7 +12,7 @@ using Newtonsoft.Json.Linq;
 
 namespace BizDeck {
 
-	public class BrowserLaunch {
+	public class BrowserLaunch : IEquatable<BrowserLaunch> {
 		
 		[JsonProperty("user_data_dir")]
 		public string UserDataDir { get; set; }
@@ -42,6 +42,23 @@ namespace BizDeck {
 			DevTools = source_instance.DevTools;
 			Headless = source_instance.Headless;
         }
+
+		// Enable use of BrowserLaunch instances as keys in BrowserProcessCache
+		public override int GetHashCode() {
+			return ToString().GetHashCode();
+		}
+
+		public override bool Equals(object obj) {
+			return Equals(obj as BrowserLaunch);
+		}
+
+		public bool Equals(BrowserLaunch bl) {
+			if (UserDataDir != bl.UserDataDir) { return false; }
+			if (ExePath != bl.ExePath) { return false; }
+			if (DevTools != bl.DevTools) { return false; }
+			if (Headless != bl.Headless) { return false; }
+			return true;
+		}
 	}
 
 	public class BrowserProcessCache {

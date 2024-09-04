@@ -4,6 +4,7 @@ using System.IO;
 using System.Net.WebSockets;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -19,6 +20,7 @@ namespace BizDeck {
 		BizDeckLogger logger;
 		HttpClient http_client = new();
 		BizDeckWebSockModule websock;
+		BizDeckApiController api_controller;
 		AppDriver app_driver;
 		Dictionary<string, Dispatch> dispatchers = new();
 		Dictionary<string, HttpMethod> http_method_map = new();
@@ -27,6 +29,7 @@ namespace BizDeck {
 		List<string> python_action_non_param_keys = new() { "type", "function"};
 		List<string> app_script_keys = new() { "name"};
 		List<string> action_script_keys = new() { "name" };
+		List<string> cache_iterate_keys = new() { "cache_group", "cache_key", "row_key", "ns_key", "steps"};
 		BizDeckResult success = new();
 
 		// We allow a null websock ctor param so that BizDeckApiController
@@ -36,10 +39,12 @@ namespace BizDeck {
 			logger = new(this);
 			app_driver = new(ws);
 			config_helper = ConfigHelper.Instance;
+			api_controller = new BizDeckApiController(config_helper);
 			websock = ws;
 			dispatchers["http_get"] = this.HTTPGet;
 			dispatchers["python_batch"] = this.RunPythonBatchScript;
 			dispatchers["python_action"] = this.RunPythonAction;
+			dispatchers["cache_iterate"] = this.CacheIterate;
 			dispatchers["app"] = this.RunApp;
 			dispatchers["actions"] = this.RunActions;
 
@@ -235,6 +240,61 @@ namespace BizDeck {
 				logger.Error($"HTTPGet: {error}");
 				return new BizDeckResult(error);
 			}
+		}
+
+		public async Task<BizDeckResult> CacheIterate(JObject action) {
+			string cache_group = null;
+			string cache_key = null;
+			string row_key = null;
+			string ns_key = null;
+			string steps = null;
+			string validator_regex = ".*";  // default validator matches anything
+			string error = null;
+			Regex validator = null;
+			BizDeckResult result = null;
+
+			if (cache_iterate_keys.TrueForAll(s => action.ContainsKey(s))) {
+				cache_group = (string)action["cache_group"];
+				cache_key = (string)action["cache_key"];
+				row_key = (string)action["row_key"];
+				ns_key = (string)action["ns_key"];
+				steps = (string)action["steps"];
+			}
+			else {
+				error = $"one of {cache_iterate_keys} missing from {action}";
+				logger.Error($"CacheIterate: {error}");
+				return new BizDeckResult(error);
+			}
+			if (action.ContainsKey("validator_regex")) {
+				validator_regex = (string)action["validator_regex"];
+            }
+			validator = new Regex(validator_regex);    
+			// First, get hold of the cache entries...
+			CacheEntry cache_entry = DataCache.Instance.GetCacheEntry(cache_group, cache_key);
+			if (cache_entry == null) {
+				error = $"no CacheEntry for {cache_group}/{cache_key}";
+				logger.Error($"CacheIterate: {error}");
+				return new BizDeckResult(error);
+            }
+			foreach (CacheEntryRow cache_row in cache_entry) {
+				if (cache_row.Row.ContainsKey(row_key)) {
+					var key_val = cache_row.Row[row_key];
+					MatchCollection matches = validator.Matches(key_val);
+					if (matches.Count > 0) {
+						logger.Info($"CacheIterate: ns:{ns_key}={key_val}");
+						NameStack.Instance.AddNameValue(ns_key, key_val);
+						string result_tuple_json = await api_controller.RunSteps(steps);
+						logger.Info($"CacheIterate: ns:{ns_key}={key_val} {result_tuple_json}");
+					}
+					else {
+						logger.Error($"CacheIterate: skipping {key_val} mismatch regex({validator_regex})");
+					}
+                }
+				else {
+					logger.Error($"CacheIterate: {cache_row.Row} missing {row_key}");
+				}
+            }
+			return BizDeckResult.Success;
 		}
 
 		public JObject LoadAndParseActionScript(string name_or_path) {

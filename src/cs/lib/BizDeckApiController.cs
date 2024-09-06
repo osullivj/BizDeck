@@ -58,9 +58,8 @@ namespace BizDeck {
                 return JsonConvert.SerializeObject(load_steps_result);
             }
             try {
-                PuppeteerDriver steps_driver = new();
                 JObject steps = JObject.Parse(load_steps_result.Message);
-                var result_tuple = await steps_driver.PlaySteps(steps_name, steps).ConfigureAwait(false);
+                var result_tuple = await PuppeteerDriver.Instance.PlaySteps(steps_name, steps).ConfigureAwait(true);
                 if (!result_tuple.OK) {
                     throw HttpException.BadRequest(result_tuple.Message);
                 }

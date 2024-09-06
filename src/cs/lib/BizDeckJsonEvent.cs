@@ -50,6 +50,10 @@ namespace BizDeck
         private static BizDeckResult bad_add_button_payload = new(false, "Bad /api/add_button payload, check logs");
         public static BizDeckResult BadActionsScript { get => bad_actions_script; }
         private static BizDeckResult bad_actions_script = new(false, "Bad actions script, check logs");
+        public static BizDeckResult PauseMissingDelay{ get => pause_missing_delay; }
+        private static BizDeckResult pause_missing_delay = new(false, "bdPause step missing delay_ms");
+        public static BizDeckResult EmptyURLStack { get => empty_url_stack; }
+        private static BizDeckResult empty_url_stack = new(false, "Empty URL stack");
 
         // Use this ctor to construct both success and fail results
         public BizDeckResult(bool ok, object val) {

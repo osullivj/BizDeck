@@ -26,6 +26,13 @@ namespace BizDeck {
 		// for handling Chrome DevTools Recorder steps
 
 	public class PuppeteerDriver {
+		// Use of Lazy<T> gives us a thread safe singleton
+		// Instance property is the access point
+		// https://csharpindepth.com/articles/singleton
+		private static readonly Lazy<PuppeteerDriver> lazy =
+			new Lazy<PuppeteerDriver>(() => new PuppeteerDriver());
+		public static PuppeteerDriver Instance { get { return lazy.Value; } }
+
 		ConfigHelper config_helper;
 		BizDeckLogger logger;
 		Dictionary<string, Dispatch> dispatchers = new();
@@ -34,9 +41,9 @@ namespace BizDeck {
 		IPage current_page;
 		JObject pending_viewport_step;
 		WaitForSelectorOptions wait_for_selector_options = new();
-		List<string> urls_visited = new();
+		Stack<string> url_stack = new();
 		
-		public PuppeteerDriver() {
+		private PuppeteerDriver() {
 			logger = new(this);
 			config_helper = ConfigHelper.Instance;
 
@@ -47,6 +54,9 @@ namespace BizDeck {
 			dispatchers["keyDown"] = this.KeyDown;
 			dispatchers["keyUp"] = this.KeyUp;
 			dispatchers["bdScrape"] = this.Scrape;
+			dispatchers["bdPause"] = this.Pause;
+			dispatchers["bdPushURL"] = this.PushURL;
+			dispatchers["bdPopURL"] = this.PopURL;
 
 			// WaitForSelectorOptions
 			wait_for_selector_options.Hidden = false;
@@ -56,7 +66,7 @@ namespace BizDeck {
 
 		public async Task<BizDeckResult> PlaySteps(string name, JObject chrome_recording) {
 			// Clear state left over from previous PlaySteps
-			current_page = null;
+			// current_page = null;
 			pending_viewport_step = null;
 			JArray steps = null;
 			string title = null;
@@ -67,7 +77,7 @@ namespace BizDeck {
 				// to enable resumption on another thread, but that is what happens
 				// in the logs. So there must be a ConfigureAwait() in PuppeteerSharp.
 				browser_launch = BuildBrowserLaunch(chrome_recording);
-				BizDeckResult result = await BrowserProcessCache.Instance.GetBrowserInstance(browser_launch);
+				BizDeckResult result = await BrowserProcessCache.Instance.GetBrowserInstance(browser_launch).ConfigureAwait(true);
 				if (!result.OK) {
 					return result;
                 }
@@ -89,7 +99,7 @@ namespace BizDeck {
 					string step_type = (string)step.GetValue("type");
 					logger.Info($"PlaySteps: playing step {step_index}, type[{step_type}]");
 					if (dispatchers.ContainsKey(step_type)) {
-						step_result = await dispatchers[step_type](step);
+						step_result = await dispatchers[step_type](step).ConfigureAwait(true);
 						if (!step_result.OK) {
 							error = $"step {step_index}, type[{step_type}], result[{step_result}]";
 							logger.Error($"PlaySteps: played {error}");
@@ -110,7 +120,7 @@ namespace BizDeck {
 				logger.Error(play_error);
 				return new BizDeckResult(play_error);
 			}
-			await BrowserProcessCache.Instance.ReleaseBrowserInstance(browser_launch, browser);
+			await BrowserProcessCache.Instance.ReleaseBrowserInstance(browser_launch, browser).ConfigureAwait(true);
 			if (play_error != null) {
 				return new BizDeckResult(play_error);
 			}
@@ -133,7 +143,7 @@ namespace BizDeck {
 				vpo.IsLandscape = (bool)step["isLandscape"];
 				logger.Info($"SetViewport: ViewPortOptions[{JsonConvert.SerializeObject(vpo)}]");
 				try {
-					await current_page.SetViewportAsync(vpo);
+					await current_page.SetViewportAsync(vpo).ConfigureAwait(true);
 				}
 				catch (Exception ex) {
 					logger.Error($"SetViewport: failed {ex}");
@@ -150,7 +160,7 @@ namespace BizDeck {
 			if (current_page == null) {
 				logger.Info($"Navigate: NewPageAsync for url[{url}]");
 				// This will resume on another thread, despite no
-				// ConfigureAwait(): P# must fo it internally.
+				// ConfigureAwait(): P# must do it internally.
 				try {
 					current_page = await browser.NewPageAsync();
 				}
@@ -186,13 +196,13 @@ namespace BizDeck {
 				logger.Error($"Navigate: NewPageAsync url[{url}] {ex}");
 				return new BizDeckResult(ex.Message);
 			}
-			if (http_response.Status != System.Net.HttpStatusCode.OK) {
+			// http_response can be null when we invoke Navigate from PopURL
+			if (http_response != null && http_response.Status != System.Net.HttpStatusCode.OK) {
 				error = $"bad status[{http_response.StatusText}] for url[{url}]";
 				logger.Error($"Navigate: {error}");
 				return new BizDeckResult(error);
             }
 			// At the point we know the navigation to url was succesful
-			urls_visited.Add(url);
 			return BizDeckResult.Success;
         }
 
@@ -340,10 +350,50 @@ namespace BizDeck {
 			}
 			return BizDeckResult.Success;
 		}
-        #endregion StepsMethods
 
-        #region InternalMethods
-        private async Task<BizDeckResult> QuerySelectorListAsync(JArray selectors) {
+		public async Task<BizDeckResult> Pause(JObject step) {
+			if (!step.ContainsKey("delay_ms")) {
+				logger.Error($"Pause: missing delay_ms in {step}");
+				return BizDeckResult.PauseMissingDelay;
+			}
+			int delay_ms = (int)step["delay_ms"];
+			await Task.Delay(delay_ms);
+			return BizDeckResult.Success;
+		}
+
+		public async Task<BizDeckResult> PushURL(JObject step) {
+			if (current_page == null) {
+				logger.Error($"PushURL: no current page for {step}");
+				return BizDeckResult.NoCurrentPage;
+			}
+			var jurl = await current_page.EvaluateExpressionAsync("window.location.href");
+			var url = jurl.ToString();
+			url_stack.Push(url);
+			logger.Info($"PushURL: {url}");
+			return new BizDeckResult(true, url);
+		}
+
+		public async Task<BizDeckResult> PopURL(JObject step) {
+			if (url_stack.Count == 0) {
+				logger.Error($"PopURL: empty stack!");
+				return BizDeckResult.EmptyURLStack;
+			}
+			var url = url_stack.Pop();
+			// We're going to use the Navigate method, which will look for
+			// bd_wait in the step. So we check our PopURL step for bd_wait.
+			JObject navigate = new JObject();
+			navigate["url"] = url;
+			if (step.ContainsKey("bd_wait")) {
+				navigate["bd_wait"] = step["bd_wait"];
+			}
+			logger.Info($"PopURL: navigating to {url}");
+			return await Navigate(navigate);
+		}
+
+		#endregion StepsMethods
+
+		#region InternalMethods
+		private async Task<BizDeckResult> QuerySelectorListAsync(JArray selectors) {
 			if (current_page == null) {
 				return BizDeckResult.NoCurrentPage;
             }
@@ -351,7 +401,10 @@ namespace BizDeck {
 			if (!selectors_result.OK) {
 				return selectors_result;
             }
+
 			List<string> selector_list = (List<string>)selectors_result.Payload;
+			var selectors_s = $"selectors<{String.Join("|", selector_list)}>";
+			logger.Info($"QuerySelectorAsync: {selectors_s}");
 			IElementHandle element = null;
 			foreach (var selector in selector_list) {
 				try {
@@ -360,6 +413,7 @@ namespace BizDeck {
 					// handle here it causes deadlock
 					element = await current_page.QuerySelectorAsync(selector);
 					if (element != null) {
+						logger.Info($"QuerySelectorAsync: hit {selector}");
 						return new BizDeckResult(true, element);
                     }
 				}
@@ -367,9 +421,12 @@ namespace BizDeck {
 					// Selector misses are routine. We follow the Chrome Recorder playback
 					// practice of trying all the selectors in turn. Switch on debug
 					// logging to see the misses.
-					logger.Debug($"QuerySelectorAsync: selector[{selector}], {ex}");
+					logger.Error($"QuerySelectorAsync: selector[{selector}], {ex}");
                 }
 			}
+			// Selectors can fail to resolve without generating an Exception, so log here
+			// on the misses
+			logger.Error($"QuerySelectorAsync: no hits for selectors: {selectors_s}");
 			return BizDeckResult.NoSelectorResolves;
 		}
 

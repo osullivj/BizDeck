@@ -252,6 +252,8 @@ namespace BizDeck {
 			string error = null;
 			Regex validator = null;
 			BizDeckResult result = null;
+			int max_iter = 100;
+			int iter_count = 0;
 
 			if (cache_iterate_keys.TrueForAll(s => action.ContainsKey(s))) {
 				cache_group = (string)action["cache_group"];
@@ -268,7 +270,10 @@ namespace BizDeck {
 			if (action.ContainsKey("validator_regex")) {
 				validator_regex = (string)action["validator_regex"];
             }
-			validator = new Regex(validator_regex);    
+			validator = new Regex(validator_regex);
+			if (action.ContainsKey("max_iter")) {
+				max_iter = (int)action["max_iter"];
+            }
 			// First, get hold of the cache entries...
 			CacheEntry cache_entry = DataCache.Instance.GetCacheEntry(cache_group, cache_key);
 			if (cache_entry == null) {
@@ -285,6 +290,7 @@ namespace BizDeck {
 						NameStack.Instance.AddNameValue(ns_key, key_val);
 						string result_tuple_json = await api_controller.RunSteps(steps);
 						logger.Info($"CacheIterate: ns:{ns_key}={key_val} {result_tuple_json}");
+						iter_count++;
 					}
 					else {
 						logger.Error($"CacheIterate: skipping {key_val} mismatch regex({validator_regex})");
@@ -292,6 +298,10 @@ namespace BizDeck {
                 }
 				else {
 					logger.Error($"CacheIterate: {cache_row.Row} missing {row_key}");
+				}
+				if (iter_count > max_iter) {
+					logger.Info($"CacheIterate: iter_count({iter_count}) exceeds max_iter({max_iter})");
+					break;
 				}
             }
 			return BizDeckResult.Success;

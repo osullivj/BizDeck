@@ -12,14 +12,12 @@ namespace BizDeck
     {
         string name;
         BizDeckLogger logger;
-        PuppeteerDriver driver;
         ConfigHelper config_helper;
 
         public StepsButton(string name) {
             logger = new(this);
             config_helper = ConfigHelper.Instance;
             this.name = name;
-            driver = new PuppeteerDriver();
         }
 
         public override void Run() {
@@ -34,7 +32,7 @@ namespace BizDeck
                     return load_result;
                 }
                 JObject steps = JObject.Parse(load_result.Message);
-                BizDeckResult play_result = await driver.PlaySteps(name, steps).ConfigureAwait(false);
+                BizDeckResult play_result = await PuppeteerDriver.Instance.PlaySteps(name, steps).ConfigureAwait(false);
                 logger.Info($"RunAsync: name[{name}], result[{play_result}]");
                 return play_result;
             }

@@ -57,6 +57,8 @@ namespace BizDeck {
         private Server() {
             logger = new(this);
             config_helper = ConfigHelper.Instance;
+            // Log file location comes from ConfigHelper, so we can now start logging...
+            logger.Info($"Config loaded from {config_helper.ConfigPath}");
             // One shot copy so that hx gui can get default background from
             // local cache avoiding hx hardwiring and using a single source of truth 
             BizDeckStatus.Instance.StartTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
@@ -107,8 +109,8 @@ namespace BizDeck {
             deck_manager = new DeckManager(config_helper);
             stream_deck = deck_manager.SetupDeck(this);
             if (stream_deck == null) {
-                config_helper.ThrowErrorToBrowser("StreamDeck init", "Is your StreamDeck plugged in?");
-                logger.Error("StreamDeck init failed - is it plugged in?");
+                // config_helper.ThrowErrorToBrowser("StreamDeck init", "Is your StreamDeck plugged in?");
+                // logger.Error("StreamDeck init failed - is it plugged in?");
                 BizDeckStatus.Instance.DeckConnection = false;
                 return false;
             }

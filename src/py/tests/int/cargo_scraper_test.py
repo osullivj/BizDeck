@@ -15,8 +15,8 @@ class TestCargoScraper(BizDeckIntTestCase):
         super().setUp()
         self.login_url = f'http://localhost:{self.biz_deck_http_port}/api/run/steps/cargo_login'
         self.scraper_url = f'http://localhost:{self.biz_deck_http_port}/api/run/steps/cargo_scraper'
-        self.api_get_scraped_books_url = f'http://localhost:{self.biz_deck_http_port}/api/cache/scraped/cargo'
-        self.xl_get_scraped_books_url = f'http://localhost:{self.biz_deck_http_port}/excel/scraped/cargo'
+        self.api_get_scraped_risks_url = f'http://localhost:{self.biz_deck_http_port}/api/cache/scraped/cargo'
+        self.xl_get_scraped_risks_url = f'http://localhost:{self.biz_deck_http_port}/excel/scraped/cargo'
 
     @gen_test
     async def test_cargo_scraper(self):
@@ -26,28 +26,26 @@ class TestCargoScraper(BizDeckIntTestCase):
         self.logger.info(f"test_book_scraper: HTTP GET {self.scraper_url}")
         # run the login and scraper scripts
         # login_response = await self.http_client.fetch(self.login_url)
-        scraper_response = await self.http_client.fetch(self.scraper_url)
-        self.logger.info(f"test_book_scraper: retcode[{scraper_response.code}], body[{scraper_response.body}], for {self.scraper_url}")
+        scraper_response = await self.http_client.fetch(self.scraper_url, request_timeout=int(os.getenv('ASYNC_TEST_TIMEOUT')))
+        self.logger.info(f"test_cargo_scraper: retcode[{scraper_response.code}], body[{scraper_response.body}], for {self.scraper_url}")
         self.assertEqual(scraper_response.code, 200)
         # get cache contents
-        self.logger.info(f"test_book_scraper: HTTP REST {self.api_get_scraped_books_url}")
-        api_get_response = await self.http_client.fetch(self.api_get_scraped_books_url)
-        self.logger.info(f"test_book_scraper: retcode[{api_get_response.code} for {self.api_get_scraped_books_url}")
+        self.logger.info(f"test_cargo_scraper: HTTP REST {self.api_get_scraped_risks_url}")
+        api_get_response = await self.http_client.fetch(self.api_get_scraped_risks_url)
+        self.logger.info(f"test_cargo_scraper: retcode[{api_get_response.code} for {self.api_get_scraped_risks_url}")
         self.assertEqual(api_get_response.code, 200)
         # turn the response into a py obj
         scrape_csv = json.loads(api_get_response.body)
-        self.logger.info("test_book_scraper: {type}, {count} rows, {row_key} key".format(**scrape_csv))
-        self.logger.info("test_book_scraper: {headers}, {data}".format(**scrape_csv))
+        self.logger.info("test_cargo_scraper: {type}, {count} rows, {row_key} key".format(**scrape_csv))
+        self.logger.info("test_cargo_scraper: {headers}, {data}".format(**scrape_csv))
         self.assertEqual(scrape_csv['type'], 'RegularCSV')
-        # now check the Excel features: the /excel/scraped/books_csv URL for an Excel friendly
-        # HTML table, and the creation of scripts/excel/scraped_books_csv.iqy
-        self.logger.info(f"test_book_scraper: Excel HTML table {self.xl_get_scraped_books_url}")
-        xl_get_response = await self.http_client.fetch(self.xl_get_scraped_books_url)
-        self.logger.info(f"test_book_scraper: retcode[{xl_get_response.code} for {self.xl_get_scraped_books_url}")
+        # now check the Excel features: the /excel/scraped/cargo_csv URL for an Excel friendly
+        # HTML table, and the creation of scripts/excel/scraped_cargo_csv.iqy
+        self.logger.info(f"test_cargo_scraper: Excel HTML table {self.xl_get_scraped_risks_url}")
+        xl_get_response = await self.http_client.fetch(self.xl_get_scraped_risks_url)
+        self.logger.info(f"test_cargo_scraper: retcode[{xl_get_response.code} for {self.xl_get_scraped_risks_url}")
         self.assertEqual(xl_get_response.code, 200)
         self.assertFalse(b'No cached data' in xl_get_response.body)
-        # self.assertTrue(b'Key' in xl_get_response.body)
-        # self.assertTrue(b'1MO' in xl_get_response.body)
         # bdroot for dev tree, bdtree for deploy tree
         iqy_path = os.path.join(self.ch.bdroot, 'scripts', 'excel', 'scraped_cargo.iqy')
         self.logger.info(f'iqy_path:{iqy_path}')

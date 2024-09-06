@@ -26,6 +26,15 @@ namespace BizDeck {
 		[JsonProperty("headless")]
 		public bool Headless { get; set; }
 
+		[JsonProperty("tracing")]
+		public bool Tracing { get; set; }
+
+		[JsonProperty("screenshots")]
+		public bool Screenshots { get; set; }
+
+		[JsonProperty("categories")]
+		public List<string> Categories { get; set; }
+
 		// Simplify logging...
 		public override string ToString() {
 			return JsonConvert.SerializeObject(this);
@@ -41,6 +50,9 @@ namespace BizDeck {
 			ExePath = source_instance.ExePath;
 			DevTools = source_instance.DevTools;
 			Headless = source_instance.Headless;
+			Tracing = source_instance.Tracing;
+			Categories = source_instance.Categories;
+			Screenshots = source_instance.Screenshots;
         }
 
 		// Enable use of BrowserLaunch instances as keys in BrowserProcessCache
@@ -53,6 +65,7 @@ namespace BizDeck {
 		}
 
 		public bool Equals(BrowserLaunch bl) {
+			if (bl == null) { return false; }
 			if (UserDataDir != bl.UserDataDir) { return false; }
 			if (ExePath != bl.ExePath) { return false; }
 			if (DevTools != bl.DevTools) { return false; }

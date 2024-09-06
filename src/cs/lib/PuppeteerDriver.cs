@@ -42,6 +42,7 @@ namespace BizDeck {
 		JObject pending_viewport_step;
 		WaitForSelectorOptions wait_for_selector_options = new();
 		Stack<string> url_stack = new();
+		TracingOptions tracing_options = new();
 		
 		private PuppeteerDriver() {
 			logger = new(this);
@@ -64,9 +65,22 @@ namespace BizDeck {
 			wait_for_selector_options.Visible = true;
 		}
 
+		private string NewFileName(string basename) {
+			char suffix = 'a';
+			bool file_exists = true;
+			string file_name, path = "";
+			var timestamp = DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss");
+			while (file_exists) {
+				file_name = $"bd_{basename}_{timestamp}_r{suffix}.json";
+				path = Path.Combine(ConfigHelper.Instance.LogDir, file_name);
+				file_exists = File.Exists(path);
+				suffix++;
+			}
+			return path;
+		}
+
 		public async Task<BizDeckResult> PlaySteps(string name, JObject chrome_recording) {
 			// Clear state left over from previous PlaySteps
-			// current_page = null;
 			pending_viewport_step = null;
 			JArray steps = null;
 			string title = null;
@@ -77,6 +91,10 @@ namespace BizDeck {
 				// to enable resumption on another thread, but that is what happens
 				// in the logs. So there must be a ConfigureAwait() in PuppeteerSharp.
 				browser_launch = BuildBrowserLaunch(chrome_recording);
+				if (browser_launch.Tracing) {
+					tracing_options.Screenshots = browser_launch.Screenshots;
+					tracing_options.Categories = browser_launch.Categories;
+                }
 				BizDeckResult result = await BrowserProcessCache.Instance.GetBrowserInstance(browser_launch).ConfigureAwait(true);
 				if (!result.OK) {
 					return result;
@@ -189,8 +207,19 @@ namespace BizDeck {
             }
 			logger.Info($"Navigate: GoToAsync({url}, {nav_wait})");
 			try {
+				if (browser_launch.Tracing) {
+					tracing_options.Path = NewFileName("trace");
+					await current_page.Tracing.StartAsync(tracing_options);
+				}
 				// https://stackoverflow.com/questions/65971972/puppeteer-sharp-get-html-after-js-finished-running
 				http_response = await current_page.GoToAsync(url, nav_wait);
+				if (browser_launch.Tracing) {
+					await current_page.Tracing.StopAsync();
+					var metrics_dict = await current_page.MetricsAsync();
+					var metrics_text = String.Join(Environment.NewLine, metrics_dict);
+					var metrics_path = NewFileName("metrics");
+					File.WriteAllText(metrics_path, metrics_text);
+				}
 			}
 			catch (Exception ex) {
 				logger.Error($"Navigate: NewPageAsync url[{url}] {ex}");
